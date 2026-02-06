@@ -28,6 +28,17 @@ body.drizzle { background-image: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100
 body.mist { background-image: linear-gradient(135deg, #606c88 0%, #3f4c6b 100%); }
 body.snow { background-image: linear-gradient(135deg, #E6DADA 0%, #274046 100%); }
 
+/* Site Title Styling */
+.site-title {
+    color: #fff;
+    font-size: 48px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 1s ease;
+}
+
 .card {
     width: 90%;
     max-width: 500px;
@@ -230,6 +241,11 @@ body.snow { background-image: linear-gradient(135deg, #E6DADA 0%, #274046 100%);
 
 /* Responsive Design for Mobile */
 @media (max-width: 480px) {
+    .site-title {
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+
     .card {
         padding: 30px 20px;
         width: 95%;
