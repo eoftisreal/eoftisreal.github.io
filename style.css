@@ -201,7 +201,7 @@ body.snow { background-image: linear-gradient(135deg, #E6DADA 0%, #274046 100%);
 
 /* Custom scrollbar for forecast */
 .forecast::-webkit-scrollbar {
-    height: 6px;
+    height: 11px;
 }
 
 .forecast::-webkit-scrollbar-track {
