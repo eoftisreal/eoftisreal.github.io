@@ -3,54 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather App</title>
+    <title>Weather & PDF Tools</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Load pdf-lib library -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-<h1 class="site-title">🐸</h1>
-<div class="card">
-    <div class="search">
+
+<!-- Top Weather Bar -->
+<nav class="weather-bar">
+    <div class="weather-info">
+        <img src="images/rain.png" class="weather-icon-small">
+        <div class="weather-text">
+            <span class="temp">--°c</span>
+            <span class="city">Loading...</span>
+        </div>
+    </div>
+
+    <div class="search-compact">
         <input type="text" placeholder="Search City" spellcheck="false">
         <button id="searchBtn"><img src="images/search.png"></button>
         <button id="locationBtn" title="Use My Location">📍</button>
     </div>
-    <div class="error">
-        <p>Invalid city name</p>
-    </div>
-    <div class="weather">
+
+    <!-- Hidden container to keep existing JS happy without breaking or complex refactor yet -->
+    <div class="weather" style="display: none;">
+        <!-- These are used by script.js but might not be shown in the top bar -->
         <div class="date-time"></div>
         <img src="images/rain.png" class="weather-icon">
-        <h1 class="temp">22°c</h1>
-        <h2 class="city">New York</h2>
-        <p class="feels-like">Feels like: <span>20°c</span></p>
+        <p class="feels-like">Feels like: <span>--</span></p>
+        <div class="humidity">--</div>
+        <div class="wind">--</div>
+        <div class="forecast"></div>
+    </div>
+    <div class="error" style="display: none;">
+        <p>Invalid city name</p>
+    </div>
+</nav>
 
-        <div class="details">
-            <div class="col">
-                <img src="images/humidity.png">
-                <div> 
-                    <p class="humidity">50%</p>
-                    <p>Humidity</p>
-                </div>
-            </div>
-            <div class="col">
-                <img src="images/wind.png">
-                <div>
-                    <p class="wind">15 km/h</p>
-                    <p>Wind Speed</p>
-                </div>
-            </div>
+<!-- Main Content Area -->
+<main>
+    <h1 class="site-title">📄 PDF Tools</h1>
+
+    <div class="card pdf-tool">
+        <h2>2-Up PDF Rotator</h2>
+        <p class="description">Upload a PDF to rotate pages and combine them (2 per page).</p>
+
+        <div class="upload-section">
+            <input type="file" id="pdfInput" accept=".pdf">
+            <label for="pdfInput" class="file-label">Choose PDF File</label>
+            <span id="fileName">No file chosen</span>
         </div>
 
-        <div class="forecast-container">
-            <h3>5-Day Forecast</h3>
-            <div class="forecast">
-                <!-- Forecast items will be injected here JS -->
-            </div>
-        </div>
-    </div> 
-</div>
+        <button id="processBtn" disabled>Process & Download</button>
+
+        <div id="status"></div>
+    </div>
+</main>
+
 <script src="script.js"></script>
-
 
 </body>
 </html>
