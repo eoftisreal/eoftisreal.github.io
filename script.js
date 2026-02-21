@@ -175,64 +175,106 @@ if (processBtn) {
                 const [embeddedPage1] = await newPdf.embedPages([pdfDoc.getPages()[i]]);
                 const dims1 = embeddedPage1.scale(1);
 
-                // Visual Dimensions after 90 deg Rotation (Clockwise)
-                // Note: pdf-lib 'rotate: degrees(-90)' rotates CLOCKWISE.
-                // Visual Width on page becomes Original Height.
-                // Visual Height on page becomes Original Width.
-                const rotatedWidth1 = dims1.height;
-                const rotatedHeight1 = dims1.width;
+                // --- Determine Rotation and Scaling ---
+                // We want to fit the page into a "Landscape" slot (Wide).
+                // If the source page is visually Portrait (Height > Width), rotate it 90 degrees.
+                // If it is already Landscape (Width >= Height), keep it as is.
+
+                const page1 = pdfDoc.getPages()[i];
+                const rotation1 = page1.getRotation().angle || 0;
+
+                // Dimensions from embedded page are usually unrotated storage dimensions.
+                // Adjust for source rotation to get visual dimensions.
+                const isRotated90_1 = Math.abs(rotation1) % 180 === 90;
+                const visualWidth1 = isRotated90_1 ? dims1.height : dims1.width;
+                const visualHeight1 = isRotated90_1 ? dims1.width : dims1.height;
+
+                let drawRotation1 = 0;
+                if (visualHeight1 > visualWidth1) {
+                    // Portrait -> Rotate to Landscape (-90 CW)
+                    drawRotation1 = -90;
+                }
+
+                // Final Visual Dimensions on destination
+                // If we rotate -90, width/height swap relative to visual source
+                const finalWidth1 = (drawRotation1 === -90) ? visualHeight1 : visualWidth1;
+                const finalHeight1 = (drawRotation1 === -90) ? visualWidth1 : visualHeight1;
 
                 const scale1 = Math.min(
-                    (A4_WIDTH - PADDING * 2) / rotatedWidth1,
-                    (HALF_HEIGHT - PADDING * 2) / rotatedHeight1
+                    (A4_WIDTH - PADDING * 2) / finalWidth1,
+                    (HALF_HEIGHT - PADDING * 2) / finalHeight1
                 );
 
-                const drawnWidth1 = rotatedWidth1 * scale1; // Visual Width
-                const drawnHeight1 = rotatedHeight1 * scale1; // Visual Height
+                const drawnWidth1 = finalWidth1 * scale1;
+                const drawnHeight1 = finalHeight1 * scale1;
 
                 // Target Center: Top Half
                 const centerX1 = A4_WIDTH / 2;
-                const centerY1 = HALF_HEIGHT + (HALF_HEIGHT / 2); // 3/4 Height
+                const centerY1 = HALF_HEIGHT + (HALF_HEIGHT / 2);
 
-                // Positioning for 90 deg Clockwise Rotation
-                // When rotated 90 deg CW around anchor (x,y):
-                // Visual Box relative to anchor: X: [0, H], Y: [-W, 0]
-                // Center relative to anchor: (H/2, -W/2)
-                // AnchorX = TargetCenterX - H/2
-                // AnchorY = TargetCenterY + W/2
+                let x1, y1;
+                if (drawRotation1 === -90) {
+                    // Rotated -90 (CW): Extends Right and Down from anchor
+                    x1 = centerX1 - (drawnWidth1 / 2);
+                    y1 = centerY1 + (drawnHeight1 / 2);
+                } else {
+                    // Rotated 0: Extends Right and Up from anchor (Standard)
+                    x1 = centerX1 - (drawnWidth1 / 2);
+                    y1 = centerY1 - (drawnHeight1 / 2);
+                }
 
                 newPage.drawPage(embeddedPage1, {
-                    x: centerX1 - (drawnWidth1 / 2),
-                    y: centerY1 + (drawnHeight1 / 2),
+                    x: x1,
+                    y: y1,
                     scale: scale1,
-                    rotate: degrees(-90)
+                    rotate: degrees(drawRotation1)
                 });
 
                 // --- Bottom Page (Source i+1) ---
                 if (i + 1 < totalPages) {
                     const [embeddedPage2] = await newPdf.embedPages([pdfDoc.getPages()[i+1]]);
                     const dims2 = embeddedPage2.scale(1);
+                    const page2 = pdfDoc.getPages()[i+1];
+                    const rotation2 = page2.getRotation().angle || 0;
 
-                    const rotatedWidth2 = dims2.height;
-                    const rotatedHeight2 = dims2.width;
+                    const isRotated90_2 = Math.abs(rotation2) % 180 === 90;
+                    const visualWidth2 = isRotated90_2 ? dims2.height : dims2.width;
+                    const visualHeight2 = isRotated90_2 ? dims2.width : dims2.height;
+
+                    let drawRotation2 = 0;
+                    if (visualHeight2 > visualWidth2) {
+                        drawRotation2 = -90;
+                    }
+
+                    const finalWidth2 = (drawRotation2 === -90) ? visualHeight2 : visualWidth2;
+                    const finalHeight2 = (drawRotation2 === -90) ? visualWidth2 : visualHeight2;
 
                     const scale2 = Math.min(
-                        (A4_WIDTH - PADDING * 2) / rotatedWidth2,
-                        (HALF_HEIGHT - PADDING * 2) / rotatedHeight2
+                        (A4_WIDTH - PADDING * 2) / finalWidth2,
+                        (HALF_HEIGHT - PADDING * 2) / finalHeight2
                     );
 
-                    const drawnWidth2 = rotatedWidth2 * scale2;
-                    const drawnHeight2 = rotatedHeight2 * scale2;
+                    const drawnWidth2 = finalWidth2 * scale2;
+                    const drawnHeight2 = finalHeight2 * scale2;
 
                     // Target Center: Bottom Half
                     const centerX2 = A4_WIDTH / 2;
-                    const centerY2 = HALF_HEIGHT / 2; // 1/4 Height
+                    const centerY2 = HALF_HEIGHT / 2;
+
+                    let x2, y2;
+                    if (drawRotation2 === -90) {
+                         x2 = centerX2 - (drawnWidth2 / 2);
+                         y2 = centerY2 + (drawnHeight2 / 2);
+                    } else {
+                         x2 = centerX2 - (drawnWidth2 / 2);
+                         y2 = centerY2 - (drawnHeight2 / 2);
+                    }
 
                     newPage.drawPage(embeddedPage2, {
-                        x: centerX2 - (drawnWidth2 / 2),
-                        y: centerY2 + (drawnHeight2 / 2),
+                        x: x2,
+                        y: y2,
                         scale: scale2,
-                        rotate: degrees(-90)
+                        rotate: degrees(drawRotation2)
                     });
                 }
             }
