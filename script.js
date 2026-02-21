@@ -126,6 +126,47 @@ if (locationBtn) {
 
 // --- PDF Logic ---
 
+// Page size definitions (in points)
+const PAGE_SIZES = {
+    'a4-portrait':      { width: 595.28, height: 841.89 },
+    'a4-landscape':     { width: 841.89, height: 595.28 },
+    'a5-portrait':      { width: 419.53, height: 595.28 },
+    'a5-landscape':     { width: 595.28, height: 419.53 },
+    'letter-portrait':  { width: 612,    height: 792    },
+    'letter-landscape': { width: 792,    height: 612    },
+    'legal-portrait':   { width: 612,    height: 1008   },
+    'legal-landscape':  { width: 1008,   height: 612    },
+};
+
+/**
+ * Parse an "unchanged pages" string like "1", "1-3", "1,4,6", "1-3,7"
+ * into a Set of 0-based page indices.
+ */
+function parseUnchangedPages(input, totalPages) {
+    const pages = new Set();
+    if (!input || !input.trim()) return pages;
+    const parts = input.split(',');
+    for (const part of parts) {
+        const trimmed = part.trim();
+        if (trimmed.includes('-')) {
+            const [startStr, endStr] = trimmed.split('-');
+            const start = parseInt(startStr, 10);
+            const end = parseInt(endStr, 10);
+            if (!isNaN(start) && !isNaN(end)) {
+                for (let p = Math.max(1, start); p <= Math.min(end, totalPages); p++) {
+                    pages.add(p - 1); // convert to 0-based
+                }
+            }
+        } else {
+            const p = parseInt(trimmed, 10);
+            if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                pages.add(p - 1); // convert to 0-based
+            }
+        }
+    }
+    return pages;
+}
+
 if (pdfInput) {
     pdfInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -149,61 +190,67 @@ if (processBtn) {
             processBtn.disabled = true;
             document.body.style.cursor = "wait";
 
+            // Read user options
+            const rotationAngle = parseInt(document.getElementById('rotationAngle').value, 10);
+            const pageSizeKey = document.getElementById('pageSize').value;
+            const pagesPerSheet = parseInt(document.getElementById('pagesPerSheet').value, 10);
+            const unchangedInput = document.getElementById('unchangedPages').value;
+
             const arrayBuffer = await file.arrayBuffer();
             const pdfDoc = await PDFDocument.load(arrayBuffer);
             const newPdf = await PDFDocument.create();
 
             const totalPages = pdfDoc.getPageCount();
+            const unchangedSet = parseUnchangedPages(unchangedInput, totalPages);
 
-            // A4 dimensions (Points)
-            const A4_WIDTH = 595.28;
-            const A4_HEIGHT = 841.89;
-            const HALF_HEIGHT = A4_HEIGHT / 2;
+            const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PAGE_SIZES[pageSizeKey];
             const PADDING = 0;
 
-            // Copy Page 1 (Cover) as-is
-            if (totalPages > 0) {
-                const [coverPage] = await newPdf.copyPages(pdfDoc, [0]);
-                newPdf.addPage(coverPage);
+            // Compute grid layout based on pagesPerSheet
+            let cols, rows;
+            if (pagesPerSheet === 1) { cols = 1; rows = 1; }
+            else if (pagesPerSheet === 2) { cols = 1; rows = 2; }
+            else { cols = 2; rows = 2; } // 4-up
+
+            const slotW = (PAGE_WIDTH - (cols + 1) * PADDING) / cols;
+            const slotH = (PAGE_HEIGHT - (rows + 1) * PADDING) / rows;
+
+            // Separate pages into unchanged (copied as-is) and processed
+            const processedIndices = [];
+            for (let i = 0; i < totalPages; i++) {
+                if (unchangedSet.has(i)) {
+                    const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
+                    newPdf.addPage(copiedPage);
+                } else {
+                    processedIndices.push(i);
+                }
             }
 
-            // Loop remaining pages in pairs
-            for (let i = 1; i < totalPages; i += 2) {
-                // If only one page remains, keep it as-is
-                if (i + 1 >= totalPages) {
-                    const [lastPage] = await newPdf.copyPages(pdfDoc, [i]);
+            // Process remaining pages in groups of pagesPerSheet
+            for (let g = 0; g < processedIndices.length; g += pagesPerSheet) {
+                const group = processedIndices.slice(g, g + pagesPerSheet);
+
+                // If only 1 page remains for a multi-up sheet, keep it as-is
+                if (group.length === 1 && pagesPerSheet > 1) {
+                    const [lastPage] = await newPdf.copyPages(pdfDoc, [group[0]]);
                     newPdf.addPage(lastPage);
-                    break;
+                    continue;
                 }
 
-                const newPage = newPdf.addPage([A4_WIDTH, A4_HEIGHT]);
+                const newPage = newPdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
 
-                for (let j = 0; j < 2; j++) {
-                    const srcIdx = i + j;
+                for (let j = 0; j < group.length; j++) {
+                    const srcIdx = group[j];
                     const srcPage = pdfDoc.getPages()[srcIdx];
                     const [embedded] = await newPdf.embedPages([srcPage]);
 
-                    // Raw MediaBox dimensions (what pdf-lib uses for the XObject)
                     const { width: rawW, height: rawH } = srcPage.getSize();
 
-                    // Normalize existing /Rotate value (pdf-lib does NOT bake
-                    // /Rotate into the embedded XObject, so we must apply it
-                    // ourselves as part of the drawing rotation).
+                    // Normalize existing /Rotate value
                     const srcRot = ((srcPage.getRotation().angle % 360) + 360) % 360;
 
-                    // Effective visual dimensions accounting for /Rotate
-                    const visSwapped = (srcRot === 90 || srcRot === 270);
-                    const visW = visSwapped ? rawH : rawW;
-                    const visH = visSwapped ? rawW : rawH;
-
-                    // Available slot dimensions
-                    const slotW = A4_WIDTH - 2 * PADDING;
-                    const slotH = HALF_HEIGHT - 2 * PADDING;
-
-                    // Always rotate 90° (matches the working PyMuPDF approach)
-                    const layoutRotation = 90;
-
-                    // Total rotation = source /Rotate + layout rotation
+                    // Total rotation = source /Rotate + user-chosen layout rotation
+                    const layoutRotation = rotationAngle;
                     const totalRotation = (srcRot + layoutRotation) % 360;
 
                     // Final visual dimensions after total rotation
@@ -211,27 +258,29 @@ if (processBtn) {
                     const finalVisW = isTotalRotated ? rawH : rawW;
                     const finalVisH = isTotalRotated ? rawW : rawH;
 
-                    // Scale to fit within slot, preserving aspect ratio
+                    // Scale to fit within slot
                     const scale = Math.min(slotW / finalVisW, slotH / finalVisH);
 
-                    // Scaled storage dimensions (raw embedded dims × scale)
                     const sw = rawW * scale;
                     const sh = rawH * scale;
 
-                    // Slot center (top half for j=0, bottom half for j=1)
-                    const cx = A4_WIDTH / 2;
-                    const cy = j === 0
-                        ? HALF_HEIGHT + HALF_HEIGHT / 2
-                        : HALF_HEIGHT / 2;
+                    // Determine grid position for this page in the sheet
+                    let col, row;
+                    if (pagesPerSheet === 1) {
+                        col = 0; row = 0;
+                    } else if (pagesPerSheet === 2) {
+                        col = 0; row = j; // vertical stack
+                    } else {
+                        // 4-up: row-major order
+                        col = j % 2;
+                        row = Math.floor(j / 2);
+                    }
 
-                    // Anchor position based on total rotation angle.
-                    // pdf-lib applies: Translate(x,y) · Rotate(θ) · Scale(s)
-                    // The embedded page spans (0,0)→(rawW,rawH) in storage.
-                    // After Scale+Rotate around origin then Translate to (x,y):
-                    //   0°  bbox center = (x + sw/2,  y + sh/2)
-                    //  90°  bbox center = (x - sh/2,  y + sw/2)
-                    // 180°  bbox center = (x - sw/2,  y - sh/2)
-                    // 270°  bbox center = (x + sh/2,  y - sw/2)
+                    // Slot center
+                    const cx = PADDING + slotW * col + slotW / 2;
+                    const cy = PAGE_HEIGHT - (PADDING + slotH * row + slotH / 2);
+
+                    // Anchor position based on total rotation angle
                     let x, y;
                     switch (totalRotation) {
                         case 90:
@@ -263,7 +312,7 @@ if (processBtn) {
             }
 
             const pdfBytes = await newPdf.save();
-            downloadPDF(pdfBytes, "processed_2up.pdf");
+            downloadPDF(pdfBytes, "processed_pdf.pdf");
 
             statusDiv.textContent = "Done! Downloading...";
             document.body.style.cursor = "default";

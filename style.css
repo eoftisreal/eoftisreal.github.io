@@ -213,6 +213,65 @@ input[type="file"] {
     font-style: italic;
 }
 
+/* Options Grid */
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.option-group label {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+.option-group select,
+.option-group input[type="text"] {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: white;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
+    transition: all 0.3s;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.option-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6.5 6.5-6.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+.option-group select option {
+    background: #333;
+    color: white;
+}
+
+.option-group select:focus,
+.option-group input[type="text"]:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.option-group input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+}
+
 #processBtn {
     background: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
     border: none;
@@ -282,5 +341,9 @@ input[type="file"] {
 
     .card {
         padding: 30px 20px;
+    }
+
+    .options-grid {
+        grid-template-columns: 1fr;
     }
 }
