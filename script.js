@@ -159,7 +159,7 @@ if (processBtn) {
             const A4_WIDTH = 595.28;
             const A4_HEIGHT = 841.89;
             const HALF_HEIGHT = A4_HEIGHT / 2;
-            const PADDING = 20;
+            const PADDING = 0;
 
             // Copy Page 1 (Cover) as-is
             if (totalPages > 0) {
@@ -255,7 +255,8 @@ if (processBtn) {
                     newPage.drawPage(embedded, {
                         x: x,
                         y: y,
-                        scale: scale,
+                        xScale: scale,
+                        yScale: scale,
                         rotate: degrees(totalRotation)
                     });
                 }
