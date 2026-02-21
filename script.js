@@ -182,56 +182,58 @@ if (processBtn) {
                     const srcIdx = i + j;
                     const srcPage = pdfDoc.getPages()[srcIdx];
                     const [embedded] = await newPdf.embedPages([srcPage]);
-                    // embedded.scale(1) already returns visual dimensions because
-                    // pdf-lib bakes the page's /Rotate metadata into the XObject matrix.
-                    const dims = embedded.scale(1);
-                    const w = dims.width;
-                    const h = dims.height;
+
+                    // Raw MediaBox dimensions (what pdf-lib uses for the XObject)
+                    const { width: rawW, height: rawH } = srcPage.getSize();
+
+                    // Normalize existing /Rotate value (pdf-lib does NOT bake
+                    // /Rotate into the embedded XObject, so we must apply it
+                    // ourselves as part of the drawing rotation).
+                    const srcRot = ((srcPage.getRotation().angle % 360) + 360) % 360;
+
+                    // Effective visual dimensions accounting for /Rotate
+                    const visSwapped = (srcRot === 90 || srcRot === 270);
+                    const visW = visSwapped ? rawH : rawW;
+                    const visH = visSwapped ? rawW : rawH;
 
                     // Available slot dimensions
-                    var slotW = A4_WIDTH - 2 * PADDING;
-                    var slotH = HALF_HEIGHT - 2 * PADDING;
+                    const slotW = A4_WIDTH - 2 * PADDING;
+                    const slotH = HALF_HEIGHT - 2 * PADDING;
 
-                    // Decide rotation by comparing which orientation fits better.
-                    // w and h are already the visual (display) dimensions.
-                    var scaleNoRot = Math.min(slotW / w, slotH / h);
-                    var scaleWithRot = Math.min(slotW / h, slotH / w);
-                    var drawRotation = 0;
-                    if (scaleWithRot > scaleNoRot) {
-                        drawRotation = -90;
-                    }
+                    // Always rotate 90° (matches the working PyMuPDF approach)
+                    const layoutRotation = 90;
 
-                    // Only the draw rotation is applied; /Rotate is already handled
-                    // by pdf-lib when embedding, so we must not add srcRot here.
-                    var totalRotation = drawRotation;
-                    var normRot = ((totalRotation % 360) + 360) % 360;
+                    // Total rotation = source /Rotate + layout rotation
+                    const totalRotation = (srcRot + layoutRotation) % 360;
 
-                    // Visual dimensions after the draw rotation
-                    var isFinalRotated = normRot % 180 === 90;
-                    var finalW = isFinalRotated ? h : w;
-                    var finalH = isFinalRotated ? w : h;
+                    // Final visual dimensions after total rotation
+                    const isTotalRotated = (totalRotation === 90 || totalRotation === 270);
+                    const finalVisW = isTotalRotated ? rawH : rawW;
+                    const finalVisH = isTotalRotated ? rawW : rawH;
 
                     // Scale to fit within slot, preserving aspect ratio
-                    var scale = Math.min(slotW / finalW, slotH / finalH);
+                    const scale = Math.min(slotW / finalVisW, slotH / finalVisH);
 
-                    // Scaled storage dimensions
-                    var sw = w * scale;
-                    var sh = h * scale;
+                    // Scaled storage dimensions (raw embedded dims × scale)
+                    const sw = rawW * scale;
+                    const sh = rawH * scale;
 
                     // Slot center (top half for j=0, bottom half for j=1)
-                    var cx = A4_WIDTH / 2;
-                    var cy = j === 0
+                    const cx = A4_WIDTH / 2;
+                    const cy = j === 0
                         ? HALF_HEIGHT + HALF_HEIGHT / 2
                         : HALF_HEIGHT / 2;
 
-                    // Anchor position based on rotation angle
-                    // For rotation θ around anchor (x,y), the bounding box center is:
-                    //   0°:   (x + sw/2,  y + sh/2)
-                    //   90°:  (x - sh/2,  y + sw/2)
-                    //   180°: (x - sw/2,  y - sh/2)
-                    //   270°: (x + sh/2,  y - sw/2)
-                    var x, y;
-                    switch (normRot) {
+                    // Anchor position based on total rotation angle.
+                    // pdf-lib applies: Translate(x,y) · Rotate(θ) · Scale(s)
+                    // The embedded page spans (0,0)→(rawW,rawH) in storage.
+                    // After Scale+Rotate around origin then Translate to (x,y):
+                    //   0°  bbox center = (x + sw/2,  y + sh/2)
+                    //  90°  bbox center = (x - sh/2,  y + sw/2)
+                    // 180°  bbox center = (x - sw/2,  y - sh/2)
+                    // 270°  bbox center = (x + sh/2,  y - sw/2)
+                    let x, y;
+                    switch (totalRotation) {
                         case 90:
                             x = cx + sh / 2;
                             y = cy - sw / 2;
