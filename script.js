@@ -182,35 +182,31 @@ if (processBtn) {
                     const srcIdx = i + j;
                     const srcPage = pdfDoc.getPages()[srcIdx];
                     const [embedded] = await newPdf.embedPages([srcPage]);
+                    // embedded.scale(1) already returns visual dimensions because
+                    // pdf-lib bakes the page's /Rotate metadata into the XObject matrix.
                     const dims = embedded.scale(1);
                     const w = dims.width;
                     const h = dims.height;
-
-                    // Source page metadata rotation
-                    const srcRot = srcPage.getRotation().angle || 0;
-
-                    // Visual dimensions accounting for source rotation
-                    const isRotated90 = Math.abs(srcRot) % 180 === 90;
-                    const visualW = isRotated90 ? h : w;
-                    const visualH = isRotated90 ? w : h;
 
                     // Available slot dimensions
                     var slotW = A4_WIDTH - 2 * PADDING;
                     var slotH = HALF_HEIGHT - 2 * PADDING;
 
-                    // Decide rotation by comparing which orientation fits better
-                    var scaleNoRot = Math.min(slotW / visualW, slotH / visualH);
-                    var scaleWithRot = Math.min(slotW / visualH, slotH / visualW);
+                    // Decide rotation by comparing which orientation fits better.
+                    // w and h are already the visual (display) dimensions.
+                    var scaleNoRot = Math.min(slotW / w, slotH / h);
+                    var scaleWithRot = Math.min(slotW / h, slotH / w);
                     var drawRotation = 0;
                     if (scaleWithRot > scaleNoRot) {
                         drawRotation = -90;
                     }
 
-                    // Combined rotation includes source rotation
-                    var totalRotation = srcRot + drawRotation;
+                    // Only the draw rotation is applied; /Rotate is already handled
+                    // by pdf-lib when embedding, so we must not add srcRot here.
+                    var totalRotation = drawRotation;
                     var normRot = ((totalRotation % 360) + 360) % 360;
 
-                    // Visual dimensions after combined rotation (based on storage dims)
+                    // Visual dimensions after the draw rotation
                     var isFinalRotated = normRot % 180 === 90;
                     var finalW = isFinalRotated ? h : w;
                     var finalH = isFinalRotated ? w : h;
