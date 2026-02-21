@@ -244,6 +244,16 @@ input[type="file"] {
     font-size: 14px;
 }
 
+/* Last Updated Footer */
+.last-updated {
+    position: fixed;
+    bottom: 8px;
+    right: 12px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    pointer-events: none;
+}
+
 /* Responsive adjustments */
 @media (max-width: 600px) {
     .weather-bar {
