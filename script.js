@@ -194,9 +194,15 @@ if (processBtn) {
                     const visualW = isRotated90 ? h : w;
                     const visualH = isRotated90 ? w : h;
 
-                    // Rotate portrait pages to landscape for better fit
+                    // Available slot dimensions
+                    var slotW = A4_WIDTH - 2 * PADDING;
+                    var slotH = HALF_HEIGHT - 2 * PADDING;
+
+                    // Decide rotation by comparing which orientation fits better
+                    var scaleNoRot = Math.min(slotW / visualW, slotH / visualH);
+                    var scaleWithRot = Math.min(slotW / visualH, slotH / visualW);
                     var drawRotation = 0;
-                    if (visualH > visualW) {
+                    if (scaleWithRot > scaleNoRot) {
                         drawRotation = -90;
                     }
 
@@ -208,10 +214,6 @@ if (processBtn) {
                     var isFinalRotated = normRot % 180 === 90;
                     var finalW = isFinalRotated ? h : w;
                     var finalH = isFinalRotated ? w : h;
-
-                    // Available slot dimensions
-                    var slotW = A4_WIDTH - 2 * PADDING;
-                    var slotH = HALF_HEIGHT - 2 * PADDING;
 
                     // Scale to fit within slot, preserving aspect ratio
                     var scale = Math.min(slotW / finalW, slotH / finalH);
