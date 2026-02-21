@@ -312,7 +312,8 @@ if (processBtn) {
             }
 
             const pdfBytes = await newPdf.save();
-            downloadPDF(pdfBytes, "processed_pdf.pdf");
+            const baseName = file.name.replace(/\.pdf$/i, '');
+            downloadPDF(pdfBytes, baseName + "_updated.pdf");
 
             statusDiv.textContent = "Done! Downloading...";
             document.body.style.cursor = "default";
