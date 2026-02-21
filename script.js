@@ -159,6 +159,7 @@ if (processBtn) {
             const A4_WIDTH = 595.28;
             const A4_HEIGHT = 841.89;
             const HALF_HEIGHT = A4_HEIGHT / 2;
+            const PADDING = 20;
 
             // Copy Page 1 (Cover)
             if (totalPages > 0) {
@@ -174,43 +175,37 @@ if (processBtn) {
                 const [embeddedPage1] = await newPdf.embedPages([pdfDoc.getPages()[i]]);
                 const dims1 = embeddedPage1.scale(1);
 
-                // Visual Dimensions after 90 deg Rotation
+                // Visual Dimensions after 90 deg Rotation (Clockwise)
+                // Note: pdf-lib 'rotate: degrees(-90)' rotates CLOCKWISE.
+                // Visual Width on page becomes Original Height.
+                // Visual Height on page becomes Original Width.
                 const rotatedWidth1 = dims1.height;
                 const rotatedHeight1 = dims1.width;
 
                 const scale1 = Math.min(
-                    A4_WIDTH / rotatedWidth1,
-                    HALF_HEIGHT / rotatedHeight1
+                    (A4_WIDTH - PADDING * 2) / rotatedWidth1,
+                    (HALF_HEIGHT - PADDING * 2) / rotatedHeight1
                 );
 
-                const drawnWidth1 = rotatedWidth1 * scale1;
-                const drawnHeight1 = rotatedHeight1 * scale1;
+                const drawnWidth1 = rotatedWidth1 * scale1; // Visual Width
+                const drawnHeight1 = rotatedHeight1 * scale1; // Visual Height
 
                 // Target Center: Top Half
                 const centerX1 = A4_WIDTH / 2;
                 const centerY1 = HALF_HEIGHT + (HALF_HEIGHT / 2); // 3/4 Height
 
-                // Anchor Calculation for 90 deg CCW Rotation
-                // Visual Box: [AnchorX - VisualHeight, AnchorX] x [AnchorY, AnchorY + VisualWidth] ???
-                // Wait.
-                // (0,0) -> (0,0) (BL)
-                // (W,0) -> (0,W) (TL relative to BL)
-                // (0,H) -> (-H,0) (BR relative to BL)
-                // (W,H) -> (-H,W) (TR relative to BL)
-                // Resulting Visual Box relative to anchor (0,0):
-                // X: [-H, 0]
-                // Y: [0, W]
-                // So VisualWidth is H. VisualHeight is W.
-                // Center relative to anchor: (-H/2, W/2).
-                // TargetCenter = Anchor + (-H/2, W/2)
-                // AnchorX - VisualWidth/2 = TargetX  => AnchorX = TargetX + VisualWidth/2
-                // AnchorY + VisualHeight/2 = TargetY => AnchorY = TargetY - VisualHeight/2
+                // Positioning for 90 deg Clockwise Rotation
+                // When rotated 90 deg CW around anchor (x,y):
+                // Visual Box relative to anchor: X: [0, H], Y: [-W, 0]
+                // Center relative to anchor: (H/2, -W/2)
+                // AnchorX = TargetCenterX - H/2
+                // AnchorY = TargetCenterY + W/2
 
                 newPage.drawPage(embeddedPage1, {
-                    x: centerX1 + (drawnWidth1 / 2),
-                    y: centerY1 - (drawnHeight1 / 2),
+                    x: centerX1 - (drawnWidth1 / 2),
+                    y: centerY1 + (drawnHeight1 / 2),
                     scale: scale1,
-                    rotate: degrees(90)
+                    rotate: degrees(-90)
                 });
 
                 // --- Bottom Page (Source i+1) ---
@@ -222,8 +217,8 @@ if (processBtn) {
                     const rotatedHeight2 = dims2.width;
 
                     const scale2 = Math.min(
-                        A4_WIDTH / rotatedWidth2,
-                        HALF_HEIGHT / rotatedHeight2
+                        (A4_WIDTH - PADDING * 2) / rotatedWidth2,
+                        (HALF_HEIGHT - PADDING * 2) / rotatedHeight2
                     );
 
                     const drawnWidth2 = rotatedWidth2 * scale2;
@@ -234,10 +229,10 @@ if (processBtn) {
                     const centerY2 = HALF_HEIGHT / 2; // 1/4 Height
 
                     newPage.drawPage(embeddedPage2, {
-                        x: centerX2 + (drawnWidth2 / 2),
-                        y: centerY2 - (drawnHeight2 / 2),
+                        x: centerX2 - (drawnWidth2 / 2),
+                        y: centerY2 + (drawnHeight2 / 2),
                         scale: scale2,
-                        rotate: degrees(90)
+                        rotate: degrees(-90)
                     });
                 }
             }
