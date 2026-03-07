@@ -5,12 +5,11 @@ const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q="
 const themeToggleBtn = document.getElementById("themeToggle");
 const currentTheme = localStorage.getItem("theme");
 
-// Default to dark theme (industrial aesthetic)
+// Default to dark theme (cinematic aesthetic)
 if (currentTheme === "light") {
     document.body.setAttribute("data-theme", "light");
     themeToggleBtn.textContent = "🌙";
 } else {
-    // Dark is default — no data-theme attribute needed (root styles are dark)
     localStorage.setItem("theme", "dark");
     themeToggleBtn.textContent = "☀️";
 }
@@ -30,29 +29,147 @@ if (themeToggleBtn) {
     });
 }
 
-// --- Parallax 3D Effect for Background & Hero ---
-document.addEventListener("mousemove", (e) => {
-    const x = e.clientX / window.innerWidth - 0.5;
-    const y = e.clientY / window.innerHeight - 0.5;
+// --- Particle System for Atmospheric Background ---
+(function initParticles() {
+    const canvas = document.getElementById('particle-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const PARTICLE_COUNT = 60;
 
-    // Move orbs slightly opposite to mouse
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function createParticle() {
+        return {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 1.5 + 0.3,
+            speedX: (Math.random() - 0.5) * 0.3,
+            speedY: (Math.random() - 0.5) * 0.2,
+            opacity: Math.random() * 0.4 + 0.1,
+            pulseSpeed: Math.random() * 0.02 + 0.005,
+            pulsePhase: Math.random() * Math.PI * 2
+        };
+    }
+
+    function init() {
+        resize();
+        particles = [];
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(createParticle());
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach(p => {
+            p.x += p.speedX;
+            p.y += p.speedY;
+            p.pulsePhase += p.pulseSpeed;
+
+            // Wrap around
+            if (p.x < 0) p.x = canvas.width;
+            if (p.x > canvas.width) p.x = 0;
+            if (p.y < 0) p.y = canvas.height;
+            if (p.y > canvas.height) p.y = 0;
+
+            const pulse = Math.sin(p.pulsePhase) * 0.3 + 0.7;
+            const alpha = p.opacity * pulse;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 106, 0, ${alpha})`;
+            ctx.fill();
+
+            // Glow effect
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 106, 0, ${alpha * 0.1})`;
+            ctx.fill();
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    init();
+    animate();
+})();
+
+
+// --- Cinematic Parallax 3D Effect ---
+let mouseX = 0, mouseY = 0;
+let targetMouseX = 0, targetMouseY = 0;
+const PARALLAX_SMOOTHING = 0.06;
+
+document.addEventListener("mousemove", (e) => {
+    targetMouseX = e.clientX / window.innerWidth - 0.5;
+    targetMouseY = e.clientY / window.innerHeight - 0.5;
+});
+
+function smoothParallax() {
+    // Smooth interpolation for cinematic feel
+    mouseX += (targetMouseX - mouseX) * PARALLAX_SMOOTHING;
+    mouseY += (targetMouseY - mouseY) * PARALLAX_SMOOTHING;
+
+    const x = mouseX;
+    const y = mouseY;
+
+    // Move orbs with depth layers
     const orb1 = document.querySelector(".orb-1");
     const orb2 = document.querySelector(".orb-2");
     const orb3 = document.querySelector(".orb-3");
 
-    if (orb1) orb1.style.transform = `translate(${x * -50}px, ${y * -50}px)`;
-    if (orb2) orb2.style.transform = `translate(${x * 60}px, ${y * 60}px)`;
-    if (orb3) orb3.style.transform = `translate(${x * -30}px, ${y * -30}px)`;
+    if (orb1) orb1.style.transform = `translate(${x * -60}px, ${y * -60}px)`;
+    if (orb2) orb2.style.transform = `translate(${x * 80}px, ${y * 80}px)`;
+    if (orb3) orb3.style.transform = `translate(${x * -40}px, ${y * -40}px)`;
 
-    // Floating hero elements parallax
+    // Floating hero elements with depth parallax
     const fl1 = document.querySelector(".fl-1");
     const fl2 = document.querySelector(".fl-2");
     const portrait = document.querySelector(".portrait-placeholder");
 
-    if (fl1) fl1.style.transform = `translate(${x * 40}px, ${y * 40}px)`;
-    if (fl2) fl2.style.transform = `translate(${x * -40}px, ${y * -40}px)`;
-    if (portrait) portrait.style.transform = `translate(${x * 20}px, ${y * 20}px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg)`;
-});
+    if (fl1) fl1.style.transform = `translate(${x * 50}px, ${y * 50}px)`;
+    if (fl2) fl2.style.transform = `translate(${x * -50}px, ${y * -50}px)`;
+    if (portrait) portrait.style.transform = `translate(${x * 15}px, ${y * 15}px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg)`;
+
+    // Technical labels subtle movement
+    const labels = document.querySelectorAll('.tech-label');
+    labels.forEach((label, i) => {
+        const depth = (i + 1) * 8;
+        label.style.transform = `translate(${x * depth}px, ${y * depth}px)`;
+    });
+
+    requestAnimationFrame(smoothParallax);
+}
+smoothParallax();
+
+
+// --- Navbar Scroll Effects ---
+(function initNavbarScroll() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+        const scrollY = window.scrollY;
+
+        // Intensify navbar on scroll
+        if (scrollY > 100) {
+            navbar.style.background = 'rgba(5, 5, 8, 0.95)';
+            navbar.style.boxShadow = '0 4px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.02) inset';
+        } else {
+            navbar.style.background = 'rgba(5, 5, 8, 0.85)';
+            navbar.style.boxShadow = '0 4px 30px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.02) inset';
+        }
+
+        lastScroll = scrollY;
+    }, { passive: true });
+})();
 
 
 // Updated Selectors for new layout
@@ -82,10 +199,7 @@ const { PDFDocument, degrees } = PDFLib;
 // --- Weather Functions ---
 
 function updateBackground(weatherMain) {
-    // In this premium glassmorphism theme, we no longer change the whole body background
-    // to flat images/gradients based on weather. We keep the glowing orbs.
-    // However, we can optionally tint orb colors based on weather if desired in the future.
-    // For now, we leave the premium background untouched.
+    // Cinematic theme keeps the atmospheric background untouched
 }
 
 function updateWeatherUI(data) {
@@ -129,7 +243,7 @@ function getRandomCity() {
 window.addEventListener('DOMContentLoaded', () => {
     checkWeather(getRandomCity());
 
-    // Scroll reveal animation
+    // Cinematic scroll reveal with staggered timing
     const revealElements = document.querySelectorAll('.reveal');
     if (revealElements.length > 0) {
         const revealObserver = new IntersectionObserver((entries) => {
@@ -139,10 +253,28 @@ window.addEventListener('DOMContentLoaded', () => {
                     revealObserver.unobserve(entry.target);
                 }
             });
-        }, { threshold: 0.1 });
+        }, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' });
 
         revealElements.forEach(el => revealObserver.observe(el));
     }
+
+    // Scroll-driven section parallax
+    const sections = document.querySelectorAll('main > section, main > .content-split, main > .tech-divider');
+    const SCROLL_SCALE_FACTOR = 0.02;
+    const SCROLL_OPACITY_FACTOR = 0.15;
+    window.addEventListener('scroll', () => {
+        const scrollY = window.scrollY;
+        const windowH = window.innerHeight;
+
+        sections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            const centerOffset = (rect.top + rect.height / 2 - windowH / 2) / windowH;
+            const scale = 1 - Math.abs(centerOffset) * SCROLL_SCALE_FACTOR;
+            const opacity = 1 - Math.abs(centerOffset) * SCROLL_OPACITY_FACTOR;
+            section.style.transform = `scale(${Math.max(0.96, scale)})`;
+            section.style.opacity = Math.max(0.7, opacity);
+        });
+    }, { passive: true });
 });
 
 if (searchBtn) {
