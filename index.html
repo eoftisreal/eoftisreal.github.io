@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather & PDF Tools</title>
+    <title>Sumit Kumar Sharma - Portfolio</title>
     <link rel="stylesheet" href="style.css">
     <!-- Load pdf-lib library -->
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -22,13 +23,12 @@
 
     <div class="search-compact">
         <input type="text" placeholder="Search City" spellcheck="false">
-        <button id="searchBtn"><img src="images/search.png"></button>
+        <button id="searchBtn"><img src="images/search.png" alt="Search"></button>
         <button id="locationBtn" title="Use My Location">📍</button>
     </div>
 
-    <!-- Hidden container to keep existing JS happy without breaking or complex refactor yet -->
+    <!-- Hidden container to keep existing JS happy -->
     <div class="weather" style="display: none;">
-        <!-- These are used by script.js but might not be shown in the top bar -->
         <div class="date-time"></div>
         <img src="images/rain.png" class="weather-icon">
         <p class="feels-like">Feels like: <span>--</span></p>
@@ -41,63 +41,170 @@
     </div>
 </nav>
 
-<!-- Main Content Area -->
-<main>
-    <h1 class="site-title">📄 PDF Tools</h1>
+<!-- Main Portfolio Content -->
+<main class="portfolio">
+    <header class="hero section neo-panel">
+        <h1 class="neon-text">SUMIT KUMAR SHARMA</h1>
+        <h3 class="subtitle">COMPUTER SCIENCE FRESHER</h3>
+        <div class="contact-info">
+            <span>📞 +91 98765 43210</span>
+            <span>✉️ sumitsharma@example.com</span>
+            <span>🔗 linkedin.com/in/coinrx</span>
+            <span>📍 Patna, India</span>
+        </div>
+    </header>
 
-    <div class="card pdf-tool">
-        <h2>PDF Page Combiner & Rotator</h2>
-        <p class="description">Upload a PDF to rotate, resize, and combine pages with flexible options.</p>
+    <div class="content-grid">
+        <div class="left-col">
+            <section class="summary section neo-panel">
+                <h2 class="neon-title">SUMMARY</h2>
+                <p>Computer Science graduate with a solid foundation in programming, software development, and problem-solving. A quick learner and collaborative team player seeking a challenging opportunity to apply technical skills and gain real-world experience in the IT industry.</p>
+            </section>
 
-        <div class="upload-section">
-            <input type="file" id="pdfInput" accept=".pdf">
-            <label for="pdfInput" class="file-label">Choose PDF File</label>
-            <span id="fileName">No file chosen</span>
+            <section class="education section neo-panel">
+                <h2 class="neon-title">EDUCATION</h2>
+                <div class="timeline-item">
+                    <h4>Bachelor of Computer Applications</h4>
+                    <p class="neon-highlight">Patliputra University</p>
+                    <p class="date">🗓️ 08/2022 - 05/2025 | 📍 Patna, India</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Intermediate (Science)</h4>
+                    <p class="neon-highlight">Baldeo High School</p>
+                    <p class="date">🗓️ 08/2020 - 05/2022 | 📍 Patna, India</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Matriculation</h4>
+                    <p class="neon-highlight">D.A.V Public School</p>
+                    <p class="date">🗓️ 04/2019 - 05/2020 | 📍 Patna, India</p>
+                </div>
+            </section>
+
+            <section class="certification section neo-panel">
+                <h2 class="neon-title">CERTIFICATION</h2>
+                <div class="timeline-item">
+                    <h4>Python - HackerRank</h4>
+                    <p>Demonstrated basic proficiency in Python through HackerRank.</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>JavaScript - HackerRank</h4>
+                    <p>Developed foundational skills in JavaScript through HackerRank.</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Xto10x Hackathon (Edition #3) - Masai School</h4>
+                    <p>Participated in the Xto10X Hackathon organized by Masai.</p>
+                </div>
+            </section>
         </div>
 
-        <div class="options-grid">
-            <div class="option-group">
-                <label for="rotationAngle">Rotation</label>
-                <select id="rotationAngle">
-                    <option value="0">0°</option>
-                    <option value="90" selected>90°</option>
-                    <option value="180">180°</option>
-                    <option value="270">270° (−90°)</option>
-                </select>
-            </div>
+        <div class="right-col">
+            <section class="skills section neo-panel">
+                <h2 class="neon-title">SKILLS</h2>
+                <div class="skills-grid">
+                    <span class="skill-tag">JavaScript</span>
+                    <span class="skill-tag">Microsoft Office</span>
+                    <span class="skill-tag">HTML</span>
+                    <span class="skill-tag">Python</span>
+                    <span class="skill-tag">Video Editing</span>
+                    <span class="skill-tag">CSS</span>
+                    <span class="skill-tag">Photoshop</span>
+                    <span class="skill-tag">C/C++</span>
+                </div>
+            </section>
 
-            <div class="option-group">
-                <label for="pageSize">Page Size</label>
-                <select id="pageSize">
-                    <option value="a4-portrait" selected>A4 Portrait</option>
-                    <option value="a4-landscape">A4 Landscape</option>
-                    <option value="a5-portrait">A5 Portrait</option>
-                    <option value="a5-landscape">A5 Landscape</option>
-                    <option value="letter-portrait">Letter Portrait</option>
-                    <option value="letter-landscape">Letter Landscape</option>
-                    <option value="legal-portrait">Legal Portrait</option>
-                    <option value="legal-landscape">Legal Landscape</option>
-                </select>
-            </div>
+            <section class="projects section neo-panel">
+                <h2 class="neon-title">PROJECTS</h2>
+                <div class="project-item">
+                    <h4>Bank Management System</h4>
+                    <p class="neon-highlight">A system for managing bank accounts and transactions</p>
+                    <ul>
+                        <li>Built using C++, featuring account creation</li>
+                        <li>Implemented transaction handling and file storage</li>
+                    </ul>
+                </div>
+                <div class="project-item">
+                    <h4>Weather App</h4>
+                    <p class="neon-highlight">Application that provides current weather information</p>
+                    <ul>
+                        <li>Developed using JavaScript</li>
+                        <li>Fetched real-time weather data using the OpenWeather API. <strong>(See the live Weather Bar at the top of this site!)</strong></li>
+                    </ul>
+                </div>
 
-            <div class="option-group">
-                <label for="pagesPerSheet">Pages per Sheet</label>
-                <select id="pagesPerSheet">
-                    <option value="1">1</option>
-                    <option value="2" selected>2</option>
-                    <option value="4">4 (2×2)</option>
-                </select>
-            </div>
+                <div class="project-item">
+                    <h4>PDF Page Combiner & Rotator</h4>
+                    <p class="neon-highlight">Interactive Web Tool</p>
+                    <p>Upload a PDF to rotate, resize, and combine pages with flexible options.</p>
 
-            <div class="option-group">
-                <label for="unchangedPages">Keep Unchanged</label>
-                <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3 or 1,4,6" title="Pages to keep as-is (e.g. 1 or 1-3 or 1,4,6)">
-            </div>
+                    <div class="pdf-tool neo-inner-panel">
+                        <div class="upload-section">
+                            <input type="file" id="pdfInput" accept=".pdf">
+                            <label for="pdfInput" class="file-label">Choose PDF File</label>
+                            <span id="fileName">No file chosen</span>
+                        </div>
+
+                        <div class="options-grid">
+                            <div class="option-group">
+                                <label for="rotationAngle">Rotation</label>
+                                <select id="rotationAngle">
+                                    <option value="0">0°</option>
+                                    <option value="90" selected>90°</option>
+                                    <option value="180">180°</option>
+                                    <option value="270">270° (−90°)</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <label for="pageSize">Page Size</label>
+                                <select id="pageSize">
+                                    <option value="a4-portrait" selected>A4 Portrait</option>
+                                    <option value="a4-landscape">A4 Landscape</option>
+                                    <option value="a5-portrait">A5 Portrait</option>
+                                    <option value="a5-landscape">A5 Landscape</option>
+                                    <option value="letter-portrait">Letter Portrait</option>
+                                    <option value="letter-landscape">Letter Landscape</option>
+                                    <option value="legal-portrait">Legal Portrait</option>
+                                    <option value="legal-landscape">Legal Landscape</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <label for="pagesPerSheet">Pages per Sheet</label>
+                                <select id="pagesPerSheet">
+                                    <option value="1">1</option>
+                                    <option value="2" selected>2</option>
+                                    <option value="4">4 (2×2)</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <label for="unchangedPages">Keep Unchanged</label>
+                                <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3" title="Pages to keep as-is (e.g. 1 or 1-3 or 1,4,6)">
+                            </div>
+                        </div>
+
+                        <button id="processBtn" disabled>Process & Download</button>
+                        <div id="status"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="interests section neo-panel">
+                <h2 class="neon-title">INTERESTS</h2>
+                <div class="interest-item">
+                    <h4>Chess Enthusiast</h4>
+                    <p>Engaging in chess regularly to enhance strategic thinking skills.</p>
+                </div>
+                <div class="interest-item">
+                    <h4>Film Analysis</h4>
+                    <p>Analyzing global cinema with a focus on storytelling and visual techniques.</p>
+                </div>
+                <div class="interest-item">
+                    <h4>Short Film Creation</h4>
+                    <p>Scripted, directed, and edited an action short film.</p>
+                </div>
+            </section>
         </div>
-
-        <button id="processBtn" disabled>Process & Download</button>
-
-        <div id="status"></div>
     </div>
 </main>
 
