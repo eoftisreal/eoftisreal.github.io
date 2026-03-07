@@ -1546,7 +1546,7 @@ footer::before {
     .navbar { padding: 0 10px; width: 95%; border-radius: 2px; }
     .logo { display: none; }
     .weather-info { border-left: none; padding-left: 0; }
-    .search-compact input { width: 80px; }
+    .search-compact input { width: 90px; }
     .search-compact { padding: 4px 8px; }
     .search-compact button { min-width: 32px; min-height: 32px; }
     .theme-toggle { width: 32px; height: 32px; }
