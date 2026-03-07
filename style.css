@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-    /* --- Cinematic Dark Theme (Default) --- */
-    --bg-base: #050508;
-    --bg-surface: #0a0c14;
-    --bg-elevated: #0e1018;
-    --text-primary: #d4dae6;
-    --text-secondary: #5a6478;
-    --glass-bg: rgba(10, 12, 20, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.04);
-    --glass-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.6);
+    /* --- Black + Purple Dark Theme (Default) --- */
+    --bg-base: #0c0a16;
+    --bg-surface: #13101e;
+    --bg-elevated: #1a1628;
+    --text-primary: #d8d4e8;
+    --text-secondary: #6a6080;
+    --glass-bg: rgba(16, 12, 28, 0.72);
+    --glass-border: rgba(180, 140, 255, 0.06);
+    --glass-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.5);
 
     --glow-1: rgba(255, 106, 0, 0.12);
-    --glow-2: rgba(10, 15, 40, 0.9);
-    --glow-3: rgba(255, 140, 50, 0.06);
+    --glow-2: rgba(60, 20, 100, 0.6);
+    --glow-3: rgba(140, 80, 220, 0.08);
 
     --accent: #ff6a00;
     --accent-hover: #ff8c32;
@@ -21,19 +21,19 @@
     --accent-subtle: rgba(255, 106, 0, 0.06);
     --accent-intense: rgba(255, 106, 0, 0.8);
 
-    --metallic-light: #b8c0cc;
-    --metallic-mid: #4a5264;
-    --metallic-dark: #1c2030;
-    --metallic-shine: linear-gradient(135deg, #2a2e3e 0%, #1a1e2e 40%, #252838 60%, #1e2232 100%);
+    --metallic-light: #c0b8d4;
+    --metallic-mid: #5a5074;
+    --metallic-dark: #221c38;
+    --metallic-shine: linear-gradient(135deg, #2a2640 0%, #1e1a30 40%, #282440 60%, #201c34 100%);
 
-    --input-bg: rgba(6, 8, 16, 0.8);
-    --input-border: rgba(255, 255, 255, 0.05);
+    --input-bg: rgba(12, 8, 22, 0.8);
+    --input-border: rgba(180, 140, 255, 0.08);
 
-    --divider: rgba(255, 255, 255, 0.04);
+    --divider: rgba(180, 140, 255, 0.06);
     --marker: rgba(255, 106, 0, 0.5);
 
-    --scan-line: rgba(255, 255, 255, 0.015);
-    --grid-line: rgba(255, 255, 255, 0.02);
+    --scan-line: rgba(200, 180, 255, 0.015);
+    --grid-line: rgba(180, 140, 255, 0.025);
 }
 
 [data-theme="light"] {
@@ -140,7 +140,7 @@ h1, h2, h3, .site-title {
     top: 0; left: 0; right: 0; bottom: 0;
     z-index: 9998;
     pointer-events: none;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(8, 4, 18, 0.4) 100%);
 }
 
 /* Corner Technical Markers */
@@ -333,9 +333,9 @@ h1, h2, h3, .site-title {
     align-items: center;
     padding: 0 30px;
     z-index: 1000;
-    border-bottom: 1px solid rgba(255, 106, 0, 0.15);
+    border-bottom: 1px solid rgba(140, 80, 220, 0.15);
     box-shadow: 0 4px 30px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.02) inset;
-    background: rgba(5, 5, 8, 0.85);
+    background: var(--glass-bg);
     backdrop-filter: blur(30px) saturate(1.3);
     -webkit-backdrop-filter: blur(30px) saturate(1.3);
 }
@@ -364,6 +364,10 @@ h1, h2, h3, .site-title {
 
 .navbar:hover {
     transform: translateX(-50%);
+}
+
+.navbar-scrolled {
+    box-shadow: 0 4px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.02) inset;
 }
 
 .nav-left {
@@ -531,11 +535,11 @@ main {
 /* Cinematic full-viewport sections */
 main > section,
 main > .content-split {
-    min-height: 80vh;
+    min-height: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 80px 0;
+    padding: 60px 0;
     position: relative;
 }
 
@@ -756,7 +760,7 @@ main > .content-split {
 /* Floating 3D Elements */
 .float-element {
     position: absolute;
-    background: rgba(10, 12, 20, 0.8);
+    background: var(--glass-bg);
     border: 1px solid rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(16px);
     border-radius: 2px;
@@ -806,6 +810,11 @@ main > .content-split {
     background: var(--accent);
     margin: 18px auto 0;
     box-shadow: 0 0 15px var(--accent-glow), 0 0 30px var(--accent-subtle);
+}
+
+.left-col .section-title::after,
+.right-col .section-title::after {
+    margin: 12px 0 0;
 }
 
 /* ============================================ */
@@ -890,6 +899,40 @@ main > .content-split {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 40px;
+    align-items: start;
+}
+
+.left-col .glass-panel {
+    padding: 28px;
+    margin-bottom: 24px;
+}
+
+.left-col .glass-panel:last-child {
+    margin-bottom: 0;
+}
+
+.left-col .section-marker,
+.left-col .section-title {
+    text-align: left;
+}
+
+.left-col .section-title {
+    font-size: 22px;
+}
+
+.right-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.right-col .section-marker,
+.right-col .section-title {
+    text-align: left;
+}
+
+.right-col .section-title {
+    margin-bottom: 20px;
+    font-size: 22px;
 }
 
 /* ============================================ */
