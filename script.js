@@ -256,11 +256,12 @@ window.addEventListener('DOMContentLoaded', () => {
         revealElements.forEach(el => revealObserver.observe(el));
     }
 
-    // Scroll-driven section parallax
+    // Scroll-driven section parallax (disabled on mobile for better visibility)
     const sections = document.querySelectorAll('main > section, main > .content-split, main > .tech-divider');
     const SCROLL_SCALE_FACTOR = 0.02;
     const SCROLL_OPACITY_FACTOR = 0.15;
     window.addEventListener('scroll', () => {
+        if (window.innerWidth <= 900) return;
         const scrollY = window.scrollY;
         const windowH = window.innerHeight;
 

@@ -1537,17 +1537,31 @@ footer::before {
     .tech-label { display: none; }
     main > section,
     main > .content-split { min-height: auto; padding: 40px 0; }
+    .scan-lines { display: none; }
+    .tech-grid-overlay { display: none; }
+    .vignette { background: radial-gradient(ellipse at center, transparent 65%, rgba(8, 4, 18, 0.2) 100%); }
 }
 
 @media (max-width: 600px) {
-    .navbar { padding: 0 15px; width: 95%; border-radius: 2px; }
+    .navbar { padding: 0 10px; width: 95%; border-radius: 2px; }
     .logo { display: none; }
     .weather-info { border-left: none; padding-left: 0; }
+    .search-compact input { width: 80px; }
+    .search-compact { padding: 4px 8px; }
+    .search-compact button { min-width: 32px; min-height: 32px; }
+    .theme-toggle { width: 32px; height: 32px; }
+    .nav-controls { gap: 8px; }
     .hero-content h1 { font-size: 24px; letter-spacing: 3px; }
     .portrait-placeholder { width: 200px; height: 200px; }
     .orbit-ring { display: none; }
     .options-grid { grid-template-columns: 1fr; }
     .section-title { font-size: 20px; letter-spacing: 4px; }
     .skills-grid { grid-template-columns: 1fr 1fr; }
-    .scan-lines { display: none; }
+    .vignette { background: radial-gradient(ellipse at center, transparent 70%, rgba(8, 4, 18, 0.15) 100%); }
+}
+
+@media (max-width: 400px) {
+    .weather-info { display: none; }
+    .search-compact input { width: 100px; }
+    .navbar { padding: 0 12px; }
 }
