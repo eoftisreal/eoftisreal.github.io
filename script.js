@@ -5,22 +5,27 @@ const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q="
 const themeToggleBtn = document.getElementById("themeToggle");
 const currentTheme = localStorage.getItem("theme");
 
-if (currentTheme) {
-    document.body.setAttribute("data-theme", currentTheme);
-    themeToggleBtn.textContent = currentTheme === "dark" ? "☀️" : "🌙";
+// Default to dark theme (industrial aesthetic)
+if (currentTheme === "light") {
+    document.body.setAttribute("data-theme", "light");
+    themeToggleBtn.textContent = "🌙";
+} else {
+    // Dark is default — no data-theme attribute needed (root styles are dark)
+    localStorage.setItem("theme", "dark");
+    themeToggleBtn.textContent = "☀️";
 }
 
 if (themeToggleBtn) {
     themeToggleBtn.addEventListener("click", () => {
         let theme = document.body.getAttribute("data-theme");
-        if (theme === "dark") {
+        if (theme === "light") {
             document.body.removeAttribute("data-theme");
-            localStorage.setItem("theme", "light");
-            themeToggleBtn.textContent = "🌙";
-        } else {
-            document.body.setAttribute("data-theme", "dark");
             localStorage.setItem("theme", "dark");
             themeToggleBtn.textContent = "☀️";
+        } else {
+            document.body.setAttribute("data-theme", "light");
+            localStorage.setItem("theme", "light");
+            themeToggleBtn.textContent = "🌙";
         }
     });
 }
@@ -123,6 +128,21 @@ function getRandomCity() {
 
 window.addEventListener('DOMContentLoaded', () => {
     checkWeather(getRandomCity());
+
+    // Scroll reveal animation
+    const revealElements = document.querySelectorAll('.reveal');
+    if (revealElements.length > 0) {
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+    }
 });
 
 if (searchBtn) {
