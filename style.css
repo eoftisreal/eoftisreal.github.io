@@ -144,6 +144,10 @@ h1, h2, h3, .site-title {
     z-index: 1000;
 }
 
+.navbar:hover {
+    transform: translateX(-50%);
+}
+
 .nav-left {
     display: flex;
     align-items: center;
@@ -477,9 +481,13 @@ main {
 /* --- Projects & PDF Tool --- */
 .project-card {
     padding: 30px;
-    height: 100%;
     display: flex;
     flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.project-card:last-child {
+    margin-bottom: 0;
 }
 
 .project-card h4 {
