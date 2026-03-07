@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-    /* --- Black + Purple Dark Theme (Default) --- */
-    --bg-base: #0c0a16;
-    --bg-surface: #13101e;
-    --bg-elevated: #1a1628;
-    --text-primary: #d8d4e8;
-    --text-secondary: #6a6080;
-    --glass-bg: rgba(16, 12, 28, 0.72);
-    --glass-border: rgba(180, 140, 255, 0.06);
+    /* --- Dark Industrial Theme (Default) --- */
+    --bg-base: #0a0e1a;
+    --bg-surface: #101624;
+    --bg-elevated: #162035;
+    --text-primary: #d4dce8;
+    --text-secondary: #7a8a9e;
+    --glass-bg: rgba(10, 16, 30, 0.75);
+    --glass-border: rgba(80, 140, 255, 0.08);
     --glass-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.5);
 
-    --glow-1: rgba(255, 106, 0, 0.12);
-    --glow-2: rgba(60, 20, 100, 0.6);
-    --glow-3: rgba(140, 80, 220, 0.08);
+    --glow-1: rgba(30, 80, 180, 0.15);
+    --glow-2: rgba(20, 40, 100, 0.5);
+    --glow-3: rgba(60, 180, 80, 0.06);
 
     --accent: #ff6a00;
     --accent-hover: #ff8c32;
@@ -21,54 +21,64 @@
     --accent-subtle: rgba(255, 106, 0, 0.06);
     --accent-intense: rgba(255, 106, 0, 0.8);
 
-    --metallic-light: #c0b8d4;
-    --metallic-mid: #5a5074;
-    --metallic-dark: #221c38;
-    --metallic-shine: linear-gradient(135deg, #2a2640 0%, #1e1a30 40%, #282440 60%, #201c34 100%);
+    --accent-blue: #1e5ab8;
+    --accent-blue-glow: rgba(30, 90, 184, 0.35);
+    --accent-neon: #b8e62e;
+    --accent-neon-glow: rgba(184, 230, 46, 0.25);
 
-    --input-bg: rgba(12, 8, 22, 0.8);
-    --input-border: rgba(180, 140, 255, 0.08);
+    --metallic-light: #b0bcd0;
+    --metallic-mid: #566880;
+    --metallic-dark: #1c283a;
+    --metallic-shine: linear-gradient(135deg, #1a2840 0%, #142030 40%, #1e3050 60%, #162238 100%);
 
-    --divider: rgba(180, 140, 255, 0.06);
+    --input-bg: rgba(8, 14, 28, 0.8);
+    --input-border: rgba(80, 140, 255, 0.1);
+
+    --divider: rgba(80, 140, 255, 0.08);
     --marker: rgba(255, 106, 0, 0.5);
 
-    --scan-line: rgba(200, 180, 255, 0.015);
-    --grid-line: rgba(180, 140, 255, 0.025);
+    --scan-line: rgba(120, 180, 255, 0.012);
+    --grid-line: rgba(80, 140, 255, 0.02);
 }
 
 [data-theme="light"] {
-    --bg-base: #eef0f4;
-    --bg-surface: #f8f9fb;
+    --bg-base: #e8ecf2;
+    --bg-surface: #f0f3f8;
     --bg-elevated: #ffffff;
-    --text-primary: #141824;
-    --text-secondary: #6b7280;
-    --glass-bg: rgba(255, 255, 255, 0.75);
-    --glass-border: rgba(0, 0, 0, 0.06);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+    --text-primary: #0e1528;
+    --text-secondary: #4a5670;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(20, 50, 120, 0.08);
+    --glass-shadow: 0 8px 32px 0 rgba(20, 40, 100, 0.1);
 
-    --glow-1: rgba(255, 140, 50, 0.12);
-    --glow-2: rgba(200, 210, 230, 0.5);
-    --glow-3: rgba(255, 106, 0, 0.06);
+    --glow-1: rgba(30, 90, 184, 0.1);
+    --glow-2: rgba(200, 215, 240, 0.5);
+    --glow-3: rgba(140, 200, 60, 0.06);
 
-    --accent: #e85d00;
+    --accent: #d45200;
     --accent-hover: #ff6a00;
-    --accent-glow: rgba(255, 106, 0, 0.2);
+    --accent-glow: rgba(255, 106, 0, 0.18);
     --accent-subtle: rgba(255, 106, 0, 0.05);
     --accent-intense: rgba(255, 106, 0, 0.6);
 
-    --metallic-light: #4a5568;
-    --metallic-mid: #718096;
-    --metallic-dark: #cbd5e0;
-    --metallic-shine: linear-gradient(135deg, #e8eaee 0%, #f5f5f7 40%, #e2e5ea 60%, #f0f1f4 100%);
+    --accent-blue: #1a4fa0;
+    --accent-blue-glow: rgba(26, 79, 160, 0.2);
+    --accent-neon: #6d9e00;
+    --accent-neon-glow: rgba(109, 158, 0, 0.15);
+
+    --metallic-light: #3a4a5e;
+    --metallic-mid: #5a6a80;
+    --metallic-dark: #c0ccd8;
+    --metallic-shine: linear-gradient(135deg, #dce2ea 0%, #f0f3f7 40%, #d8dfe8 60%, #eceef3 100%);
 
     --input-bg: rgba(255, 255, 255, 0.7);
-    --input-border: rgba(0, 0, 0, 0.08);
+    --input-border: rgba(20, 50, 120, 0.1);
 
-    --divider: rgba(0, 0, 0, 0.06);
+    --divider: rgba(20, 50, 120, 0.08);
     --marker: rgba(255, 106, 0, 0.5);
 
-    --scan-line: rgba(0, 0, 0, 0.01);
-    --grid-line: rgba(0, 0, 0, 0.02);
+    --scan-line: rgba(0, 0, 20, 0.01);
+    --grid-line: rgba(20, 50, 120, 0.025);
 }
 
 * {
@@ -149,7 +159,7 @@ h1, h2, h3, .site-title {
     z-index: 9997;
     pointer-events: none;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 500;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -191,7 +201,7 @@ h1, h2, h3, .site-title {
     align-items: center;
     gap: 8px;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 500;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -417,7 +427,7 @@ h1, h2, h3, .site-title {
 }
 
 .weather-text .city {
-    font-size: 9px;
+    font-size: 11px;
     color: var(--metallic-mid);
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -451,7 +461,7 @@ h1, h2, h3, .site-title {
     background: transparent;
     color: var(--text-primary);
     font-family: 'Rajdhani', sans-serif;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: 2px;
     width: 110px;
@@ -573,7 +583,7 @@ main > .content-split {
 .hero-content h3 {
     font-family: 'Rajdhani', sans-serif;
     font-weight: 400;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--accent);
     margin-bottom: 16px;
     text-transform: uppercase;
@@ -591,12 +601,12 @@ main > .content-split {
 }
 
 .hero-content p {
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.9;
     color: var(--text-secondary);
     margin-bottom: 36px;
     max-width: 440px;
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: 0.5px;
 }
 
@@ -612,7 +622,7 @@ main > .content-split {
     gap: 8px;
     padding: 8px 16px;
     border-radius: 2px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 500;
     text-decoration: none;
     color: var(--text-secondary);
@@ -734,7 +744,7 @@ main > .content-split {
 .tech-label {
     position: absolute;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 500;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -770,7 +780,7 @@ main > .content-split {
     animation: float-small 8s infinite ease-in-out alternate;
     font-family: 'Rajdhani', sans-serif;
     font-weight: 500;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 3px;
     text-transform: uppercase;
     color: var(--accent);
@@ -886,7 +896,7 @@ main > .content-split {
 
 .skill-card h4 {
     font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -969,7 +979,7 @@ main > .content-split {
 }
 
 .timeline-item h4 {
-    font-size: 14px;
+    font-size: 15px;
     margin-bottom: 5px;
     font-family: 'Rajdhani', sans-serif;
     font-weight: 600;
@@ -980,13 +990,13 @@ main > .content-split {
 .timeline-item .highlight {
     color: var(--accent);
     font-weight: 500;
-    font-size: 12px;
+    font-size: 13px;
     margin-bottom: 8px;
     letter-spacing: 1px;
 }
 
 .timeline-item .date {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--metallic-mid);
     display: flex;
     align-items: center;
@@ -996,7 +1006,7 @@ main > .content-split {
 
 .timeline-item p {
     margin-top: 10px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
     line-height: 1.6;
 }
@@ -1038,10 +1048,10 @@ main > .content-split {
 
 .project-card .desc {
     color: var(--text-secondary);
-    font-size: 12px;
+    font-size: 13px;
     margin-bottom: 20px;
     line-height: 1.8;
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: 0.5px;
 }
 
@@ -1051,7 +1061,7 @@ main > .content-split {
 }
 
 .project-card ul li {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-secondary);
     margin-bottom: 8px;
     padding-left: 24px;
@@ -1083,7 +1093,7 @@ main > .content-split {
     top: -8px;
     left: 20px;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 500;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -1113,7 +1123,7 @@ main > .content-split {
     color: var(--accent);
     padding: 10px 28px;
     border-radius: 2px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.4s ease;
@@ -1130,7 +1140,7 @@ main > .content-split {
 }
 
 #fileName {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--metallic-mid);
     letter-spacing: 2px;
 }
@@ -1149,7 +1159,7 @@ main > .content-split {
 }
 
 .option-group label {
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--accent);
     text-transform: uppercase;
@@ -1165,7 +1175,7 @@ main > .content-split {
     padding: 10px;
     border-radius: 2px;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     outline: none;
     transition: all 0.4s ease;
@@ -1187,7 +1197,7 @@ main > .content-split {
     padding: 12px;
     border-radius: 2px;
     font-weight: 700;
-    font-size: 11px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.4s ease;
     text-transform: uppercase;
@@ -1212,7 +1222,7 @@ main > .content-split {
 
 #status {
     margin-top: 10px;
-    font-size: 10px;
+    font-size: 12px;
     text-align: center;
     color: var(--accent);
     font-weight: 500;
@@ -1225,7 +1235,7 @@ main > .content-split {
 footer {
     text-align: center;
     padding: 50px 30px;
-    font-size: 9px;
+    font-size: 11px;
     color: var(--metallic-mid);
     font-family: 'Rajdhani', sans-serif;
     letter-spacing: 4px;
@@ -1342,7 +1352,7 @@ footer::before {
 /* ============================================ */
 .section-marker {
     font-family: 'Rajdhani', sans-serif;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 500;
     letter-spacing: 5px;
     text-transform: uppercase;
@@ -1381,6 +1391,133 @@ footer::before {
     z-index: -1;
     pointer-events: none;
     opacity: 0.4;
+}
+
+/* ============================================ */
+/* Aerospace Industrial Enhancements            */
+/* ============================================ */
+
+/* Module container accents - blue top edge on glass panels */
+.skill-card {
+    border-top: 2px solid var(--accent-blue);
+}
+
+.skill-card:hover {
+    border-top-color: var(--accent-neon);
+}
+
+/* Section markers with neon accent dot */
+.section-marker::before {
+    content: '▸';
+    margin-right: 6px;
+    color: var(--accent-neon);
+    font-size: 10px;
+}
+
+/* Blueprint-style section titles */
+.section-title::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--accent-blue);
+    margin: 0 auto 12px;
+    transform: rotate(45deg);
+    opacity: 0.5;
+}
+
+.left-col .section-title::before,
+.right-col .section-title::before {
+    margin: 0 0 12px;
+}
+
+/* Industrial container border for education/cert panels */
+.left-col .glass-panel {
+    border-top: 2px solid var(--accent-blue);
+    border-left: 1px solid rgba(30, 90, 184, 0.12);
+}
+
+/* Project cards - enhanced left accent with blue */
+.project-card {
+    border-left: 2px solid var(--accent-blue);
+}
+
+.project-card:hover {
+    border-left-color: var(--accent-neon);
+}
+
+/* Timeline dot uses blue accent */
+.timeline-item::before {
+    background: var(--accent-blue);
+    box-shadow: 0 0 12px var(--accent-blue-glow), 0 0 24px rgba(30, 90, 184, 0.15);
+}
+
+.timeline-item:hover::before {
+    background: var(--accent-neon);
+    box-shadow: 0 0 16px var(--accent-neon-glow), 0 0 30px rgba(184, 230, 46, 0.1);
+}
+
+/* Timeline border uses blue */
+.timeline-item {
+    border-left: 1px solid rgba(30, 90, 184, 0.2);
+}
+
+.timeline-item:hover {
+    border-left-color: var(--accent-blue);
+    background: rgba(30, 90, 184, 0.03);
+}
+
+/* Status dot with neon accent */
+.status-dot {
+    background: var(--accent-neon);
+    box-shadow: 0 0 8px var(--accent-neon-glow);
+}
+
+/* Navbar bottom accents use blue gradient */
+.navbar::before {
+    background: linear-gradient(90deg, var(--accent-blue), transparent);
+}
+
+.navbar::after {
+    background: linear-gradient(90deg, transparent, var(--accent-blue));
+}
+
+/* Orbit ring accents with blue */
+.orbit-ring-1 {
+    border-color: rgba(30, 90, 184, 0.12);
+}
+
+.orbit-ring::before {
+    background: var(--accent-blue);
+    box-shadow: 0 0 10px var(--accent-blue-glow);
+}
+
+/* Tech divider with blue diamond */
+.tech-divider::before {
+    color: var(--accent-blue);
+    text-shadow: 0 0 10px var(--accent-blue-glow);
+}
+
+/* Badge hover uses blue accent */
+.badge:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 30px var(--accent-blue-glow), 0 0 40px rgba(30, 90, 184, 0.1);
+}
+
+/* Glass panel hover uses blue accent edge */
+.glass-panel::before {
+    background: linear-gradient(90deg, transparent, var(--accent-blue-glow), transparent);
+}
+
+/* PDF tool border */
+.pdf-tool-ui {
+    border-left: 2px solid var(--accent-blue);
+}
+
+/* Light mode vignette adjustment */
+[data-theme="light"] .vignette {
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(20, 40, 100, 0.08) 100%);
 }
 
 /* ============================================ */
