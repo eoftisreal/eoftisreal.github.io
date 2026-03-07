@@ -104,6 +104,7 @@ if (themeToggleBtn) {
 // --- Cinematic Parallax 3D Effect ---
 let mouseX = 0, mouseY = 0;
 let targetMouseX = 0, targetMouseY = 0;
+const PARALLAX_SMOOTHING = 0.06;
 
 document.addEventListener("mousemove", (e) => {
     targetMouseX = e.clientX / window.innerWidth - 0.5;
@@ -112,8 +113,8 @@ document.addEventListener("mousemove", (e) => {
 
 function smoothParallax() {
     // Smooth interpolation for cinematic feel
-    mouseX += (targetMouseX - mouseX) * 0.06;
-    mouseY += (targetMouseY - mouseY) * 0.06;
+    mouseX += (targetMouseX - mouseX) * PARALLAX_SMOOTHING;
+    mouseY += (targetMouseY - mouseY) * PARALLAX_SMOOTHING;
 
     const x = mouseX;
     const y = mouseY;
@@ -259,6 +260,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Scroll-driven section parallax
     const sections = document.querySelectorAll('main > section, main > .content-split, main > .tech-divider');
+    const SCROLL_SCALE_FACTOR = 0.02;
+    const SCROLL_OPACITY_FACTOR = 0.15;
     window.addEventListener('scroll', () => {
         const scrollY = window.scrollY;
         const windowH = window.innerHeight;
@@ -266,9 +269,8 @@ window.addEventListener('DOMContentLoaded', () => {
         sections.forEach(section => {
             const rect = section.getBoundingClientRect();
             const centerOffset = (rect.top + rect.height / 2 - windowH / 2) / windowH;
-            // Subtle scale and opacity based on distance from viewport center
-            const scale = 1 - Math.abs(centerOffset) * 0.02;
-            const opacity = 1 - Math.abs(centerOffset) * 0.15;
+            const scale = 1 - Math.abs(centerOffset) * SCROLL_SCALE_FACTOR;
+            const opacity = 1 - Math.abs(centerOffset) * SCROLL_OPACITY_FACTOR;
             section.style.transform = `scale(${Math.max(0.96, scale)})`;
             section.style.opacity = Math.max(0.7, opacity);
         });

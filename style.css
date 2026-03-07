@@ -360,7 +360,6 @@ h1, h2, h3, .site-title {
     top: auto;
     bottom: -1px;
     pointer-events: none;
-    opacity: 1;
 }
 
 .navbar:hover {
@@ -969,7 +968,6 @@ main > .content-split {
     margin-bottom: 16px;
     position: relative;
     overflow: hidden;
-    border-left: 2px solid rgba(255, 106, 0, 0.2);
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-left: 2px solid rgba(255, 106, 0, 0.2);
