@@ -274,7 +274,8 @@ h1, h2, h3, .site-title {
 }
 
 /* Hide original weather container */
-.weather, .error { display: none !important; }
+.weather { display: none !important; }
+.error { display: none; }
 
 /* -------------------------------------- */
 /* Main Layout & Typography               */

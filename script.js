@@ -90,12 +90,12 @@ function updateWeatherUI(data) {
     const weatherMain = data.weather[0].main;
     let iconSrc = "images/clear.png";
 
-    if (weatherMain == "Clouds") iconSrc = "images/clouds.png";
-    else if (weatherMain == "Clear") iconSrc = "images/clear.png";
-    else if (weatherMain == "Rain") iconSrc = "images/rain.png";
-    else if (weatherMain == "Drizzle") iconSrc = "images/drizzle.png";
-    else if (weatherMain == "Mist") iconSrc = "images/mist.png";
-    else if (weatherMain == "Snow") iconSrc = "images/snow.png";
+    if (weatherMain === "Clouds") iconSrc = "images/clouds.png";
+    else if (weatherMain === "Clear") iconSrc = "images/clear.png";
+    else if (weatherMain === "Rain") iconSrc = "images/rain.png";
+    else if (weatherMain === "Drizzle") iconSrc = "images/drizzle.png";
+    else if (weatherMain === "Mist") iconSrc = "images/mist.png";
+    else if (weatherMain === "Snow") iconSrc = "images/snow.png";
 
     if (weatherIcon) weatherIcon.src = iconSrc;
     updateBackground(weatherMain);
@@ -105,9 +105,9 @@ function updateWeatherUI(data) {
 async function checkWeather(city) {
     try {
         const response = await fetch(apiUrl + city + `&appid=${apiKey}`);
-        if (response.status == 404) {
+        if (!response.ok) {
             if (errorContainer) errorContainer.style.display = "block";
-            console.warn("City not found");
+            console.warn("City not found or API error");
         } else {
             const data = await response.json();
             updateWeatherUI(data);
@@ -368,10 +368,12 @@ if (processBtn) {
 
 function downloadPDF(bytes, filename) {
     const blob = new Blob([bytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
