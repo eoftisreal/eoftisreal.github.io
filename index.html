@@ -1,34 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather & PDF Tools</title>
+    <title>Sumit Kumar Sharma - Portfolio</title>
     <link rel="stylesheet" href="style.css">
     <!-- Load pdf-lib library -->
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 </head>
 <body>
 
-<!-- Top Weather Bar -->
-<nav class="weather-bar">
-    <div class="weather-info">
-        <img src="images/rain.png" class="weather-icon-small">
-        <div class="weather-text">
-            <span class="temp">--°c</span>
-            <span class="city">Loading...</span>
+<!-- Background Glowing Orbs for Premium 3D Glassmorphism -->
+<div class="background-orbs" id="parallax-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<!-- Floating Glass Navbar & Weather Bar -->
+<nav class="navbar glass-panel">
+    <div class="nav-left">
+        <a href="#" class="logo">S.K.S.</a>
+
+        <div class="weather-info">
+            <img src="images/rain.png" class="weather-icon-small" alt="weather">
+            <div class="weather-text">
+                <span class="temp">--°c</span>
+                <span class="city">Loading...</span>
+            </div>
         </div>
     </div>
 
-    <div class="search-compact">
-        <input type="text" placeholder="Search City" spellcheck="false">
-        <button id="searchBtn"><img src="images/search.png"></button>
-        <button id="locationBtn" title="Use My Location">📍</button>
+    <div class="nav-controls">
+        <div class="search-compact">
+            <input type="text" placeholder="Search City" spellcheck="false">
+            <button id="searchBtn" aria-label="Search City"><img src="images/search.png" alt="Search"></button>
+            <button id="locationBtn" title="Use My Location" aria-label="Use My Location">📍</button>
+        </div>
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">🌙</button>
     </div>
 
-    <!-- Hidden container to keep existing JS happy without breaking or complex refactor yet -->
-    <div class="weather" style="display: none;">
-        <!-- These are used by script.js but might not be shown in the top bar -->
+    <!-- Hidden elements for existing script.js logic -->
+    <div class="weather">
         <div class="date-time"></div>
         <img src="images/rain.png" class="weather-icon">
         <p class="feels-like">Feels like: <span>--</span></p>
@@ -36,73 +50,214 @@
         <div class="wind">--</div>
         <div class="forecast"></div>
     </div>
-    <div class="error" style="display: none;">
-        <p>Invalid city name</p>
-    </div>
+    <div class="error"><p>Invalid city name</p></div>
 </nav>
 
-<!-- Main Content Area -->
+<!-- Main Portfolio Content -->
 <main>
-    <h1 class="site-title">📄 PDF Tools</h1>
+    <!-- Hero Section -->
+    <section class="hero" id="parallax-hero">
+        <div class="hero-content">
+            <h3>Hello, I'm</h3>
+            <h1 class="site-title">Sumit Kumar Sharma</h1>
+            <p>Computer Science graduate with a solid foundation in programming, software development, and problem-solving. A quick learner and collaborative team player seeking a challenging opportunity in the IT industry.</p>
 
-    <div class="card pdf-tool">
-        <h2>PDF Page Combiner & Rotator</h2>
-        <p class="description">Upload a PDF to rotate, resize, and combine pages with flexible options.</p>
-
-        <div class="upload-section">
-            <input type="file" id="pdfInput" accept=".pdf">
-            <label for="pdfInput" class="file-label">Choose PDF File</label>
-            <span id="fileName">No file chosen</span>
-        </div>
-
-        <div class="options-grid">
-            <div class="option-group">
-                <label for="rotationAngle">Rotation</label>
-                <select id="rotationAngle">
-                    <option value="0">0°</option>
-                    <option value="90" selected>90°</option>
-                    <option value="180">180°</option>
-                    <option value="270">270° (−90°)</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="pageSize">Page Size</label>
-                <select id="pageSize">
-                    <option value="a4-portrait" selected>A4 Portrait</option>
-                    <option value="a4-landscape">A4 Landscape</option>
-                    <option value="a5-portrait">A5 Portrait</option>
-                    <option value="a5-landscape">A5 Landscape</option>
-                    <option value="letter-portrait">Letter Portrait</option>
-                    <option value="letter-landscape">Letter Landscape</option>
-                    <option value="legal-portrait">Legal Portrait</option>
-                    <option value="legal-landscape">Legal Landscape</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="pagesPerSheet">Pages per Sheet</label>
-                <select id="pagesPerSheet">
-                    <option value="1">1</option>
-                    <option value="2" selected>2</option>
-                    <option value="4">4 (2×2)</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="unchangedPages">Keep Unchanged</label>
-                <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3 or 1,4,6" title="Pages to keep as-is (e.g. 1 or 1-3 or 1,4,6)">
+            <div class="contact-badges">
+                <a href="tel:+919876543210" class="badge">📞 +91 98765 43210</a>
+                <a href="mailto:sumitsharma@example.com" class="badge">✉️ Email Me</a>
+                <a href="https://linkedin.com/in/coinrx" target="_blank" class="badge">🔗 LinkedIn</a>
+                <span class="badge">📍 Patna, India</span>
             </div>
         </div>
 
-        <button id="processBtn" disabled>Process & Download</button>
+        <div class="hero-image">
+            <!-- Floating glass elements mimicking the 3D depth of the image -->
+            <div class="float-element fl-1">
+                <span style="font-size: 24px;">💻</span> Code
+            </div>
 
-        <div id="status"></div>
+            <!-- Placeholder for portrait/illustration -->
+            <div class="portrait-placeholder glass-panel">
+                👤
+            </div>
+
+            <div class="float-element fl-2">
+                <span style="font-size: 24px;">✨</span> Design
+            </div>
+        </div>
+    </section>
+
+    <!-- Services / Skills Section -->
+    <section class="skills">
+        <h2 class="section-title">Technical <span>Skills</span></h2>
+        <div class="skills-grid">
+            <div class="skill-card glass-panel">
+                <div class="skill-icon">🖥️</div>
+                <h4>Frontend Web</h4>
+                <p style="font-size: 13px; color: var(--text-secondary);">HTML, CSS, JavaScript</p>
+            </div>
+            <div class="skill-card glass-panel">
+                <div class="skill-icon">⚙️</div>
+                <h4>Backend & Systems</h4>
+                <p style="font-size: 13px; color: var(--text-secondary);">Python, C/C++</p>
+            </div>
+            <div class="skill-card glass-panel">
+                <div class="skill-icon">🎨</div>
+                <h4>Design & Media</h4>
+                <p style="font-size: 13px; color: var(--text-secondary);">Photoshop, Video Editing</p>
+            </div>
+            <div class="skill-card glass-panel">
+                <div class="skill-icon">📊</div>
+                <h4>Tools</h4>
+                <p style="font-size: 13px; color: var(--text-secondary);">Microsoft Office Suite</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Split Content: Education & Projects -->
+    <div class="content-split">
+        <!-- Left: Education & Certifications -->
+        <div class="left-col">
+            <section class="education glass-panel" style="margin-bottom: 40px;">
+                <h2 class="section-title" style="text-align: left; margin-bottom: 20px; font-size: 28px;">Education</h2>
+
+                <div class="timeline-item">
+                    <h4>Bachelor of Computer Applications</h4>
+                    <div class="highlight">Patliputra University</div>
+                    <div class="date"><span>🗓️ 08/2022 - 05/2025</span> | <span>📍 Patna, India</span></div>
+                </div>
+
+                <div class="timeline-item">
+                    <h4>Intermediate (Science)</h4>
+                    <div class="highlight">Baldeo High School</div>
+                    <div class="date"><span>🗓️ 08/2020 - 05/2022</span> | <span>📍 Patna, India</span></div>
+                </div>
+
+                <div class="timeline-item">
+                    <h4>Matriculation</h4>
+                    <div class="highlight">D.A.V Public School</div>
+                    <div class="date"><span>🗓️ 04/2019 - 05/2020</span> | <span>📍 Patna, India</span></div>
+                </div>
+            </section>
+
+            <section class="certifications glass-panel" style="margin-bottom: 40px;">
+                <h2 class="section-title" style="text-align: left; margin-bottom: 20px; font-size: 28px;">Certifications</h2>
+
+                <div class="timeline-item">
+                    <h4>Python - HackerRank</h4>
+                    <p>Demonstrated basic proficiency in Python.</p>
+                </div>
+
+                <div class="timeline-item">
+                    <h4>JavaScript - HackerRank</h4>
+                    <p>Developed foundational skills in JavaScript.</p>
+                </div>
+
+                <div class="timeline-item">
+                    <h4>Xto10x Hackathon (Edition #3)</h4>
+                    <p>Participated in the hackathon organized by Masai School.</p>
+                </div>
+            </section>
+
+            <section class="interests glass-panel">
+                <h2 class="section-title" style="text-align: left; margin-bottom: 20px; font-size: 28px;">Interests</h2>
+                <div class="timeline-item">
+                    <h4>Chess Enthusiast</h4>
+                    <p>Engaging in chess regularly to enhance strategic thinking skills.</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Film Analysis & Creation</h4>
+                    <p>Analyzing global cinema, scripting, directing, and editing short films.</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Right: Projects -->
+        <div class="right-col">
+            <h2 class="section-title" style="text-align: left; margin-bottom: 20px; font-size: 28px;">Featured <span>Projects</span></h2>
+
+            <div class="project-card glass-panel" style="margin-bottom: 40px;">
+                <h4>Bank Management System</h4>
+                <div class="desc">A system for managing bank accounts and transactions</div>
+                <ul>
+                    <li>Built using C++, featuring account creation</li>
+                    <li>Implemented transaction handling and file storage</li>
+                </ul>
+            </div>
+
+            <div class="project-card glass-panel" style="margin-bottom: 40px;">
+                <h4>Weather App</h4>
+                <div class="desc">Application that provides current weather information</div>
+                <ul>
+                    <li>Developed using JavaScript</li>
+                    <li>Fetched real-time weather data using the OpenWeather API</li>
+                    <li><strong>Integrated natively into this portfolio's top navigation bar!</strong></li>
+                </ul>
+            </div>
+
+            <!-- PDF Tool Interactive Project -->
+            <div class="project-card glass-panel">
+                <h4>PDF Page Combiner & Rotator</h4>
+                <div class="desc">Interactive Web Tool: Upload a PDF to rotate, resize, and combine pages with flexible options. Fully functional below.</div>
+
+                <div class="pdf-tool-ui">
+                    <div class="upload-section">
+                        <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
+                        <label for="pdfInput" class="file-label">Choose PDF File</label>
+                        <span id="fileName">No file chosen</span>
+                    </div>
+
+                    <div class="options-grid">
+                        <div class="option-group">
+                            <label for="rotationAngle">Rotation</label>
+                            <select id="rotationAngle">
+                                <option value="0">0°</option>
+                                <option value="90" selected>90°</option>
+                                <option value="180">180°</option>
+                                <option value="270">270° (−90°)</option>
+                            </select>
+                        </div>
+
+                        <div class="option-group">
+                            <label for="pageSize">Page Size</label>
+                            <select id="pageSize">
+                                <option value="a4-portrait" selected>A4 Portrait</option>
+                                <option value="a4-landscape">A4 Landscape</option>
+                                <option value="a5-portrait">A5 Portrait</option>
+                                <option value="a5-landscape">A5 Landscape</option>
+                                <option value="letter-portrait">Letter Portrait</option>
+                                <option value="letter-landscape">Letter Landscape</option>
+                                <option value="legal-portrait">Legal Portrait</option>
+                                <option value="legal-landscape">Legal Landscape</option>
+                            </select>
+                        </div>
+
+                        <div class="option-group">
+                            <label for="pagesPerSheet">Pages per Sheet</label>
+                            <select id="pagesPerSheet">
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="4">4 (2×2)</option>
+                            </select>
+                        </div>
+
+                        <div class="option-group">
+                            <label for="unchangedPages">Keep Unchanged</label>
+                            <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3">
+                        </div>
+                    </div>
+
+                    <button id="processBtn" disabled>Process & Download PDF</button>
+                    <div id="status"></div>
+                </div>
+            </div>
+
+        </div>
     </div>
 </main>
 
-<footer class="last-updated">
-    Last updated: <span id="lastUpdated">2026-02-21 07:30 IST</span>
+<footer>
+    <p>Last updated: <span id="lastUpdated">2026-02-21</span> | Designed with Glassmorphism 🌟</p>
 </footer>
 
 <script src="script.js"></script>
