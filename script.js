@@ -1,6 +1,55 @@
 const apiKey = "081d831bc57b8a3e95b7a73f3328060e";
 const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
 
+// --- Theme Toggle Logic ---
+const themeToggleBtn = document.getElementById("themeToggle");
+const currentTheme = localStorage.getItem("theme");
+
+if (currentTheme) {
+    document.body.setAttribute("data-theme", currentTheme);
+    themeToggleBtn.textContent = currentTheme === "dark" ? "☀️" : "🌙";
+}
+
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", () => {
+        let theme = document.body.getAttribute("data-theme");
+        if (theme === "dark") {
+            document.body.removeAttribute("data-theme");
+            localStorage.setItem("theme", "light");
+            themeToggleBtn.textContent = "🌙";
+        } else {
+            document.body.setAttribute("data-theme", "dark");
+            localStorage.setItem("theme", "dark");
+            themeToggleBtn.textContent = "☀️";
+        }
+    });
+}
+
+// --- Parallax 3D Effect for Background & Hero ---
+document.addEventListener("mousemove", (e) => {
+    const x = e.clientX / window.innerWidth - 0.5;
+    const y = e.clientY / window.innerHeight - 0.5;
+
+    // Move orbs slightly opposite to mouse
+    const orb1 = document.querySelector(".orb-1");
+    const orb2 = document.querySelector(".orb-2");
+    const orb3 = document.querySelector(".orb-3");
+
+    if (orb1) orb1.style.transform = `translate(${x * -50}px, ${y * -50}px)`;
+    if (orb2) orb2.style.transform = `translate(${x * 60}px, ${y * 60}px)`;
+    if (orb3) orb3.style.transform = `translate(${x * -30}px, ${y * -30}px)`;
+
+    // Floating hero elements parallax
+    const fl1 = document.querySelector(".fl-1");
+    const fl2 = document.querySelector(".fl-2");
+    const portrait = document.querySelector(".portrait-placeholder");
+
+    if (fl1) fl1.style.transform = `translate(${x * 40}px, ${y * 40}px)`;
+    if (fl2) fl2.style.transform = `translate(${x * -40}px, ${y * -40}px)`;
+    if (portrait) portrait.style.transform = `translate(${x * 20}px, ${y * 20}px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg)`;
+});
+
+
 // Updated Selectors for new layout
 const searchBox = document.querySelector(".search-compact input");
 const searchBtn = document.getElementById("searchBtn");
@@ -28,21 +77,10 @@ const { PDFDocument, degrees } = PDFLib;
 // --- Weather Functions ---
 
 function updateBackground(weatherMain) {
-    const body = document.body;
-    body.className = '';
-    switch (weatherMain) {
-        case "Clouds": body.classList.add("clouds"); break;
-        case "Clear": body.classList.add("clear"); break;
-        case "Rain":
-        case "Thunderstorm": body.classList.add("rain"); break;
-        case "Drizzle": body.classList.add("drizzle"); break;
-        case "Mist":
-        case "Fog":
-        case "Haze":
-        case "Smoke": body.classList.add("mist"); break;
-        case "Snow": body.classList.add("snow"); break;
-        default: body.classList.add("clear"); break;
-    }
+    // In this premium glassmorphism theme, we no longer change the whole body background
+    // to flat images/gradients based on weather. We keep the glowing orbs.
+    // However, we can optionally tint orb colors based on weather if desired in the future.
+    // For now, we leave the premium background untouched.
 }
 
 function updateWeatherUI(data) {
