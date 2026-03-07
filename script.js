@@ -160,10 +160,10 @@ smoothParallax();
 
         // Intensify navbar on scroll
         if (scrollY > 100) {
-            navbar.style.background = 'rgba(5, 5, 8, 0.95)';
+            navbar.style.background = 'var(--glass-bg)';
             navbar.style.boxShadow = '0 4px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.02) inset';
         } else {
-            navbar.style.background = 'rgba(5, 5, 8, 0.85)';
+            navbar.style.background = 'var(--glass-bg)';
             navbar.style.boxShadow = '0 4px 30px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.02) inset';
         }
 
