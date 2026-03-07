@@ -1411,7 +1411,7 @@ footer::before {
     content: '▸';
     margin-right: 6px;
     color: var(--accent-neon);
-    font-size: 10px;
+    font-size: 1em;
 }
 
 /* Blueprint-style section titles */
