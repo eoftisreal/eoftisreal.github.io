@@ -37,8 +37,7 @@ if (themeToggleBtn) {
     if (window.innerWidth <= 900) return;
     const ctx = canvas.getContext('2d');
     let particles = [];
-    const isMobile = window.innerWidth <= 600;
-    const PARTICLE_COUNT = isMobile ? 25 : 60;
+    const PARTICLE_COUNT = 60;
 
     let resizeTimer;
     function resize() {
