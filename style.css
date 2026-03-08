@@ -93,6 +93,11 @@ html {
 
 body {
     background-color: var(--bg-base);
+    background-image: url('https://github.com/user-attachments/assets/3e3664ed-7f99-4b98-98ea-9a95fc0f1b79');
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--text-primary);
     font-family: 'Rajdhani', 'Inter', sans-serif;
     font-weight: 400;
@@ -656,10 +661,9 @@ main > .content-split {
 .portrait-placeholder {
     width: 320px;
     height: 320px;
-    background: var(--metallic-shine);
+    background: url('https://github.com/user-attachments/assets/f9ac743d-deb7-46bc-aa03-f4b43368f72c') center/cover no-repeat;
     border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.06);
-    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 106, 0, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -671,19 +675,13 @@ main > .content-split {
         inset 0 2px 0 rgba(255,255,255,0.05);
     position: relative;
     z-index: 2;
-    overflow: visible;
+    overflow: hidden;
     transform-style: preserve-3d;
 }
 
-/* Energy core glow */
+/* Energy core glow (hidden when character image is used) */
 .portrait-placeholder .core-glow {
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--accent) 0%, rgba(255, 106, 0, 0.3) 40%, transparent 70%);
-    box-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--accent-subtle);
-    animation: core-pulse 3s infinite ease-in-out;
+    display: none;
 }
 
 @keyframes core-pulse {
