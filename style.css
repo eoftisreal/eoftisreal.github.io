@@ -93,7 +93,19 @@ html {
 
 body {
     background-color: var(--bg-base);
-    background-image: url('https://github.com/user-attachments/assets/3e3664ed-7f99-4b98-98ea-9a95fc0f1b79');
+    background-image:
+        /* Diagonal depth shadow — bottom-left corner */
+        linear-gradient(135deg, rgba(4, 6, 16, 0.82) 0%, transparent 52%),
+        /* Orange energy burst — upper-right (focal light source) */
+        radial-gradient(ellipse 80% 60% at 96% 0%, rgba(255, 106, 0, 0.20) 0%, transparent 62%),
+        /* Warm amber secondary glow — reinforces top-right warmth */
+        radial-gradient(ellipse 42% 38% at 78% 22%, rgba(255, 145, 48, 0.09) 0%, transparent 60%),
+        /* Blue nebula field — lower-left */
+        radial-gradient(ellipse 72% 58% at -8% 102%, rgba(30, 90, 184, 0.30) 0%, transparent 62%),
+        /* Neon-lime pulse — mid-canvas (subtle depth plane) */
+        radial-gradient(ellipse 52% 42% at 54% 46%, rgba(184, 230, 46, 0.055) 0%, transparent 62%),
+        /* Deep-space base — angled for visual direction */
+        linear-gradient(162deg, #030508 0%, #060914 22%, #0a0e1a 52%, #0c1220 78%, #0a1018 100%);
     background-size: cover;
     background-position: center top;
     background-attachment: fixed;
@@ -1521,6 +1533,23 @@ footer::before {
 /* Light mode vignette adjustment */
 [data-theme="light"] .vignette {
     background: radial-gradient(ellipse at center, transparent 65%, rgba(20, 40, 100, 0.05) 100%);
+}
+
+/* Light mode artwork background */
+[data-theme="light"] body {
+    background-image:
+        /* Soft warm haze — upper-left corner */
+        linear-gradient(145deg, rgba(252, 245, 238, 0.65) 0%, transparent 50%),
+        /* Warm orange light source — upper-right */
+        radial-gradient(ellipse 80% 60% at 96% 0%, rgba(212, 82, 0, 0.12) 0%, transparent 62%),
+        /* Amber secondary glow */
+        radial-gradient(ellipse 42% 38% at 78% 22%, rgba(230, 120, 40, 0.06) 0%, transparent 60%),
+        /* Cool blue depth — lower-left */
+        radial-gradient(ellipse 72% 58% at -8% 102%, rgba(26, 79, 160, 0.14) 0%, transparent 62%),
+        /* Soft neon-lime hint — mid-canvas */
+        radial-gradient(ellipse 52% 42% at 54% 46%, rgba(109, 158, 0, 0.04) 0%, transparent 62%),
+        /* Airy base gradient */
+        linear-gradient(162deg, #f8fafd 0%, #eef1f8 22%, #e8ecf2 52%, #e4e8f0 78%, #eaedf5 100%);
 }
 
 /* ============================================ */
