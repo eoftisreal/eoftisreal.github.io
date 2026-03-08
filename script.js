@@ -33,13 +33,21 @@ if (themeToggleBtn) {
 (function initParticles() {
     const canvas = document.getElementById('particle-canvas');
     if (!canvas) return;
+    // Skip particles on mobile (hidden via CSS, avoid JS overhead)
+    if (window.innerWidth <= 900) return;
     const ctx = canvas.getContext('2d');
     let particles = [];
     const PARTICLE_COUNT = 60;
 
+    let resizeTimer;
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+    }
+
+    function debouncedResize() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 150);
     }
 
     function createParticle() {
@@ -64,6 +72,12 @@ if (themeToggleBtn) {
     }
 
     function animate() {
+        // Skip rendering when tab is not visible
+        if (document.hidden) {
+            requestAnimationFrame(animate);
+            return;
+        }
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         particles.forEach(p => {
@@ -95,7 +109,7 @@ if (themeToggleBtn) {
         requestAnimationFrame(animate);
     }
 
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', debouncedResize);
     init();
     animate();
 })();
@@ -106,12 +120,27 @@ let mouseX = 0, mouseY = 0;
 let targetMouseX = 0, targetMouseY = 0;
 const PARALLAX_SMOOTHING = 0.06;
 
+// Cache DOM elements outside the animation loop to avoid repeated queries
+const cachedOrb1 = document.querySelector(".orb-1");
+const cachedOrb2 = document.querySelector(".orb-2");
+const cachedOrb3 = document.querySelector(".orb-3");
+const cachedFl1 = document.querySelector(".fl-1");
+const cachedFl2 = document.querySelector(".fl-2");
+const cachedPortrait = document.querySelector(".portrait-placeholder");
+const cachedLabels = document.querySelectorAll('.tech-label');
+
 document.addEventListener("mousemove", (e) => {
     targetMouseX = e.clientX / window.innerWidth - 0.5;
     targetMouseY = e.clientY / window.innerHeight - 0.5;
-});
+}, { passive: true });
 
 function smoothParallax() {
+    // Skip parallax on mobile devices
+    if (window.innerWidth <= 900) {
+        requestAnimationFrame(smoothParallax);
+        return;
+    }
+
     // Smooth interpolation for cinematic feel
     mouseX += (targetMouseX - mouseX) * PARALLAX_SMOOTHING;
     mouseY += (targetMouseY - mouseY) * PARALLAX_SMOOTHING;
@@ -119,27 +148,18 @@ function smoothParallax() {
     const x = mouseX;
     const y = mouseY;
 
-    // Move orbs with depth layers
-    const orb1 = document.querySelector(".orb-1");
-    const orb2 = document.querySelector(".orb-2");
-    const orb3 = document.querySelector(".orb-3");
+    // Move orbs with depth layers (using cached references)
+    if (cachedOrb1) cachedOrb1.style.transform = `translate(${x * -60}px, ${y * -60}px)`;
+    if (cachedOrb2) cachedOrb2.style.transform = `translate(${x * 80}px, ${y * 80}px)`;
+    if (cachedOrb3) cachedOrb3.style.transform = `translate(${x * -40}px, ${y * -40}px)`;
 
-    if (orb1) orb1.style.transform = `translate(${x * -60}px, ${y * -60}px)`;
-    if (orb2) orb2.style.transform = `translate(${x * 80}px, ${y * 80}px)`;
-    if (orb3) orb3.style.transform = `translate(${x * -40}px, ${y * -40}px)`;
+    // Floating hero elements with depth parallax (using cached references)
+    if (cachedFl1) cachedFl1.style.transform = `translate(${x * 50}px, ${y * 50}px)`;
+    if (cachedFl2) cachedFl2.style.transform = `translate(${x * -50}px, ${y * -50}px)`;
+    if (cachedPortrait) cachedPortrait.style.transform = `translate(${x * 15}px, ${y * 15}px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg)`;
 
-    // Floating hero elements with depth parallax
-    const fl1 = document.querySelector(".fl-1");
-    const fl2 = document.querySelector(".fl-2");
-    const portrait = document.querySelector(".portrait-placeholder");
-
-    if (fl1) fl1.style.transform = `translate(${x * 50}px, ${y * 50}px)`;
-    if (fl2) fl2.style.transform = `translate(${x * -50}px, ${y * -50}px)`;
-    if (portrait) portrait.style.transform = `translate(${x * 15}px, ${y * 15}px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg)`;
-
-    // Technical labels subtle movement
-    const labels = document.querySelectorAll('.tech-label');
-    labels.forEach((label, i) => {
+    // Technical labels subtle movement (using cached NodeList)
+    cachedLabels.forEach((label, i) => {
         const depth = (i + 1) * 8;
         label.style.transform = `translate(${x * depth}px, ${y * depth}px)`;
     });
@@ -191,8 +211,7 @@ const cities = [
     "Beijing", "Los Angeles", "Berlin", "Madrid", "Istanbul", "Bangkok", "Seoul"
 ];
 
-// PDF-Lib from CDN
-const { PDFDocument, degrees } = PDFLib;
+// PDF-Lib loaded async from CDN — destructure lazily when needed
 
 // --- Weather Functions ---
 
@@ -260,9 +279,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const sections = document.querySelectorAll('main > section, main > .content-split, main > .tech-divider');
     const SCROLL_SCALE_FACTOR = 0.02;
     const SCROLL_OPACITY_FACTOR = 0.15;
-    window.addEventListener('scroll', () => {
-        if (window.innerWidth <= 900) return;
-        const scrollY = window.scrollY;
+    let scrollRAFId = null;
+
+    function updateSectionParallax() {
+        scrollRAFId = null;
         const windowH = window.innerHeight;
 
         sections.forEach(section => {
@@ -273,6 +293,14 @@ window.addEventListener('DOMContentLoaded', () => {
             section.style.transform = `scale(${Math.max(0.96, scale)})`;
             section.style.opacity = Math.max(0.7, opacity);
         });
+    }
+
+    window.addEventListener('scroll', () => {
+        if (window.innerWidth <= 900) return;
+        // Debounce with requestAnimationFrame to avoid layout thrashing
+        if (!scrollRAFId) {
+            scrollRAFId = requestAnimationFrame(updateSectionParallax);
+        }
     }, { passive: true });
 });
 
@@ -373,6 +401,13 @@ if (processBtn) {
     processBtn.addEventListener('click', async () => {
         const file = pdfInput.files[0];
         if (!file) return;
+
+        // Lazy-load PDFLib (loaded async, may not be ready at page load)
+        if (typeof PDFLib === 'undefined') {
+            statusDiv.textContent = "PDF library is still loading, please try again.";
+            return;
+        }
+        const { PDFDocument, degrees } = PDFLib;
 
         try {
             statusDiv.textContent = "Processing...";
