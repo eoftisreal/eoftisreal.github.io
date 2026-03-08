@@ -1536,7 +1536,7 @@ footer::before {
 }
 
 /* Light mode artwork background */
-[data-theme="light"] body {
+body[data-theme="light"] {
     background-image:
         /* Soft warm haze — upper-left corner */
         linear-gradient(145deg, rgba(252, 245, 238, 0.65) 0%, transparent 50%),
