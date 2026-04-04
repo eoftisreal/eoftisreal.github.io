@@ -77,6 +77,103 @@
 
 <!-- Main Portfolio Content -->
 <main>
+    <!-- Tools Section (Always Visible) -->
+    <section class="tools-section reveal">
+        <div class="section-marker">// Active Tools</div>
+        <h2 class="section-title">Live <span>Systems</span></h2>
+
+        <!-- Link Resolver Interactive Project -->
+        <div class="project-card glass-panel">
+            <h4>Link Resolver & By-passer</h4>
+            <div class="desc">Automated tool to bypass verifications and extract final download links from supported URLs.</div>
+
+            <div class="resolver-tool-ui" style="margin-top: 15px;">
+                <div class="option-group">
+                    <input type="text" id="resolverUrl" placeholder="Paste your link here" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; border-radius: 4px; font-family: 'Inter', sans-serif;">
+                </div>
+                <button id="resolverScanBtn" style="margin-top: 10px; width: 100%;">Scan URL</button>
+                <div id="resolverScanStatus" style="margin-top: 10px; font-size: 14px; color: var(--accent-orange);"></div>
+
+                <div id="resolverButtonsList" style="margin-top: 15px; display: none;">
+                    <p style="font-weight: bold; margin-bottom: 10px;">Select buttons to resolve:</p>
+                    <div id="resolverCheckboxes" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;"></div>
+                    <button id="resolverResolveBtn" style="margin-top: 10px; width: 100%;">Resolve Selected</button>
+                </div>
+
+                <div id="resolverResults" style="margin-top: 15px; display: none; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 4px; border: 1px solid var(--glass-border);">
+                    <p style="font-weight: bold; margin-bottom: 10px; color: var(--accent-orange);">Results:</p>
+                    <div id="resolverResultsContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Tool Interactive Project -->
+        <div class="project-card glass-panel">
+            <h4>PDF Page Combiner & Rotator</h4>
+            <div class="desc">Interactive Web Tool: Upload a PDF to rotate, resize, and combine pages with flexible options. Fully functional below.</div>
+
+            <div class="pdf-tool-ui">
+                <div class="upload-section">
+                    <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
+                    <label for="pdfInput" class="file-label">Choose PDF File</label>
+                    <span id="fileName">No file chosen</span>
+                </div>
+
+                <div class="options-grid">
+                    <div class="option-group">
+                        <label for="rotationAngle">Rotation</label>
+                        <select id="rotationAngle">
+                            <option value="0">0°</option>
+                            <option value="90" selected>90°</option>
+                            <option value="180">180°</option>
+                            <option value="270">270° (−90°)</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="pageSize">Page Size</label>
+                        <select id="pageSize">
+                            <option value="a4-portrait" selected>A4 Portrait</option>
+                            <option value="a4-landscape">A4 Landscape</option>
+                            <option value="a5-portrait">A5 Portrait</option>
+                            <option value="a5-landscape">A5 Landscape</option>
+                            <option value="letter-portrait">Letter Portrait</option>
+                            <option value="letter-landscape">Letter Landscape</option>
+                            <option value="legal-portrait">Legal Portrait</option>
+                            <option value="legal-landscape">Legal Landscape</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="pagesPerSheet">Pages per Sheet</label>
+                        <select id="pagesPerSheet">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="4">4 (2×2)</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="unchangedPages">Keep Unchanged</label>
+                        <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3">
+                    </div>
+                </div>
+
+                <button id="processBtn" disabled>Process & Download PDF</button>
+                <div id="status"></div>
+            </div>
+        </div>
+    </section>
+
+    <div class="tech-divider"></div>
+
+    <div class="portfolio-toggle-container" style="text-align: center; margin: 40px 0;">
+        <button id="togglePortfolioBtn" class="glass-panel" style="padding: 15px 30px; font-size: 1.2rem; cursor: pointer; border: 1px solid var(--glass-border); color: var(--text-primary); background: rgba(20, 20, 25, 0.6); font-family: 'Orbitron', sans-serif; transition: all 0.3s ease;">
+            [+] Reveal Portfolio Sections
+        </button>
+    </div>
+
+    <div id="portfolioContent" style="display: none;">
     <!-- Hero Section -->
     <section class="hero" id="parallax-hero">
         <div class="hero-content">
@@ -238,65 +335,9 @@
                 </ul>
             </div>
 
-            <!-- PDF Tool Interactive Project -->
-            <div class="project-card glass-panel reveal">
-                <h4>PDF Page Combiner & Rotator</h4>
-                <div class="desc">Interactive Web Tool: Upload a PDF to rotate, resize, and combine pages with flexible options. Fully functional below.</div>
-
-                <div class="pdf-tool-ui">
-                    <div class="upload-section">
-                        <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
-                        <label for="pdfInput" class="file-label">Choose PDF File</label>
-                        <span id="fileName">No file chosen</span>
-                    </div>
-
-                    <div class="options-grid">
-                        <div class="option-group">
-                            <label for="rotationAngle">Rotation</label>
-                            <select id="rotationAngle">
-                                <option value="0">0°</option>
-                                <option value="90" selected>90°</option>
-                                <option value="180">180°</option>
-                                <option value="270">270° (−90°)</option>
-                            </select>
-                        </div>
-
-                        <div class="option-group">
-                            <label for="pageSize">Page Size</label>
-                            <select id="pageSize">
-                                <option value="a4-portrait" selected>A4 Portrait</option>
-                                <option value="a4-landscape">A4 Landscape</option>
-                                <option value="a5-portrait">A5 Portrait</option>
-                                <option value="a5-landscape">A5 Landscape</option>
-                                <option value="letter-portrait">Letter Portrait</option>
-                                <option value="letter-landscape">Letter Landscape</option>
-                                <option value="legal-portrait">Legal Portrait</option>
-                                <option value="legal-landscape">Legal Landscape</option>
-                            </select>
-                        </div>
-
-                        <div class="option-group">
-                            <label for="pagesPerSheet">Pages per Sheet</label>
-                            <select id="pagesPerSheet">
-                                <option value="1">1</option>
-                                <option value="2" selected>2</option>
-                                <option value="4">4 (2×2)</option>
-                            </select>
-                        </div>
-
-                        <div class="option-group">
-                            <label for="unchangedPages">Keep Unchanged</label>
-                            <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3">
-                        </div>
-                    </div>
-
-                    <button id="processBtn" disabled>Process & Download PDF</button>
-                    <div id="status"></div>
-                </div>
-            </div>
-
         </div>
     </div>
+    </div> <!-- End portfolioContent -->
 </main>
 
 <footer>
