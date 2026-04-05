@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -9,6 +10,7 @@ from multiprocessing import Pool
 import time
 
 app = Flask(__name__, static_folder='.', static_url_path='')
+CORS(app)
 
 # =========================================
 # Chrome options
