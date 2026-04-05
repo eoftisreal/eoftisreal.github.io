@@ -260,6 +260,27 @@ function getRandomCity() {
 window.addEventListener('DOMContentLoaded', () => {
     checkWeather(getRandomCity());
 
+    // --- Portfolio Toggle Logic ---
+    const togglePortfolioBtn = document.getElementById('togglePortfolioBtn');
+    const portfolioContent = document.getElementById('portfolioContent');
+
+    if (togglePortfolioBtn && portfolioContent) {
+        togglePortfolioBtn.addEventListener('click', () => {
+            if (portfolioContent.style.display === 'none') {
+                portfolioContent.style.display = 'block';
+                togglePortfolioBtn.textContent = '[-] Hide Portfolio Sections';
+                // Trigger resize event to potentially fix parallax/particle offsets if needed
+                window.dispatchEvent(new Event('resize'));
+                // Trigger IntersectionObserver for newly revealed elements
+                document.querySelectorAll('.reveal').forEach(el => el.classList.remove('visible'));
+                setTimeout(() => window.dispatchEvent(new Event('scroll')), 100);
+            } else {
+                portfolioContent.style.display = 'none';
+                togglePortfolioBtn.textContent = '[+] Reveal Portfolio Sections';
+            }
+        });
+    }
+
     // Cinematic scroll reveal with staggered timing
     const revealElements = document.querySelectorAll('.reveal');
     if (revealElements.length > 0) {
@@ -336,6 +357,148 @@ if (locationBtn) {
             );
         } else {
             alert("Geolocation not supported.");
+        }
+    });
+}
+
+
+// --- Link Resolver Logic ---
+const resolverUrlInput = document.getElementById('resolverUrl');
+const resolverScanBtn = document.getElementById('resolverScanBtn');
+const resolverScanStatus = document.getElementById('resolverScanStatus');
+const resolverButtonsList = document.getElementById('resolverButtonsList');
+const resolverCheckboxes = document.getElementById('resolverCheckboxes');
+const resolverResolveBtn = document.getElementById('resolverResolveBtn');
+const resolverResults = document.getElementById('resolverResults');
+const resolverResultsContent = document.getElementById('resolverResultsContent');
+
+if (resolverScanBtn) {
+    resolverScanBtn.addEventListener('click', async () => {
+        const url = resolverUrlInput.value.trim();
+        if (!url) {
+            resolverScanStatus.textContent = "Please enter a valid URL.";
+            return;
+        }
+
+        resolverScanStatus.textContent = "Scanning page (this may take a few seconds)...";
+        resolverScanBtn.disabled = true;
+        resolverButtonsList.style.display = 'none';
+        resolverResults.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                resolverScanStatus.textContent = "Error: " + data.error;
+            } else if (data.buttons && data.buttons.length > 0) {
+                resolverScanStatus.textContent = `Found ${data.buttons.length} buttons.`;
+                resolverCheckboxes.innerHTML = '';
+
+                data.buttons.forEach((btn, index) => {
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '8px';
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `btn_${index}`;
+                    checkbox.value = btn.id;
+                    checkbox.style.marginRight = '10px';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `btn_${index}`;
+                    label.textContent = `${btn.text} (Y-Pos: ${btn.y})`;
+                    label.style.cursor = 'pointer';
+                    label.style.fontSize = '14px';
+
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+                    resolverCheckboxes.appendChild(div);
+                });
+
+                resolverButtonsList.style.display = 'block';
+            } else {
+                resolverScanStatus.textContent = "No valid buttons found on this page.";
+            }
+        } catch (error) {
+            resolverScanStatus.textContent = "Error connecting to server.";
+            console.error(error);
+        } finally {
+            resolverScanBtn.disabled = false;
+        }
+    });
+}
+
+if (resolverResolveBtn) {
+    resolverResolveBtn.addEventListener('click', async () => {
+        const url = resolverUrlInput.value.trim();
+        const selectedCheckboxes = document.querySelectorAll('#resolverCheckboxes input[type="checkbox"]:checked');
+
+        if (selectedCheckboxes.length === 0) {
+            alert("Please select at least one button to resolve.");
+            return;
+        }
+
+        const indices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+
+        resolverResolveBtn.disabled = true;
+        resolverScanStatus.textContent = "Resolving links... This may take up to a minute.";
+        resolverResults.style.display = 'none';
+        resolverResultsContent.innerHTML = '';
+
+        try {
+            const response = await fetch('/api/resolve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url, indices: indices })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                resolverScanStatus.textContent = "Error: " + data.error;
+            } else if (data.results) {
+                resolverScanStatus.textContent = "Resolution complete.";
+                resolverResults.style.display = 'block';
+
+                data.results.forEach(res => {
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '10px';
+                    div.style.padding = '10px';
+                    div.style.background = 'rgba(255,255,255,0.05)';
+                    div.style.borderRadius = '4px';
+
+                    const title = document.createElement('div');
+                    title.style.fontWeight = 'bold';
+                    title.textContent = `Button: ${res.text || 'Unknown'} (Index ${res.index})`;
+                    div.appendChild(title);
+
+                    const content = document.createElement('div');
+                    content.style.marginTop = '5px';
+                    content.style.wordBreak = 'break-all';
+
+                    if (res.status === 'success') {
+                        content.innerHTML = `<span style="color: #4CAF50;">✅ Success:</span> <a href="${res.url}" target="_blank" style="color: #64B5F6;">${res.url}</a>`;
+                    } else {
+                        content.innerHTML = `<span style="color: #F44336;">❌ Error:</span> ${res.message}`;
+                    }
+                    div.appendChild(content);
+
+                    resolverResultsContent.appendChild(div);
+                });
+            }
+        } catch (error) {
+            resolverScanStatus.textContent = "Error connecting to server.";
+            console.error(error);
+        } finally {
+            resolverResolveBtn.disabled = false;
         }
     });
 }
