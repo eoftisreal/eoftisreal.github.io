@@ -363,6 +363,7 @@ if (locationBtn) {
 
 
 // --- Link Resolver Logic ---
+const resolverServerUrlInput = document.getElementById('resolverServerUrl');
 const resolverUrlInput = document.getElementById('resolverUrl');
 const resolverScanBtn = document.getElementById('resolverScanBtn');
 const resolverScanStatus = document.getElementById('resolverScanStatus');
@@ -372,6 +373,10 @@ const resolverResolveBtn = document.getElementById('resolverResolveBtn');
 const resolverResults = document.getElementById('resolverResults');
 const resolverResultsContent = document.getElementById('resolverResultsContent');
 
+function getResolverServerBase() {
+    return (resolverServerUrlInput ? resolverServerUrlInput.value.trim() : '').replace(/\/$/, '');
+}
+
 if (resolverScanBtn) {
     resolverScanBtn.addEventListener('click', async () => {
         const url = resolverUrlInput.value.trim();
@@ -380,13 +385,15 @@ if (resolverScanBtn) {
             return;
         }
 
+        const serverBase = getResolverServerBase();
+
         resolverScanStatus.textContent = "Scanning page (this may take a few seconds)...";
         resolverScanBtn.disabled = true;
         resolverButtonsList.style.display = 'none';
         resolverResults.style.display = 'none';
 
         try {
-            const response = await fetch('/api/scan', {
+            const response = await fetch(`${serverBase}/api/scan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: url })
@@ -428,7 +435,7 @@ if (resolverScanBtn) {
                 resolverScanStatus.textContent = "No valid buttons found on this page.";
             }
         } catch (error) {
-            resolverScanStatus.textContent = "Error connecting to server.";
+            resolverScanStatus.textContent = "Error connecting to server. Make sure the backend (server.py) is running and the server URL above is correct.";
             console.error(error);
         } finally {
             resolverScanBtn.disabled = false;
@@ -447,6 +454,7 @@ if (resolverResolveBtn) {
         }
 
         const indices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+        const serverBase = getResolverServerBase();
 
         resolverResolveBtn.disabled = true;
         resolverScanStatus.textContent = "Resolving links... This may take up to a minute.";
@@ -454,7 +462,7 @@ if (resolverResolveBtn) {
         resolverResultsContent.innerHTML = '';
 
         try {
-            const response = await fetch('/api/resolve', {
+            const response = await fetch(`${serverBase}/api/resolve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: url, indices: indices })
@@ -485,9 +493,26 @@ if (resolverResolveBtn) {
                     content.style.wordBreak = 'break-all';
 
                     if (res.status === 'success') {
-                        content.innerHTML = `<span style="color: #4CAF50;">✅ Success:</span> <a href="${res.url}" target="_blank" style="color: #64B5F6;">${res.url}</a>`;
+                        const safeUrl = (typeof res.url === 'string' && /^https?:\/\//i.test(res.url)) ? res.url : '';
+                        const link = document.createElement('a');
+                        link.setAttribute('href', safeUrl);
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.style.color = '#64B5F6';
+                        link.textContent = safeUrl || res.url;
+                        const successLabel = document.createElement('span');
+                        successLabel.style.color = '#4CAF50';
+                        successLabel.textContent = '✅ Success: ';
+                        content.appendChild(successLabel);
+                        content.appendChild(link);
                     } else {
-                        content.innerHTML = `<span style="color: #F44336;">❌ Error:</span> ${res.message}`;
+                        content.textContent = '';
+                        const errLabel = document.createElement('span');
+                        errLabel.style.color = '#F44336';
+                        errLabel.textContent = '❌ Error: ';
+                        const errMsg = document.createTextNode(res.message);
+                        content.appendChild(errLabel);
+                        content.appendChild(errMsg);
                     }
                     div.appendChild(content);
 
@@ -495,7 +520,7 @@ if (resolverResolveBtn) {
                 });
             }
         } catch (error) {
-            resolverScanStatus.textContent = "Error connecting to server.";
+            resolverScanStatus.textContent = "Error connecting to server. Make sure the backend (server.py) is running and the server URL above is correct.";
             console.error(error);
         } finally {
             resolverResolveBtn.disabled = false;
