@@ -3,6 +3,8 @@ from flask import Flask, request, jsonify, send_from_directory
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from multiprocessing import Pool
@@ -21,12 +23,15 @@ def chrome_options():
     options.add_argument("--window-size=1920,1080")
     return options
 
+def get_driver():
+    return webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options())
+
 # =========================================
 # Scanner Helper (Finds all options)
 # =========================================
 def scan_page_for_buttons(url):
     print(f"🔍 Scanning page: {url} ...")
-    driver = webdriver.Chrome(options=chrome_options())
+    driver = get_driver()
     found_buttons = []
 
     try:
@@ -74,7 +79,7 @@ def worker(task):
     target_url, button_index_to_click = task
     print(f"🚀 [Worker] Starting task for Button #{button_index_to_click + 1}...")
 
-    driver = webdriver.Chrome(options=chrome_options())
+    driver = get_driver()
     wait = WebDriverWait(driver, 25)
 
     try:
