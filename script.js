@@ -731,10 +731,10 @@ if (processBtn) {
                     // Compute where the bounding box of the rotated scaled page sits relative
                     // to the anchor (bottom-left of unrotated page). pdf-lib rotates CCW around
                     // the anchor, so corners transform as: (px,py) → (px·cosθ − py·sinθ, px·sinθ + py·cosθ)
-                    const cxArr = [0, sw, sw, 0];
-                    const cyArr = [0, 0, sh, sh];
-                    const rotX = cxArr.map((px, i) => px * cosT - cyArr[i] * sinT);
-                    const rotY = cxArr.map((px, i) => px * sinT + cyArr[i] * cosT);
+                    const cornerXValues = [0, sw, sw, 0];
+                    const cornerYValues = [0, 0, sh, sh];
+                    const rotX = cornerXValues.map((px, i) => px * cosT - cornerYValues[i] * sinT);
+                    const rotY = cornerXValues.map((px, i) => px * sinT + cornerYValues[i] * cosT);
                     const bbCxRel = (Math.min(...rotX) + Math.max(...rotX)) / 2;
                     const bbCyRel = (Math.min(...rotY) + Math.max(...rotY)) / 2;
 
