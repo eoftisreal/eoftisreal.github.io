@@ -217,6 +217,9 @@ const cities = [
 
 // PDF-Lib loaded async from CDN — destructure lazily when needed
 
+// True on Android and iOS where the `download` attribute on blob URLs is unreliable.
+const isMobileBrowser = /android|ipad|iphone|ipod/i.test(navigator.userAgent);
+
 // --- Weather Functions ---
 
 function updateBackground(weatherMain) {
@@ -925,7 +928,10 @@ if (processBtn) {
             const baseName = file.name.replace(/\.pdf$/i, '');
             downloadPDF(pdfBytes, baseName + "_updated.pdf");
 
-            statusDiv.textContent = `✓ Done! ${totalPages} page${totalPages !== 1 ? 's' : ''} processed — downloading now.`;
+            const isMobile = isMobileBrowser;
+            statusDiv.textContent = isMobile
+                ? `✓ Done! ${totalPages} page${totalPages !== 1 ? 's' : ''} processed — PDF opened in a new tab. Use your browser's menu to save it.`
+                : `✓ Done! ${totalPages} page${totalPages !== 1 ? 's' : ''} processed — downloading now.`;
             statusDiv.className = 'status-success';
             document.body.style.cursor = "default";
             processBtn.disabled = false;
@@ -944,6 +950,17 @@ if (processBtn) {
 function downloadPDF(bytes, filename) {
     const blob = new Blob([bytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
+
+    // Android and iOS browsers ignore the `download` attribute on blob URLs,
+    // so we fall back to opening the PDF in a new tab where the user can save it.
+    const isMobile = isMobileBrowser;
+    if (isMobile) {
+        window.open(url, '_blank');
+        // Keep the object URL alive long enough for the new tab to load the PDF.
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        return;
+    }
+
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
