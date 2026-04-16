@@ -627,20 +627,42 @@ if (processBtn) {
             const slotW = (PAGE_WIDTH - (cols + 1) * PADDING) / cols;
             const slotH = (PAGE_HEIGHT - (rows + 1) * PADDING) / rows;
 
-            // Separate pages into unchanged (copied as-is) and processed
-            const processedIndices = [];
+            // Build an ordered list of operations that respects document order.
+            // Unchanged pages act as group boundaries — they prevent processed
+            // pages on either side of them from being merged into the same sheet.
+            const operations = [];
+            let currentGroup = [];
+
             for (let i = 0; i < totalPages; i++) {
                 if (unchangedSet.has(i)) {
-                    const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
-                    newPdf.addPage(copiedPage);
+                    // Flush any buffered processed pages before the unchanged page
+                    if (currentGroup.length > 0) {
+                        operations.push({ type: 'process', indices: [...currentGroup] });
+                        currentGroup = [];
+                    }
+                    operations.push({ type: 'unchanged', index: i });
                 } else {
-                    processedIndices.push(i);
+                    currentGroup.push(i);
+                    if (currentGroup.length === pagesPerSheet) {
+                        operations.push({ type: 'process', indices: [...currentGroup] });
+                        currentGroup = [];
+                    }
                 }
             }
+            // Flush any remaining processed pages at the end of the document
+            if (currentGroup.length > 0) {
+                operations.push({ type: 'process', indices: [...currentGroup] });
+            }
 
-            // Process remaining pages in groups of pagesPerSheet
-            for (let g = 0; g < processedIndices.length; g += pagesPerSheet) {
-                const group = processedIndices.slice(g, g + pagesPerSheet);
+            // Execute operations in document order
+            for (const op of operations) {
+                if (op.type === 'unchanged') {
+                    const [copiedPage] = await newPdf.copyPages(pdfDoc, [op.index]);
+                    newPdf.addPage(copiedPage);
+                    continue;
+                }
+
+                const group = op.indices;
 
                 // If only 1 page remains for a multi-up sheet, keep it as-is
                 if (group.length === 1 && pagesPerSheet > 1) {
