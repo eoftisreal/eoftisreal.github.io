@@ -585,7 +585,113 @@ function resetPdfTool() {
     if (progressBar) progressBar.style.display = 'none';
     if (progressFill) progressFill.style.width = '0%';
     document.body.style.cursor = 'default';
+    // Reset visual controls to defaults
+    setPpsValue('2');
+    setRotationValue('90');
+    const unchangedEl = document.getElementById('unchangedPages');
+    if (unchangedEl) unchangedEl.value = '';
+    // Deactivate any active preset
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('preset-active'));
 }
+
+// ---- Pages-per-Sheet visual selector ----
+function setPpsValue(val) {
+    const hidden = document.getElementById('pagesPerSheet');
+    if (hidden) hidden.value = val;
+    document.querySelectorAll('.pps-btn').forEach(btn => {
+        const isActive = btn.dataset.value === val;
+        btn.classList.toggle('pps-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+}
+
+document.querySelectorAll('.pps-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        setPpsValue(btn.dataset.value);
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('preset-active'));
+    });
+});
+
+// ---- Rotation visual selector ----
+function setRotationValue(val) {
+    const rotInput = document.getElementById('rotationAngle');
+    const customInput = document.querySelector('.rot-custom-input');
+    if (val === 'custom') {
+        if (customInput) {
+            customInput.style.display = '';
+            customInput.focus();
+        }
+    } else {
+        if (customInput) customInput.style.display = 'none';
+        if (rotInput) rotInput.value = val;
+    }
+    document.querySelectorAll('.rot-btn').forEach(btn => {
+        const isActive = btn.dataset.value === val;
+        btn.classList.toggle('rot-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+}
+
+document.querySelectorAll('.rot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        setRotationValue(btn.dataset.value);
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('preset-active'));
+    });
+});
+
+// Keep the hidden rotationAngle input in sync when user types in custom input
+(function () {
+    const customInput = document.querySelector('.rot-custom-input');
+    const rotInput = document.getElementById('rotationAngle');
+    if (customInput && rotInput) {
+        customInput.addEventListener('input', () => {
+            rotInput.value = customInput.value;
+        });
+    }
+})();
+
+// ---- Quick Presets ----
+const PRESETS = {
+    rotate90: { pps: '1', rotation: '90' },
+    stack2up: { pps: '2', rotation: '0' },
+    grid4up:  { pps: '4', rotation: '0' },
+    custom:   null, // opens advanced panel only
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const preset = PRESETS[btn.dataset.preset];
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('preset-active'));
+        btn.classList.add('preset-active');
+        if (preset) {
+            setPpsValue(preset.pps);
+            setRotationValue(preset.rotation);
+        }
+        // Open advanced panel for Custom preset
+        if (btn.dataset.preset === 'custom') {
+            const toggle = document.getElementById('advancedToggle');
+            const panel = document.getElementById('advancedPanel');
+            if (toggle && panel && toggle.getAttribute('aria-expanded') === 'false') {
+                toggle.setAttribute('aria-expanded', 'true');
+                panel.setAttribute('aria-hidden', 'false');
+                panel.classList.add('panel-open');
+            }
+        }
+    });
+});
+
+// ---- Advanced Panel Toggle ----
+(function () {
+    const toggle = document.getElementById('advancedToggle');
+    const panel = document.getElementById('advancedPanel');
+    if (!toggle || !panel) return;
+    toggle.addEventListener('click', () => {
+        const expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        panel.setAttribute('aria-hidden', expanded ? 'true' : 'false');
+        panel.classList.toggle('panel-open', !expanded);
+    });
+})();
 
 function setProgress(current, total) {
     if (!progressBar || !progressFill) return;

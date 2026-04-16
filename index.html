@@ -126,43 +126,123 @@
                     </div>
                 </div>
 
-                <div class="options-grid">
-                    <div class="option-group">
-                        <label for="rotationAngle">Rotation (°)</label>
-                        <input type="number" id="rotationAngle" value="90" step="1" placeholder="e.g. 45" title="Degrees to rotate each page (0 = no rotation, 90 = quarter turn)">
-                        <span class="option-hint">Applied to all non-kept pages</span>
+                <!-- Quick Presets -->
+                <div class="pdf-presets">
+                    <div class="pdf-section-label">Quick Presets</div>
+                    <div class="preset-btns">
+                        <button type="button" class="preset-btn" data-preset="rotate90">
+                            <span class="preset-icon">&#8635;</span>
+                            <span class="preset-name">Rotate 90°</span>
+                            <span class="preset-desc">All pages rotated</span>
+                        </button>
+                        <button type="button" class="preset-btn" data-preset="stack2up">
+                            <span class="preset-icon">
+                                <svg viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="20"><rect x="1" y="1" width="22" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="17" width="22" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </span>
+                            <span class="preset-name">Stack 2-up</span>
+                            <span class="preset-desc">2 pages per sheet</span>
+                        </button>
+                        <button type="button" class="preset-btn" data-preset="grid4up">
+                            <span class="preset-icon">
+                                <svg viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="20"><rect x="1" y="1" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="1" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="17" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="17" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </span>
+                            <span class="preset-name">Grid 4-up</span>
+                            <span class="preset-desc">4 pages per sheet</span>
+                        </button>
+                        <button type="button" class="preset-btn preset-custom" data-preset="custom">
+                            <span class="preset-icon">&#9881;</span>
+                            <span class="preset-name">Custom</span>
+                            <span class="preset-desc">Your own settings</span>
+                        </button>
                     </div>
+                </div>
 
-                    <div class="option-group">
-                        <label for="pageSize">Page Size</label>
-                        <select id="pageSize" title="Output page dimensions">
-                            <option value="original">Original (source size)</option>
-                            <option value="a4-portrait" selected>A4 Portrait</option>
-                            <option value="a4-landscape">A4 Landscape</option>
-                            <option value="a5-portrait">A5 Portrait</option>
-                            <option value="a5-landscape">A5 Landscape</option>
-                            <option value="letter-portrait">Letter Portrait</option>
-                            <option value="letter-landscape">Letter Landscape</option>
-                            <option value="legal-portrait">Legal Portrait</option>
-                            <option value="legal-landscape">Legal Landscape</option>
+                <!-- Main Options Panel -->
+                <div class="pdf-options-panel">
+                    <!-- Pages per Sheet -->
+                    <div class="pdf-option-row">
+                        <div class="pdf-option-label">
+                            Pages per Sheet
+                            <span class="pdf-tip" tabindex="0" aria-label="Combine pages per sheet">?<span class="pdf-tip-text" aria-hidden="true">Combine multiple source pages onto each output page.<br>1 = no combining &nbsp;2 = vertical stack &nbsp;4 = 2×2 grid</span></span>
+                        </div>
+                        <div class="pps-selector" role="group" aria-label="Pages per sheet">
+                            <button type="button" class="pps-btn" data-value="1" aria-pressed="false" title="One source page per output page — no combining">
+                                <svg class="pps-icon" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="22" height="30" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+                                <span>1</span>
+                            </button>
+                            <button type="button" class="pps-btn pps-active" data-value="2" aria-pressed="true" title="Stack two source pages vertically on one output page">
+                                <svg class="pps-icon" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="22" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="20" width="22" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/></svg>
+                                <span>2</span>
+                            </button>
+                            <button type="button" class="pps-btn" data-value="4" aria-pressed="false" title="Arrange four source pages in a 2×2 grid on one output page">
+                                <svg class="pps-icon" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="10" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="15" y="3" width="10" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="20" width="10" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="15" y="20" width="10" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/></svg>
+                                <span>4</span>
+                            </button>
+                        </div>
+                        <!-- Hidden select keeps existing JS compatibility -->
+                        <select id="pagesPerSheet" style="display:none;" aria-hidden="true">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="4">4</option>
                         </select>
-                        <span class="option-hint">Size of each output page</span>
                     </div>
 
-                    <div class="option-group">
-                        <label for="pagesPerSheet">Pages per Sheet</label>
-                        <select id="pagesPerSheet" title="How many source pages to combine onto one output page">
-                            <option value="1">1 (no combining)</option>
-                            <option value="2" selected>2 (stacked)</option>
-                            <option value="4">4 (2×2 grid)</option>
-                        </select>
-                        <span class="option-hint">How many pages to combine</span>
+                    <!-- Rotation -->
+                    <div class="pdf-option-row">
+                        <div class="pdf-option-label">
+                            Rotation
+                            <span class="pdf-tip" tabindex="0" aria-label="Rotation angle help">?<span class="pdf-tip-text" aria-hidden="true">Rotate pages clockwise.<br>0° = no change &nbsp; 90° = quarter turn<br>180° = flip &nbsp; 270° = three-quarter turn</span></span>
+                        </div>
+                        <div class="rotation-selector" role="group" aria-label="Rotation angle">
+                            <button type="button" class="rot-btn" data-value="0" aria-pressed="false" title="No rotation">0°</button>
+                            <button type="button" class="rot-btn rot-active" data-value="90" aria-pressed="true" title="Rotate 90° clockwise">90°</button>
+                            <button type="button" class="rot-btn" data-value="180" aria-pressed="false" title="Rotate 180° (flip upside down)">180°</button>
+                            <button type="button" class="rot-btn" data-value="270" aria-pressed="false" title="Rotate 270° clockwise (same as 90° counter-clockwise)">270°</button>
+                            <button type="button" class="rot-btn rot-custom-btn" data-value="custom" aria-pressed="false" title="Enter a custom angle">Custom</button>
+                        </div>
+                        <input type="number" id="rotationAngle" value="90" step="1" min="0" max="359" placeholder="Enter degrees (0–359)" class="rot-custom-input" style="display:none;" title="Custom rotation angle in degrees (0–359)" aria-label="Custom rotation angle">
                     </div>
 
-                    <div class="option-group">
-                        <label for="unchangedPages">Keep Unchanged</label>
-                        <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3,7" title="Page numbers to leave untouched (not rotated or combined). Use commas or ranges like 1-3.">
-                        <span class="option-hint">Pages to skip (e.g. 1-3,7)</span>
+                    <!-- Advanced Toggle -->
+                    <button type="button" class="pdf-advanced-toggle" id="advancedToggle" aria-expanded="false" aria-controls="advancedPanel">
+                        <span>Advanced Options</span>
+                        <span class="toggle-arrow" aria-hidden="true">&#9660;</span>
+                    </button>
+
+                    <!-- Advanced Panel (collapsible) -->
+                    <div class="pdf-advanced-panel" id="advancedPanel" aria-hidden="true">
+                        <div class="pdf-option-row">
+                            <div class="pdf-option-label">
+                                Page Size
+                                <span class="pdf-tip" tabindex="0" aria-label="Page size help">?<span class="pdf-tip-text" aria-hidden="true">Output page dimensions.<br>'Original' keeps the source size.<br>Other options resize to standard paper.</span></span>
+                            </div>
+                            <select id="pageSize" class="pdf-select" title="Output page dimensions">
+                                <optgroup label="Auto">
+                                    <option value="original">Original (source size)</option>
+                                </optgroup>
+                                <optgroup label="A-Series">
+                                    <option value="a4-portrait" selected>A4 Portrait (210 × 297 mm)</option>
+                                    <option value="a4-landscape">A4 Landscape (297 × 210 mm)</option>
+                                    <option value="a5-portrait">A5 Portrait (148 × 210 mm)</option>
+                                    <option value="a5-landscape">A5 Landscape (210 × 148 mm)</option>
+                                </optgroup>
+                                <optgroup label="US Sizes">
+                                    <option value="letter-portrait">Letter Portrait (8.5 × 11 in)</option>
+                                    <option value="letter-landscape">Letter Landscape (11 × 8.5 in)</option>
+                                    <option value="legal-portrait">Legal Portrait (8.5 × 14 in)</option>
+                                    <option value="legal-landscape">Legal Landscape (14 × 8.5 in)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div class="pdf-option-row">
+                            <div class="pdf-option-label">
+                                Keep Unchanged
+                                <span class="pdf-tip" tabindex="0" aria-label="Keep unchanged pages help">?<span class="pdf-tip-text" aria-hidden="true">Pages to skip rotation &amp; combining.<br>Use commas and ranges:<br><em>1,3,5-7</em> → pages 1, 3, and 5 through 7</span></span>
+                            </div>
+                            <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3,7" class="pdf-text-input" title="Page numbers to leave untouched (not rotated or combined). Use commas or ranges like 1-3." aria-label="Pages to keep unchanged">
+                            <span class="pdf-input-hint">Skip rotation &amp; combining for these pages</span>
+                        </div>
                     </div>
                 </div>
 

@@ -1324,6 +1324,400 @@ main > .content-split {
 }
 
 /* ============================================ */
+/* PDF Options Menu – Redesigned                */
+/* ============================================ */
+
+/* ---- Quick Presets ---- */
+.pdf-presets {
+    margin-bottom: 18px;
+}
+
+.pdf-section-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--metallic-mid);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-family: 'Rajdhani', sans-serif;
+    margin-bottom: 8px;
+}
+
+.preset-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    flex: 1 1 auto;
+    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    background: transparent;
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Rajdhani', sans-serif;
+    position: relative;
+}
+
+.preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.preset-btn.preset-active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    box-shadow: 0 0 12px var(--accent-subtle);
+}
+
+.preset-icon {
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preset-name {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    line-height: 1;
+}
+
+.preset-desc {
+    font-size: 9px;
+    opacity: 0.6;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+    text-transform: none;
+    font-weight: 400;
+}
+
+.preset-custom .preset-icon {
+    font-size: 14px;
+}
+
+/* ---- Options Panel ---- */
+.pdf-options-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.pdf-option-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pdf-option-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-family: 'Rajdhani', sans-serif;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ---- Tooltip Badge ---- */
+.pdf-tip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--metallic-mid);
+    color: var(--metallic-mid);
+    font-size: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0;
+    cursor: help;
+    position: relative;
+    text-transform: none;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+}
+
+.pdf-tip:hover,
+.pdf-tip:focus {
+    opacity: 1;
+    border-color: var(--accent);
+    color: var(--accent);
+    outline: none;
+}
+
+.pdf-tip-text {
+    display: none;
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+    background: var(--bg-elevated);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    color: var(--text-primary);
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    letter-spacing: 0.3px;
+    line-height: 1.6;
+    text-transform: none;
+    text-align: left;
+    min-width: 160px;
+    white-space: normal;
+    width: max-content;
+    max-width: 220px;
+}
+
+.pdf-tip:hover .pdf-tip-text,
+.pdf-tip:focus .pdf-tip-text {
+    display: block;
+}
+
+/* ---- Pages-per-Sheet Selector ---- */
+.pps-selector {
+    display: flex;
+    gap: 8px;
+}
+
+.pps-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 8px 8px;
+    background: transparent;
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.pps-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+}
+
+.pps-btn.pps-active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    box-shadow: 0 0 12px var(--accent-subtle);
+}
+
+.pps-icon {
+    width: 28px;
+    height: 36px;
+    stroke: currentColor;
+}
+
+/* ---- Rotation Selector ---- */
+.rotation-selector {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.rot-btn {
+    flex: 1 1 auto;
+    min-width: 44px;
+    padding: 7px 6px;
+    background: transparent;
+    border: 1px solid var(--input-border);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.22s ease;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.rot-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+}
+
+.rot-btn.rot-active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    box-shadow: 0 0 10px var(--accent-subtle);
+}
+
+.rot-custom-input {
+    background: var(--input-bg);
+    border: 1px solid var(--accent);
+    color: var(--text-primary);
+    padding: 7px 10px;
+    border-radius: 2px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+    letter-spacing: 1px;
+}
+
+.rot-custom-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-subtle), inset 0 0 8px var(--accent-subtle);
+}
+
+/* ---- Advanced Toggle ---- */
+.pdf-advanced-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    border: 1px solid var(--input-border);
+    border-radius: 2px;
+    padding: 8px 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    width: 100%;
+}
+
+.pdf-advanced-toggle:hover {
+    border-color: var(--metallic-mid);
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.02);
+}
+
+.pdf-advanced-toggle[aria-expanded="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.toggle-arrow {
+    font-size: 9px;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.pdf-advanced-toggle[aria-expanded="true"] .toggle-arrow {
+    transform: rotate(180deg);
+}
+
+/* ---- Advanced Panel ---- */
+.pdf-advanced-panel {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--input-border);
+    border-top: none;
+    border-radius: 0 0 3px 3px;
+    background: rgba(255,255,255,0.01);
+    animation: slideDown 0.2s ease;
+}
+
+.pdf-advanced-panel.panel-open {
+    display: flex;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Advanced Panel Inputs ---- */
+.pdf-select {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-primary);
+    padding: 9px 10px;
+    border-radius: 2px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+.pdf-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-subtle), inset 0 0 8px var(--accent-subtle);
+}
+
+.pdf-text-input {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-primary);
+    padding: 9px 10px;
+    border-radius: 2px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+    letter-spacing: 1px;
+}
+
+.pdf-text-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-subtle), inset 0 0 8px var(--accent-subtle);
+}
+
+.pdf-input-hint {
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+    opacity: 0.65;
+}
+
+/* ============================================ */
 /* Footer                                       */
 /* ============================================ */
 footer {
