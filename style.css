@@ -1130,8 +1130,16 @@ main > .content-split {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     margin-bottom: 20px;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .file-label {
@@ -1161,6 +1169,15 @@ main > .content-split {
     letter-spacing: 2px;
 }
 
+.page-info {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    opacity: 0.85;
+}
+
 .options-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1172,6 +1189,14 @@ main > .content-split {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.option-hint {
+    font-size: 10px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+    opacity: 0.7;
 }
 
 .option-group label {
@@ -1205,8 +1230,14 @@ main > .content-split {
     box-shadow: 0 0 15px var(--accent-subtle), inset 0 0 8px var(--accent-subtle);
 }
 
+.pdf-btn-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
 #processBtn {
-    width: 100%;
+    flex: 1;
     background: transparent;
     color: var(--accent);
     border: 1px solid var(--accent);
@@ -1236,13 +1267,60 @@ main > .content-split {
     box-shadow: 0 6px 30px var(--accent-glow);
 }
 
+#resetBtn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--metallic-mid);
+    padding: 12px 18px;
+    border-radius: 2px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+#resetBtn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background: rgba(255,255,255,0.04);
+}
+
+#progressBar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+#progressFill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
 #status {
-    margin-top: 10px;
+    margin-top: 4px;
     font-size: 12px;
     text-align: center;
     color: var(--accent);
     font-weight: 500;
     letter-spacing: 2px;
+}
+
+#status.status-success {
+    color: var(--accent-neon);
+}
+
+#status.status-error {
+    color: #ff4d4d;
+    letter-spacing: 1px;
 }
 
 /* ============================================ */
@@ -1597,6 +1675,7 @@ body[data-theme="light"] {
     .portrait-placeholder { width: 200px; height: 200px; }
     .orbit-ring { display: none; }
     .options-grid { grid-template-columns: 1fr; }
+    .pdf-btn-group { flex-direction: column; }
     .section-title { font-size: 20px; letter-spacing: 4px; }
     .skills-grid { grid-template-columns: 1fr 1fr; }
     .vignette { background: radial-gradient(ellipse at center, transparent 70%, rgba(8, 4, 18, 0.1) 100%); }
