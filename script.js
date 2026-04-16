@@ -602,8 +602,8 @@ if (processBtn) {
             processBtn.disabled = true;
             document.body.style.cursor = "wait";
 
-            // Read user options
-            const rotationAngle = parseInt(document.getElementById('rotationAngle').value, 10);
+            // Read user options — rotation accepts any degree value (including non-multiples of 90)
+            const rotationAngle = ((parseFloat(document.getElementById('rotationAngle').value) || 0) % 360 + 360) % 360;
             const pageSizeKey = document.getElementById('pageSize').value;
             const pagesPerSheet = parseInt(document.getElementById('pagesPerSheet').value, 10);
             const unchangedInput = document.getElementById('unchangedPages').value;
@@ -615,17 +615,11 @@ if (processBtn) {
             const totalPages = pdfDoc.getPageCount();
             const unchangedSet = parseUnchangedPages(unchangedInput, totalPages);
 
-            const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PAGE_SIZES[pageSizeKey];
-            const PADDING = 0;
-
-            // Compute grid layout based on pagesPerSheet
+            // Compute grid layout (cols/rows depend only on pagesPerSheet, not page size)
             let cols, rows;
             if (pagesPerSheet === 1) { cols = 1; rows = 1; }
             else if (pagesPerSheet === 2) { cols = 1; rows = 2; }
             else { cols = 2; rows = 2; } // 4-up
-
-            const slotW = (PAGE_WIDTH - (cols + 1) * PADDING) / cols;
-            const slotH = (PAGE_HEIGHT - (rows + 1) * PADDING) / rows;
 
             // Build an ordered list of operations that respects document order.
             // Unchanged pages act as group boundaries — they prevent processed
@@ -671,7 +665,26 @@ if (processBtn) {
                     continue;
                 }
 
-                const newPage = newPdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+                // Determine output sheet dimensions for this group.
+                // "original" uses the bounding box of the first group page after applying all rotations.
+                let sheetW, sheetH;
+                if (pageSizeKey === 'original') {
+                    const refPage = pdfDoc.getPages()[group[0]];
+                    const { width: rW, height: rH } = refPage.getSize();
+                    const refSrcRot = ((refPage.getRotation().angle % 360) + 360) % 360;
+                    const refTotal = (refSrcRot + rotationAngle) % 360;
+                    const refθ = refTotal * Math.PI / 180;
+                    sheetW = Math.abs(rW * Math.cos(refθ)) + Math.abs(rH * Math.sin(refθ));
+                    sheetH = Math.abs(rW * Math.sin(refθ)) + Math.abs(rH * Math.cos(refθ));
+                } else {
+                    sheetW = PAGE_SIZES[pageSizeKey].width;
+                    sheetH = PAGE_SIZES[pageSizeKey].height;
+                }
+
+                const slotW = sheetW / cols;
+                const slotH = sheetH / rows;
+
+                const newPage = newPdf.addPage([sheetW, sheetH]);
 
                 for (let j = 0; j < group.length; j++) {
                     const srcIdx = group[j];
@@ -683,14 +696,15 @@ if (processBtn) {
                     // Normalize existing /Rotate value
                     const srcRot = ((srcPage.getRotation().angle % 360) + 360) % 360;
 
-                    // Total rotation = source /Rotate + user-chosen layout rotation
-                    const layoutRotation = rotationAngle;
-                    const totalRotation = (srcRot + layoutRotation) % 360;
+                    // Total rotation = source /Rotate + user-chosen rotation
+                    const totalRotation = (srcRot + rotationAngle) % 360;
+                    const θRad = totalRotation * Math.PI / 180;
+                    const cosT = Math.cos(θRad);
+                    const sinT = Math.sin(θRad);
 
-                    // Final visual dimensions after total rotation
-                    const isTotalRotated = (totalRotation === 90 || totalRotation === 270);
-                    const finalVisW = isTotalRotated ? rawH : rawW;
-                    const finalVisH = isTotalRotated ? rawW : rawH;
+                    // Bounding box of the unscaled source page after rotation
+                    const finalVisW = Math.abs(rawW * cosT) + Math.abs(rawH * sinT);
+                    const finalVisH = Math.abs(rawW * sinT) + Math.abs(rawH * cosT);
 
                     // Scale to fit within slot
                     const scale = Math.min(slotW / finalVisW, slotH / finalVisH);
@@ -710,34 +724,27 @@ if (processBtn) {
                         row = Math.floor(j / 2);
                     }
 
-                    // Slot center
-                    const cx = PADDING + slotW * col + slotW / 2;
-                    const cy = PAGE_HEIGHT - (PADDING + slotH * row + slotH / 2);
+                    // Slot center (PDF y-axis: 0 at bottom)
+                    const cx = slotW * col + slotW / 2;
+                    const cy = sheetH - (slotH * row + slotH / 2);
 
-                    // Anchor position based on total rotation angle
-                    let x, y;
-                    switch (totalRotation) {
-                        case 90:
-                            x = cx + sh / 2;
-                            y = cy - sw / 2;
-                            break;
-                        case 180:
-                            x = cx + sw / 2;
-                            y = cy + sh / 2;
-                            break;
-                        case 270:
-                            x = cx - sh / 2;
-                            y = cy + sw / 2;
-                            break;
-                        default: // 0
-                            x = cx - sw / 2;
-                            y = cy - sh / 2;
-                            break;
-                    }
+                    // Compute where the bounding box of the rotated scaled page sits relative
+                    // to the anchor (bottom-left of unrotated page). pdf-lib rotates CCW around
+                    // the anchor, so corners transform as: (px,py) → (px·cosθ − py·sinθ, px·sinθ + py·cosθ)
+                    const cxArr = [0, sw, sw, 0];
+                    const cyArr = [0, 0, sh, sh];
+                    const rotX = cxArr.map((px, i) => px * cosT - cyArr[i] * sinT);
+                    const rotY = cxArr.map((px, i) => px * sinT + cyArr[i] * cosT);
+                    const bbCxRel = (Math.min(...rotX) + Math.max(...rotX)) / 2;
+                    const bbCyRel = (Math.min(...rotY) + Math.max(...rotY)) / 2;
+
+                    // Anchor so that the bounding box center lands on (cx, cy)
+                    const x = cx - bbCxRel;
+                    const y = cy - bbCyRel;
 
                     newPage.drawPage(embedded, {
-                        x: x,
-                        y: y,
+                        x,
+                        y,
                         xScale: scale,
                         yScale: scale,
                         rotate: degrees(totalRotation)
