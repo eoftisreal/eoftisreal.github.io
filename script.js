@@ -208,6 +208,17 @@ const statusDiv = document.getElementById('status');
 const progressBar = document.getElementById('progressBar');
 const progressFill = document.getElementById('progressFill');
 
+// PDF Fixer Elements
+const pdfFixerInput = document.getElementById('pdfFixerInput');
+const fixPdfBtn = document.getElementById('fixPdfBtn');
+const fixerResetBtn = document.getElementById('fixerResetBtn');
+const fixerFileNameDisplay = document.getElementById('fixerFileName');
+const fixerStatusDiv = document.getElementById('fixerStatus');
+const fixerProgressBar = document.getElementById('fixerProgressBar');
+const fixerProgressFill = document.getElementById('fixerProgressFill');
+const fixerIssuesPanel = document.getElementById('fixerIssuesPanel');
+const fixerIssuesList = document.getElementById('fixerIssuesList');
+
 // Random Cities
 const cities = [
     "London", "New York", "Tokyo", "Paris", "Sydney", "Dubai", "Singapore",
@@ -951,4 +962,311 @@ function downloadPDF(bytes, filename) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+// --- PDF Fixer Logic ---
+
+/**
+ * Detect issues in a loaded PDFDocument.
+ * Returns an array of issue description strings.
+ */
+function detectPdfIssues(pdfDoc) {
+    const issues = [];
+    const pages = pdfDoc.getPages();
+    const total = pages.length;
+
+    let rotatedPages = [];
+    let cropBoxOffsetPages = [];
+    let cropMismatchPages = [];
+    let zeroDimPages = [];
+
+    // Collect reference dimensions from first valid page for inconsistency check
+    let refW = null, refH = null;
+    let inconsistentPages = [];
+
+    for (let i = 0; i < total; i++) {
+        const page = pages[i];
+
+        // Check /Rotate metadata
+        const rot = ((page.getRotation().angle % 360) + 360) % 360;
+        if (rot !== 0) {
+            rotatedPages.push(i + 1);
+        }
+
+        // Get MediaBox and CropBox
+        let mediaBox = null;
+        let cropBox = null;
+        try { mediaBox = page.getMediaBox(); } catch (_) {}
+        try { cropBox = typeof page.getCropBox === 'function' ? page.getCropBox() : null; } catch (_) {}
+
+        if (!mediaBox) continue;
+
+        // Check for zero/invalid dimensions
+        if (mediaBox.width <= 0 || mediaBox.height <= 0) {
+            zeroDimPages.push(i + 1);
+            continue;
+        }
+
+        // Check CropBox offset
+        if (cropBox) {
+            if (cropBox.x !== 0 || cropBox.y !== 0) {
+                cropBoxOffsetPages.push(i + 1);
+            }
+            // Check CropBox vs MediaBox dimension mismatch (>2pt tolerance)
+            if (Math.abs(cropBox.width - mediaBox.width) > 2 || Math.abs(cropBox.height - mediaBox.height) > 2) {
+                cropMismatchPages.push(i + 1);
+            }
+        }
+
+        // Check for inconsistent page dimensions (portrait vs landscape size change)
+        const pageW = Math.round(mediaBox.width);
+        const pageH = Math.round(mediaBox.height);
+        if (refW === null) {
+            refW = pageW; refH = pageH;
+        } else if (pageW !== refW || pageH !== refH) {
+            if (!inconsistentPages.includes(i + 1)) inconsistentPages.push(i + 1);
+        }
+    }
+
+    // Build human-readable messages
+    if (rotatedPages.length > 0) {
+        const pageNums = rotatedPages.length === total
+            ? 'all pages'
+            : 'page' + (rotatedPages.length > 1 ? 's' : '') + ' ' + formatPageList(rotatedPages);
+        issues.push(`Embedded /Rotate metadata (${pageNums}) — may cause rotation errors`);
+    }
+    if (cropBoxOffsetPages.length > 0) {
+        const pageNums = cropBoxOffsetPages.length === total
+            ? 'all pages'
+            : 'page' + (cropBoxOffsetPages.length > 1 ? 's' : '') + ' ' + formatPageList(cropBoxOffsetPages);
+        issues.push(`CropBox offset from origin (${pageNums}) — may cause blank margins`);
+    }
+    if (cropMismatchPages.length > 0) {
+        const pageNums = cropMismatchPages.length === total
+            ? 'all pages'
+            : 'page' + (cropMismatchPages.length > 1 ? 's' : '') + ' ' + formatPageList(cropMismatchPages);
+        issues.push(`CropBox/MediaBox dimension mismatch (${pageNums}) — may clip content`);
+    }
+    if (zeroDimPages.length > 0) {
+        issues.push(`Zero or invalid page dimensions (pages ${formatPageList(zeroDimPages)})`);
+    }
+    if (inconsistentPages.length > 0) {
+        issues.push(`Inconsistent page sizes across document (${inconsistentPages.length} differing page${inconsistentPages.length > 1 ? 's' : ''})`);
+    }
+
+    return issues;
+}
+
+/**
+ * Format a list of page numbers compactly, e.g. [1,2,3,7] → "1-3, 7"
+ */
+function formatPageList(nums) {
+    if (nums.length === 0) return '';
+    const sorted = [...nums].sort((a, b) => a - b);
+    const ranges = [];
+    let start = sorted[0], end = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === end + 1) {
+            end = sorted[i];
+        } else {
+            ranges.push(start === end ? `${start}` : `${start}-${end}`);
+            start = end = sorted[i];
+        }
+    }
+    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+    return ranges.join(', ');
+}
+
+/**
+ * Apply all fixes to a PDFDocument in-place.
+ * Returns the number of pages successfully fixed.
+ */
+async function fixPdfIssues(pdfDoc) {
+    const { degrees, PDFName, PDFArray, PDFDict } = PDFLib;
+    const pages = pdfDoc.getPages();
+    let fixed = 0;
+
+    for (let i = 0; i < pages.length; i++) {
+        try {
+            const page = pages[i];
+
+            // 1. Reset /Rotate to 0°
+            page.setRotation(degrees(0));
+
+            // 2. Normalize CropBox to match MediaBox
+            let mediaBox = null;
+            try { mediaBox = page.getMediaBox(); } catch (_) {}
+            if (mediaBox && mediaBox.width > 0 && mediaBox.height > 0) {
+                try {
+                    page.setMediaBox(mediaBox.x, mediaBox.y, mediaBox.width, mediaBox.height);
+                    if (typeof page.setCropBox === 'function') {
+                        page.setCropBox(mediaBox.x, mediaBox.y, mediaBox.width, mediaBox.height);
+                    } else {
+                        // Directly set via page dictionary for pdf-lib versions without setCropBox
+                        const node = page.node;
+                        node.set(PDFName.of('CropBox'), pdfDoc.context.obj([
+                            mediaBox.x, mediaBox.y,
+                            mediaBox.x + mediaBox.width, mediaBox.y + mediaBox.height
+                        ]));
+                    }
+                } catch (_) {}
+
+                // 3. Remove annotations (Annots key) to clean up form fields and interactive elements
+                try {
+                    page.node.delete(PDFName.of('Annots'));
+                } catch (_) {}
+            }
+
+            fixed++;
+        } catch (_) {
+            // Skip pages that fail — they'll remain as-is
+        }
+
+        // Yield to UI thread periodically
+        if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
+    }
+
+    return fixed;
+}
+
+function setFixerProgress(current, total) {
+    if (!fixerProgressBar || !fixerProgressFill) return;
+    fixerProgressBar.style.display = 'block';
+    fixerProgressFill.style.width = total > 0 ? Math.round((current / total) * 100) + '%' : '0%';
+}
+
+function resetFixerTool() {
+    if (pdfFixerInput) pdfFixerInput.value = '';
+    if (fixerFileNameDisplay) fixerFileNameDisplay.textContent = 'No file chosen';
+    if (fixPdfBtn) fixPdfBtn.disabled = true;
+    if (fixerStatusDiv) { fixerStatusDiv.textContent = ''; fixerStatusDiv.className = ''; }
+    if (fixerProgressBar) { fixerProgressBar.style.display = 'none'; fixerProgressFill.style.width = '0%'; }
+    if (fixerIssuesPanel) fixerIssuesPanel.style.display = 'none';
+    if (fixerIssuesList) fixerIssuesList.innerHTML = '';
+    document.body.style.cursor = 'default';
+}
+
+if (pdfFixerInput) {
+    pdfFixerInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            resetFixerTool();
+            return;
+        }
+
+        // Show file name
+        fixerFileNameDisplay.textContent = file.name;
+        fixPdfBtn.disabled = true;
+        if (fixerStatusDiv) { fixerStatusDiv.textContent = ''; fixerStatusDiv.className = ''; }
+        if (fixerProgressBar) fixerProgressBar.style.display = 'none';
+        if (fixerIssuesPanel) fixerIssuesPanel.style.display = 'none';
+        if (fixerIssuesList) fixerIssuesList.innerHTML = '';
+
+        // Lazy-load check
+        if (typeof PDFLib === 'undefined') {
+            if (fixerStatusDiv) {
+                fixerStatusDiv.textContent = '⚠️ PDF library is still loading, please try again in a moment.';
+            }
+            return;
+        }
+
+        const { PDFDocument } = PDFLib;
+
+        try {
+            fixerStatusDiv.textContent = 'Analyzing PDF…';
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+            const total = pdfDoc.getPageCount();
+
+            // Run issue detection
+            const issues = detectPdfIssues(pdfDoc);
+
+            if (issues.length === 0) {
+                fixerStatusDiv.textContent = `✓ No issues found in ${total} page${total !== 1 ? 's' : ''}. PDF looks clean.`;
+                fixerStatusDiv.className = 'status-success';
+                if (fixerIssuesPanel) fixerIssuesPanel.style.display = 'none';
+            } else {
+                fixerStatusDiv.textContent = '';
+                fixerStatusDiv.className = '';
+                // Show issues panel
+                if (fixerIssuesList) {
+                    fixerIssuesList.innerHTML = issues.map(iss => `<div>• ${iss}</div>`).join('');
+                }
+                if (fixerIssuesPanel) fixerIssuesPanel.style.display = '';
+            }
+
+            // Enable fix button regardless (even clean PDFs can be re-saved)
+            fixPdfBtn.disabled = false;
+            fixPdfBtn.dataset.fileName = file.name;
+
+        } catch (err) {
+            console.error(err);
+            if (fixerStatusDiv) {
+                fixerStatusDiv.textContent = '✕ Could not read PDF: ' + err.message;
+                fixerStatusDiv.className = 'status-error';
+            }
+            fixPdfBtn.disabled = true;
+        }
+    });
+}
+
+if (fixPdfBtn) {
+    fixPdfBtn.addEventListener('click', async () => {
+        const file = pdfFixerInput && pdfFixerInput.files[0];
+        if (!file) return;
+
+        if (typeof PDFLib === 'undefined') {
+            if (fixerStatusDiv) fixerStatusDiv.textContent = '⚠️ PDF library is still loading, please try again.';
+            return;
+        }
+
+        const { PDFDocument } = PDFLib;
+
+        try {
+            fixPdfBtn.disabled = true;
+            document.body.style.cursor = 'wait';
+            if (fixerStatusDiv) { fixerStatusDiv.textContent = 'Loading PDF…'; fixerStatusDiv.className = ''; }
+            if (fixerProgressBar) { fixerProgressBar.style.display = 'block'; fixerProgressFill.style.width = '0%'; }
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+            const total = pdfDoc.getPageCount();
+
+            if (fixerStatusDiv) fixerStatusDiv.textContent = `Fixing ${total} page${total !== 1 ? 's' : ''}…`;
+            setFixerProgress(0, total);
+
+            // Apply fixes (yields periodically so progress bar updates)
+            const fixedCount = await fixPdfIssues(pdfDoc);
+            setFixerProgress(total, total);
+
+            if (fixerStatusDiv) fixerStatusDiv.textContent = 'Saving fixed PDF…';
+            const pdfBytes = await pdfDoc.save();
+
+            const baseName = file.name.replace(/\.pdf$/i, '');
+            downloadPDF(pdfBytes, baseName + '_fixed.pdf');
+
+            if (fixerStatusDiv) {
+                fixerStatusDiv.textContent = `✓ PDF fixed! ${fixedCount} of ${total} page${total !== 1 ? 's' : ''} processed — downloading now.`;
+                fixerStatusDiv.className = 'status-success';
+            }
+            // Hide issues panel after successful fix
+            if (fixerIssuesPanel) fixerIssuesPanel.style.display = 'none';
+            document.body.style.cursor = 'default';
+            fixPdfBtn.disabled = false;
+
+        } catch (err) {
+            console.error(err);
+            if (fixerStatusDiv) {
+                fixerStatusDiv.textContent = '✕ Error fixing PDF: ' + err.message;
+                fixerStatusDiv.className = 'status-error';
+            }
+            document.body.style.cursor = 'default';
+            fixPdfBtn.disabled = false;
+            if (fixerProgressBar) fixerProgressBar.style.display = 'none';
+        }
+    });
+}
+
+if (fixerResetBtn) {
+    fixerResetBtn.addEventListener('click', resetFixerTool);
 }

@@ -111,6 +111,37 @@
             </div>
         </div>
 
+        <!-- PDF Fixer Tool -->
+        <div class="project-card glass-panel">
+            <h4>PDF Fixer</h4>
+            <div class="desc">Fix problematic PDFs in one click. Removes rotation metadata, normalizes dimensions, and cleans corrupted structures.</div>
+
+            <div class="pdf-fixer-ui">
+                <div class="upload-section">
+                    <input type="file" id="pdfFixerInput" accept=".pdf" style="display: none;">
+                    <label for="pdfFixerInput" class="file-label">Choose PDF to Fix</label>
+                    <div class="file-info">
+                        <span id="fixerFileName">No file chosen</span>
+                    </div>
+                </div>
+
+                <div id="fixerIssuesPanel" class="fixer-issues-panel" style="display:none;">
+                    <div class="fixer-issues-title">Issues Detected:</div>
+                    <div id="fixerIssuesList"></div>
+                </div>
+
+                <div class="pdf-btn-group">
+                    <button id="fixPdfBtn" disabled>Fix PDF</button>
+                    <button id="fixerResetBtn">Reset</button>
+                </div>
+
+                <div id="fixerProgressBar" style="display:none;">
+                    <div id="fixerProgressFill"></div>
+                </div>
+                <div id="fixerStatus"></div>
+            </div>
+        </div>
+
         <!-- PDF Tool Interactive Project -->
         <div class="project-card glass-panel">
             <h4>PDF Page Combiner & Rotator</h4>
