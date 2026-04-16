@@ -1474,6 +1474,212 @@ main > .content-split {
 }
 
 /* ============================================ */
+/* Analyze PDF Button                           */
+/* ============================================ */
+
+#analyzePdfBtn {
+    flex: 1;
+    background: transparent;
+    color: var(--accent-neon, #39ff14);
+    border: 1px solid var(--accent-neon, #39ff14);
+    padding: 12px;
+    border-radius: 2px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+#analyzePdfBtn:disabled {
+    border-color: var(--metallic-mid);
+    color: var(--metallic-mid);
+    cursor: not-allowed;
+    opacity: 0.4;
+    box-shadow: none;
+}
+
+#analyzePdfBtn:not(:disabled):hover {
+    background: var(--accent-neon, #39ff14);
+    color: #000;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(57, 255, 20, 0.3);
+}
+
+/* Analysis Progress Bar */
+#analysisProgressBar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+#analysisProgressFill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-neon, #39ff14);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* ============================================ */
+/* PDF Analysis Results Panel                   */
+/* ============================================ */
+
+#analysisResultsPanel {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 16px;
+}
+
+.analysis-section {
+    margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.analysis-header {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(255,255,255,0.03);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.analysis-header-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.analysis-header-toggle:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+.analysis-header-critical {
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.07);
+    border-bottom-color: rgba(255, 107, 53, 0.2);
+}
+
+.analysis-header-warn {
+    color: #ffc107;
+    background: rgba(255, 193, 7, 0.07);
+    border-bottom-color: rgba(255, 193, 7, 0.2);
+}
+
+.analysis-content {
+    padding: 10px 12px;
+    font-size: 11.5px;
+    font-family: 'Inter', monospace, sans-serif;
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+.analysis-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.analysis-row:last-child {
+    border-bottom: none;
+}
+
+.analysis-key {
+    color: var(--metallic-mid);
+    flex-shrink: 0;
+    font-size: 11px;
+    min-width: 130px;
+}
+
+.analysis-val {
+    color: var(--text-primary);
+    text-align: right;
+    font-size: 11px;
+    word-break: break-all;
+}
+
+.analysis-val.ok {
+    color: var(--accent-neon, #39ff14);
+}
+
+.analysis-val.warn {
+    color: #ffc107;
+}
+
+.analysis-val.crit {
+    color: #ff6b35;
+}
+
+.analysis-page-block {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 11px;
+}
+
+.analysis-page-block:last-child {
+    border-bottom: none;
+}
+
+.analysis-page-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.analysis-issue-item {
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,107,53,0.1);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+}
+
+.analysis-issue-item:last-child {
+    border-bottom: none;
+}
+
+.analysis-issue-label {
+    font-weight: 600;
+    color: #ff6b35;
+    margin-right: 4px;
+}
+
+.analysis-warn-item {
+    padding: 4px 0;
+    color: var(--text-secondary);
+    font-size: 11.5px;
+}
+
+.analysis-rec-item {
+    padding: 4px 0;
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    display: flex;
+    gap: 6px;
+}
+
+.analysis-rec-num {
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+    min-width: 18px;
+}
+
+/* ============================================ */
 /* PDF Options Menu – Redesigned                */
 /* ============================================ */
 
