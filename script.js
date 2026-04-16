@@ -211,6 +211,7 @@ const progressFill = document.getElementById('progressFill');
 // PDF Fixer Elements
 const pdfFixerInput = document.getElementById('pdfFixerInput');
 const fixPdfBtn = document.getElementById('fixPdfBtn');
+const analyzePdfBtn = document.getElementById('analyzePdfBtn');
 const fixerResetBtn = document.getElementById('fixerResetBtn');
 const fixerFileNameDisplay = document.getElementById('fixerFileName');
 const fixerStatusDiv = document.getElementById('fixerStatus');
@@ -222,6 +223,22 @@ const fixerOptionsPanel = document.getElementById('fixerOptionsPanel');
 const decompressStreamsChk = document.getElementById('decompressStreams');
 const removeMetadataChk = document.getElementById('removeMetadata');
 const normalizeDimensionsChk = document.getElementById('normalizeDimensions');
+// Analysis panel elements
+const analysisProgress = document.getElementById('analysisProgress');
+const analysisStatus = document.getElementById('analysisStatus');
+const analysisProgressFill = document.getElementById('analysisProgressFill');
+const analysisResultsPanel = document.getElementById('analysisResultsPanel');
+const fileSummaryEl = document.getElementById('fileSummary');
+const fileDetailsEl = document.getElementById('fileDetails');
+const pageOverviewEl = document.getElementById('pageOverview');
+const pageDetailsListEl = document.getElementById('pageDetailsList');
+const pageDetailsPanelEl = document.getElementById('pageDetailsPanel');
+const issuesSectionEl = document.getElementById('issuesSectionEl');
+const issuesListEl = document.getElementById('issuesList');
+const warningsSectionEl = document.getElementById('warningsSectionEl');
+const warningsListEl = document.getElementById('warningsList');
+const recommendationsSectionEl = document.getElementById('recommendationsSectionEl');
+const recommendationsListEl = document.getElementById('recommendationsList');
 
 // Random Cities
 const cities = [
@@ -1307,11 +1324,15 @@ function resetFixerTool() {
     if (pdfFixerInput) pdfFixerInput.value = '';
     if (fixerFileNameDisplay) fixerFileNameDisplay.textContent = 'No file chosen';
     if (fixPdfBtn) fixPdfBtn.disabled = true;
+    if (analyzePdfBtn) analyzePdfBtn.disabled = true;
     if (fixerStatusDiv) { fixerStatusDiv.textContent = ''; fixerStatusDiv.className = ''; }
     if (fixerProgressBar) { fixerProgressBar.style.display = 'none'; fixerProgressFill.style.width = '0%'; }
     if (fixerIssuesPanel) fixerIssuesPanel.style.display = 'none';
     if (fixerIssuesList) fixerIssuesList.innerHTML = '';
     if (fixerOptionsPanel) fixerOptionsPanel.style.display = 'none';
+    // Reset analysis panel
+    if (analysisProgress) analysisProgress.style.display = 'none';
+    if (analysisResultsPanel) analysisResultsPanel.style.display = 'none';
     document.body.style.cursor = 'default';
 }
 
@@ -1369,8 +1390,9 @@ if (pdfFixerInput) {
             // Always show optimization options once a PDF is loaded
             if (fixerOptionsPanel) fixerOptionsPanel.style.display = '';
 
-            // Enable fix button regardless (even clean PDFs can be re-saved)
+            // Enable fix and analyze buttons regardless (even clean PDFs can be re-saved)
             fixPdfBtn.disabled = false;
+            if (analyzePdfBtn) analyzePdfBtn.disabled = false;
             fixPdfBtn.dataset.fileName = file.name;
 
         } catch (err) {
@@ -1483,4 +1505,648 @@ if (fixPdfBtn) {
 
 if (fixerResetBtn) {
     fixerResetBtn.addEventListener('click', resetFixerTool);
+}
+
+// --- PDF Comprehensive Analysis ---
+
+/**
+ * Toggle the detailed per-page analysis panel open/closed.
+ */
+function togglePageDetails() {
+    if (!pageDetailsPanelEl) return;
+    const open = pageDetailsPanelEl.style.display !== 'none';
+    pageDetailsPanelEl.style.display = open ? 'none' : '';
+    const hint = document.getElementById('pageDetailsToggleHint');
+    if (hint) hint.textContent = open ? '(click to expand)' : '(click to collapse)';
+}
+
+/**
+ * Helper: build an analysis row HTML string.
+ */
+function analysisRow(key, val, cls) {
+    const valClass = cls ? ` class="analysis-val ${cls}"` : ' class="analysis-val"';
+    return `<div class="analysis-row"><span class="analysis-key">${key}</span><span${valClass}>${val}</span></div>`;
+}
+
+/**
+ * Attempt to read PDF version from the raw bytes (first 8 bytes: "%PDF-x.x").
+ */
+function readPdfVersion(arrayBuffer) {
+    try {
+        const bytes = new Uint8Array(arrayBuffer, 0, 8);
+        const header = String.fromCharCode(...bytes);
+        const m = header.match(/%PDF-(\d+\.\d+)/);
+        return m ? m[1] : 'Unknown';
+    } catch (e) { return 'Unknown'; }
+}
+
+/**
+ * Attempt to read PDF metadata fields via pdf-lib.
+ */
+function readPdfMetadata(pdfDoc) {
+    const meta = {};
+    try { meta.title = pdfDoc.getTitle() || '—'; } catch (e) { meta.title = '—'; }
+    try { meta.author = pdfDoc.getAuthor() || '—'; } catch (e) { meta.author = '—'; }
+    try { meta.producer = pdfDoc.getProducer() || '—'; } catch (e) { meta.producer = '—'; }
+    try { meta.creator = pdfDoc.getCreator() || '—'; } catch (e) { meta.creator = '—'; }
+    try { const d = pdfDoc.getCreationDate(); meta.creationDate = d ? d.toLocaleString() : '—'; } catch (e) { meta.creationDate = '—'; }
+    try { const d = pdfDoc.getModificationDate(); meta.modDate = d ? d.toLocaleString() : '—'; } catch (e) { meta.modDate = '—'; }
+    return meta;
+}
+
+/**
+ * Count objects, FlateDecode streams, and other stream types from pdfDoc context.
+ */
+function analyzeFileObjects(pdfDoc) {
+    const { PDFName } = PDFLib;
+    let totalObjects = 0;
+    let flateStreams = 0;
+    let rawStreams = 0;
+    let otherStreams = 0;
+    let largestStreamBytes = 0;
+
+    try {
+        for (const [, obj] of pdfDoc.context.enumerateIndirectObjects()) {
+            totalObjects++;
+            if (!obj || !obj.dict || !obj.contents) continue;
+            const filter = obj.dict.get(PDFName.of('Filter'));
+            const len = obj.contents ? obj.contents.length : 0;
+            if (len > largestStreamBytes) largestStreamBytes = len;
+            if (!filter) {
+                rawStreams++;
+                continue;
+            }
+            let filterName = '';
+            if (typeof filter.asString === 'function') {
+                filterName = filter.asString();
+            } else if (typeof filter.asArray === 'function') {
+                const arr = filter.asArray();
+                filterName = arr.map(f => typeof f.asString === 'function' ? f.asString() : '?').join(', ');
+            }
+            if (filterName.includes('FlateDecode')) flateStreams++;
+            else otherStreams++;
+        }
+    } catch (e) { console.warn('PDF Analysis: error scanning objects:', e); }
+
+    return { totalObjects, flateStreams, rawStreams, otherStreams, largestStreamBytes };
+}
+
+/**
+ * Get a safe numeric value from a PDF array box entry.
+ */
+function safeBoxNum(val) {
+    if (!val) return null;
+    if (typeof val.asNumber === 'function') return val.asNumber();
+    if (typeof val.numberValue !== 'undefined') return val.numberValue;
+    return null;
+}
+
+/**
+ * Read a box (MediaBox/CropBox/BleedBox/TrimBox/ArtBox) from a page node.
+ * Returns {x, y, width, height} or null.
+ */
+function readPageBox(pageNode, boxName) {
+    const { PDFName } = PDFLib;
+    try {
+        const arr = pageNode.get(PDFName.of(boxName));
+        if (!arr) return null;
+        const vals = typeof arr.asArray === 'function' ? arr.asArray() : null;
+        if (!vals || vals.length < 4) return null;
+        const x1 = safeBoxNum(vals[0]);
+        const y1 = safeBoxNum(vals[1]);
+        const x2 = safeBoxNum(vals[2]);
+        const y2 = safeBoxNum(vals[3]);
+        if (x1 === null || y1 === null || x2 === null || y2 === null) return null;
+        return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+    } catch (e) { return null; }
+}
+
+/**
+ * Analyze resources (Fonts, XObjects, Images, Shadings, Patterns) on a page.
+ */
+function analyzePageResources(page) {
+    const { PDFName } = PDFLib;
+    const result = {
+        fontCount: 0,
+        xObjectCount: 0,
+        formXObjectCount: 0,
+        imageCount: 0,
+        shadingCount: 0,
+        patternCount: 0,
+        colorSpaces: [],
+    };
+    try {
+        const resources = page.node.get(PDFName.of('Resources'));
+        if (!resources || typeof resources.get !== 'function') return result;
+
+        // Fonts
+        const fonts = resources.get(PDFName.of('Font'));
+        if (fonts && typeof fonts.keys === 'function') {
+            result.fontCount = [...fonts.keys()].length;
+        }
+
+        // XObjects (images + form xobjects)
+        const xObjects = resources.get(PDFName.of('XObject'));
+        if (xObjects && typeof xObjects.keys === 'function') {
+            for (const key of xObjects.keys()) {
+                result.xObjectCount++;
+                const xobj = xObjects.get(key);
+                if (!xobj) continue;
+                const dictObj = xobj.dict ? xobj : null;
+                if (!dictObj) continue;
+                const subtype = dictObj.dict.get(PDFName.of('Subtype'));
+                const subtypeName = subtype && typeof subtype.asString === 'function' ? subtype.asString() : '';
+                if (subtypeName === 'Image') {
+                    result.imageCount++;
+                    // Color space
+                    try {
+                        const cs = dictObj.dict.get(PDFName.of('ColorSpace'));
+                        if (cs) {
+                            let csName = '';
+                            if (typeof cs.asString === 'function') csName = cs.asString();
+                            else if (typeof cs.asArray === 'function') {
+                                const arr = cs.asArray();
+                                csName = arr[0] && typeof arr[0].asString === 'function' ? arr[0].asString() : '';
+                            }
+                            if (csName && !result.colorSpaces.includes(csName)) result.colorSpaces.push(csName);
+                        }
+                    } catch (e) { /* skip */ }
+                } else if (subtypeName === 'Form') {
+                    result.formXObjectCount++;
+                }
+            }
+        }
+
+        // Shadings
+        const shadings = resources.get(PDFName.of('Shading'));
+        if (shadings && typeof shadings.keys === 'function') {
+            result.shadingCount = [...shadings.keys()].length;
+        }
+
+        // Patterns
+        const patterns = resources.get(PDFName.of('Pattern'));
+        if (patterns && typeof patterns.keys === 'function') {
+            result.patternCount = [...patterns.keys()].length;
+        }
+    } catch (e) { console.warn('PDF Analysis: error reading resources:', e); }
+    return result;
+}
+
+/**
+ * Get content stream sizes (compressed/uncompressed) for a page.
+ */
+function analyzePageContentStream(page) {
+    const { PDFName } = PDFLib;
+    let compressedSize = 0;
+    let filter = '—';
+    let streamCount = 0;
+
+    try {
+        const contents = page.node.get(PDFName.of('Contents'));
+        if (!contents) return { compressedSize, filter, streamCount };
+
+        const processStream = (streamObj) => {
+            if (!streamObj) return;
+            // Resolve indirect reference if needed
+            let resolved;
+            if (typeof streamObj.context !== 'undefined') {
+                resolved = streamObj;
+            } else if (page.doc && typeof page.doc.context !== 'undefined') {
+                resolved = page.doc.context.lookup(streamObj);
+            } else {
+                resolved = null;
+            }
+            if (!resolved || !resolved.dict) return;
+            streamCount++;
+            const sz = resolved.contents ? resolved.contents.length : 0;
+            compressedSize += sz;
+            const f = resolved.dict.get(PDFName.of('Filter'));
+            if (f && filter === '—') {
+                if (typeof f.asString === 'function') filter = f.asString();
+                else if (typeof f.asArray === 'function') {
+                    const arr = f.asArray();
+                    filter = arr.map(x => typeof x.asString === 'function' ? x.asString() : '?').join(', ');
+                }
+            }
+        };
+
+        if (typeof contents.asArray === 'function') {
+            contents.asArray().forEach(processStream);
+        } else {
+            processStream(contents);
+        }
+    } catch (e) { /* skip */ }
+
+    return { compressedSize, filter, streamCount };
+}
+
+/**
+ * Analyse one page and return a data object.
+ */
+function analyzeOnePage(page, index) {
+    const { PDFName } = PDFLib;
+    let mediaBox = null;
+    let cropBox = null;
+    let bleedBox = null;
+    let trimBox = null;
+    let artBox = null;
+
+    try { mediaBox = page.getMediaBox(); } catch (e) { /* skip */ }
+    try {
+        cropBox = typeof page.getCropBox === 'function' ? page.getCropBox() : readPageBox(page.node, 'CropBox');
+    } catch (e) { /* skip */ }
+    bleedBox = readPageBox(page.node, 'BleedBox');
+    trimBox  = readPageBox(page.node, 'TrimBox');
+    artBox   = readPageBox(page.node, 'ArtBox');
+
+    const rotation = ((page.getRotation().angle % 360) + 360) % 360;
+    const resources = analyzePageResources(page);
+    const contentStream = analyzePageContentStream(page);
+
+    // Annotations count
+    let annotCount = 0;
+    try {
+        const annots = page.node.get(PDFName.of('Annots'));
+        if (annots && typeof annots.asArray === 'function') annotCount = annots.asArray().length;
+    } catch (e) { /* skip */ }
+
+    // Rendering issue detection for this page
+    const renderingIssues = [];
+    if (mediaBox) {
+        if (mediaBox.width <= 0 || mediaBox.height <= 0) renderingIssues.push('Zero or invalid MediaBox dimensions');
+        if (cropBox && (cropBox.width > mediaBox.width + 2 || cropBox.height > mediaBox.height + 2)) {
+            renderingIssues.push('CropBox exceeds MediaBox — content may be clipped');
+        }
+        if (cropBox && (cropBox.x !== 0 || cropBox.y !== 0)) {
+            renderingIssues.push(`CropBox offset (${cropBox.x.toFixed(1)}, ${cropBox.y.toFixed(1)}) — blank margins likely`);
+        }
+        const ratio = mediaBox.width > 0 ? mediaBox.height / mediaBox.width : 0;
+        if (ratio > 10 || (ratio > 0 && ratio < 0.1)) renderingIssues.push(`Extreme aspect ratio (${ratio.toFixed(2)}:1)`);
+    }
+    if (rotation !== 0) renderingIssues.push(`Embedded /Rotate=${rotation}° — rotation may be inverted`);
+
+    return {
+        index,
+        mediaBox,
+        cropBox,
+        bleedBox,
+        trimBox,
+        artBox,
+        rotation,
+        resources,
+        contentStream,
+        annotCount,
+        renderingIssues,
+    };
+}
+
+/**
+ * Build a human-readable size string.
+ */
+function fmtBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
+/**
+ * Build a box string like "612 × 792 pt" or include offset info.
+ */
+function fmtBox(box, showOffset) {
+    if (!box) return '—';
+    let s = `${box.width.toFixed(1)} × ${box.height.toFixed(1)} pt`;
+    if (showOffset && (box.x !== 0 || box.y !== 0)) s += ` @ (${box.x.toFixed(1)}, ${box.y.toFixed(1)})`;
+    return s;
+}
+
+/**
+ * Main comprehensive PDF analysis function.
+ * Returns a structured analysis data object.
+ */
+async function analyzePdfComprehensive(file, arrayBuffer, pdfDoc) {
+    const total = pdfDoc.getPageCount();
+    const fileSizeMB = file.size / (1024 * 1024);
+    const version = readPdfVersion(arrayBuffer);
+    const metadata = readPdfMetadata(pdfDoc);
+    const objects = analyzeFileObjects(pdfDoc);
+
+    // Per-page analysis
+    const pages = pdfDoc.getPages();
+    const pageData = [];
+    for (let i = 0; i < pages.length; i++) {
+        if (i % 3 === 0) await new Promise(r => setTimeout(r, 0)); // yield to UI
+        pageData.push(analyzeOnePage(pages[i], i));
+    }
+
+    // Page-level inconsistency detection
+    const sizeMap = {};
+    const rotationMap = {};
+    const cropOffsetPages = [];
+    let zeroDimPages = [];
+    let cropGtMediaPages = [];
+
+    for (const pd of pageData) {
+        // Size grouping
+        if (pd.mediaBox) {
+            const key = `${Math.round(pd.mediaBox.width)}×${Math.round(pd.mediaBox.height)}`;
+            sizeMap[key] = (sizeMap[key] || []);
+            sizeMap[key].push(pd.index + 1);
+        } else {
+            zeroDimPages.push(pd.index + 1);
+        }
+        // Rotation grouping
+        const rk = `${pd.rotation}°`;
+        rotationMap[rk] = (rotationMap[rk] || []);
+        rotationMap[rk].push(pd.index + 1);
+        // CropBox offset
+        if (pd.cropBox && (pd.cropBox.x !== 0 || pd.cropBox.y !== 0)) cropOffsetPages.push(pd.index + 1);
+        // CropBox > MediaBox
+        if (pd.mediaBox && pd.cropBox && (pd.cropBox.width > pd.mediaBox.width + 2 || pd.cropBox.height > pd.mediaBox.height + 2)) {
+            cropGtMediaPages.push(pd.index + 1);
+        }
+    }
+
+    // Build issues list
+    const issues = [];
+    if (cropOffsetPages.length > 0) {
+        issues.push({
+            severity: 'CRITICAL',
+            message: `CropBox offset on ${cropOffsetPages.length === total ? 'all' : formatPageList(cropOffsetPages)} page${cropOffsetPages.length > 1 ? 's' : ''}`,
+            detail: 'A non-zero CropBox origin shifts the visible area and causes blank margins or clipped content when rendering.',
+        });
+    }
+    if (Object.keys(rotationMap).some(k => k !== '0°')) {
+        const rotatedPages = Object.entries(rotationMap).filter(([k]) => k !== '0°').flatMap(([, v]) => v);
+        issues.push({
+            severity: 'CRITICAL',
+            message: `Embedded /Rotate metadata on ${rotatedPages.length === total ? 'all' : formatPageList(rotatedPages)} page${rotatedPages.length > 1 ? 's' : ''}`,
+            detail: 'Embedded rotation is applied by the PDF viewer on top of any rotation your tool applies, causing double-rotation or inverted orientation.',
+        });
+    }
+    if (Object.keys(sizeMap).length > 1) {
+        issues.push({
+            severity: 'HIGH',
+            message: `Inconsistent page sizes (${Object.keys(sizeMap).length} different dimensions)`,
+            detail: 'Mixed page sizes can cause scaling errors and layout inconsistencies during PDF processing.',
+        });
+    }
+    if (cropGtMediaPages.length > 0) {
+        issues.push({
+            severity: 'HIGH',
+            message: `CropBox exceeds MediaBox on pages ${formatPageList(cropGtMediaPages)}`,
+            detail: 'A CropBox larger than the MediaBox causes content to be clipped or rendered outside the visible area.',
+        });
+    }
+    if (zeroDimPages.length > 0) {
+        issues.push({
+            severity: 'CRITICAL',
+            message: `Zero or invalid dimensions on pages ${formatPageList(zeroDimPages)}`,
+            detail: 'Pages with zero width or height cannot be rendered and will appear blank.',
+        });
+    }
+
+    // Build warnings list
+    const warnings = [];
+    if (fileSizeMB >= 50) warnings.push(`Very large file (${fileSizeMB.toFixed(1)} MB) — may cause memory issues or browser crashes during processing.`);
+    else if (fileSizeMB >= 20) warnings.push(`Large file (${fileSizeMB.toFixed(1)} MB) — stream decompression recommended before processing.`);
+    if (objects.flateStreams > 0) warnings.push(`FlateDecode compressed streams (${objects.flateStreams}) — PDF-lib must decompress all streams on load; overhead scales with file size.`);
+    const totalImages = pageData.reduce((s, p) => s + p.resources.imageCount, 0);
+    if (totalImages > 50) warnings.push(`${totalImages} embedded images — high resource usage; may cause memory pressure.`);
+    const totalFormXObj = pageData.reduce((s, p) => s + p.resources.formXObjectCount, 0);
+    if (totalFormXObj > 0) warnings.push(`${totalFormXObj} Form XObject${totalFormXObj > 1 ? 's' : ''} (complex vector drawings) — these compressed/optimized structures are the most common cause of blank pages in large PDFs.`);
+    if (objects.largestStreamBytes > 5 * 1024 * 1024) warnings.push(`Largest stream: ${fmtBytes(objects.largestStreamBytes)} — very large individual stream; decompression may be slow.`);
+
+    // Build recommendations
+    const recommendations = [];
+    if (cropOffsetPages.length > 0) recommendations.push('Normalize CropBox to match MediaBox (remove offset) — fixes blank margin areas.');
+    if (Object.keys(rotationMap).some(k => k !== '0°')) recommendations.push('Reset embedded /Rotate to 0° — prevents double-rotation when your tool applies rotation.');
+    if (objects.flateStreams > 0) recommendations.push('Decompress all FlateDecode streams — resolves rendering errors from cascading recompression on large PDFs with complex vector drawings.');
+    if (Object.keys(sizeMap).length > 1) recommendations.push('Standardize all page dimensions to a consistent size before processing.');
+    if (totalImages > 50) recommendations.push('Consider downscaling embedded images to reduce memory pressure.');
+    if (recommendations.length === 0) recommendations.push('No critical fixes required. The PDF structure looks clean.');
+
+    // Estimated decompressed memory
+    const estimatedDecompressedMB = fileSizeMB * (objects.flateStreams > 0 ? 3.5 : 1.2);
+
+    return {
+        file: { name: file.name, sizeMB: fileSizeMB, version, ...metadata },
+        objects,
+        pageCount: total,
+        pageData,
+        sizeMap,
+        rotationMap,
+        cropOffsetPages,
+        cropGtMediaPages,
+        zeroDimPages,
+        totalImages,
+        totalFormXObj,
+        estimatedDecompressedMB,
+        issues,
+        warnings,
+        recommendations,
+    };
+}
+
+/**
+ * Display comprehensive analysis results in the UI.
+ */
+function displayAnalysisResults(data) {
+    if (!analysisResultsPanel) return;
+    analysisResultsPanel.style.display = '';
+
+    // --- FILE SUMMARY ---
+    if (fileSummaryEl) {
+        fileSummaryEl.innerHTML =
+            analysisRow('File', escapeHtml(data.file.name)) +
+            analysisRow('Size', `${data.file.sizeMB.toFixed(2)} MB`) +
+            analysisRow('Format', `PDF ${data.file.version}`) +
+            analysisRow('Pages', String(data.pageCount)) +
+            analysisRow('Producer', escapeHtml(data.file.producer)) +
+            analysisRow('Author', escapeHtml(data.file.author)) +
+            analysisRow('Created', escapeHtml(data.file.creationDate));
+    }
+
+    // --- FILE DETAILS ---
+    if (fileDetailsEl) {
+        const obj = data.objects;
+        const flateClass = obj.flateStreams > 0 ? 'warn' : 'ok';
+        const formClass = data.totalFormXObj > 0 ? 'warn' : 'ok';
+        fileDetailsEl.innerHTML =
+            analysisRow('Total Objects', String(obj.totalObjects)) +
+            analysisRow('FlateDecode Streams', String(obj.flateStreams), flateClass) +
+            analysisRow('Raw Streams', String(obj.rawStreams)) +
+            analysisRow('Other Streams', String(obj.otherStreams)) +
+            analysisRow('Largest Stream', fmtBytes(obj.largestStreamBytes)) +
+            analysisRow('Total Images', String(data.totalImages)) +
+            analysisRow('Form XObjects', String(data.totalFormXObj), formClass) +
+            analysisRow('Est. Decompressed', `~${data.estimatedDecompressedMB.toFixed(1)} MB`);
+    }
+
+    // --- PAGE OVERVIEW ---
+    if (pageOverviewEl) {
+        let html = '';
+        // Size consistency
+        const sizeKeys = Object.keys(data.sizeMap);
+        if (sizeKeys.length === 1) {
+            html += analysisRow('Page Size Consistency', '✓ Consistent', 'ok');
+            html += analysisRow('Page Size', sizeKeys[0].replace('×', ' × ') + ' pt');
+        } else {
+            html += analysisRow('Page Size Consistency', `✗ ${sizeKeys.length} Different Sizes`, 'crit');
+            sizeKeys.forEach(k => {
+                html += analysisRow(`  ${k.replace('×', ' × ')} pt`, `${data.sizeMap[k].length} page${data.sizeMap[k].length > 1 ? 's' : ''}`);
+            });
+        }
+        // Rotation consistency
+        const rotKeys = Object.keys(data.rotationMap);
+        if (rotKeys.length === 1 && rotKeys[0] === '0°') {
+            html += analysisRow('Rotation Consistency', '✓ All 0° (no rotation)', 'ok');
+        } else {
+            const hasNonZero = rotKeys.some(k => k !== '0°');
+            html += analysisRow('Rotation Consistency', hasNonZero ? `✗ Mixed rotations` : '✓ All 0°', hasNonZero ? 'crit' : 'ok');
+            rotKeys.forEach(k => {
+                html += analysisRow(`  /Rotate = ${k}`, `${data.rotationMap[k].length} page${data.rotationMap[k].length > 1 ? 's' : ''}`);
+            });
+        }
+        // CropBox
+        const cbClass = data.cropOffsetPages.length > 0 ? 'crit' : 'ok';
+        html += analysisRow('CropBox Offsets', data.cropOffsetPages.length > 0 ? `✗ ${data.cropOffsetPages.length} page${data.cropOffsetPages.length > 1 ? 's' : ''} with offset` : '✓ All at origin', cbClass);
+        // Images & vectors
+        html += analysisRow('Total Embedded Images', String(data.totalImages));
+        html += analysisRow('Complex Vector (Form XObj)', String(data.totalFormXObj), data.totalFormXObj > 0 ? 'warn' : 'ok');
+        pageOverviewEl.innerHTML = html;
+    }
+
+    // --- DETAILED PAGE ANALYSIS ---
+    if (pageDetailsListEl) {
+        pageDetailsListEl.innerHTML = data.pageData.map(pd => {
+            const mb = pd.mediaBox;
+            const cb = pd.cropBox;
+            let rows = '';
+            rows += analysisRow('MediaBox', fmtBox(mb, false));
+            rows += analysisRow('CropBox', fmtBox(cb, true), cb && (cb.x !== 0 || cb.y !== 0) ? 'warn' : '');
+            if (pd.bleedBox) rows += analysisRow('BleedBox', fmtBox(pd.bleedBox, true));
+            if (pd.trimBox)  rows += analysisRow('TrimBox',  fmtBox(pd.trimBox, true));
+            if (pd.artBox)   rows += analysisRow('ArtBox',   fmtBox(pd.artBox, true));
+            rows += analysisRow('/Rotate', `${pd.rotation}°`, pd.rotation !== 0 ? 'crit' : 'ok');
+            rows += analysisRow('Fonts', String(pd.resources.fontCount));
+            rows += analysisRow('Images', String(pd.resources.imageCount));
+            rows += analysisRow('Form XObjects', String(pd.resources.formXObjectCount), pd.resources.formXObjectCount > 0 ? 'warn' : '');
+            rows += analysisRow('Shadings', String(pd.resources.shadingCount));
+            rows += analysisRow('Patterns', String(pd.resources.patternCount));
+            rows += analysisRow('Annotations', String(pd.annotCount));
+            rows += analysisRow('Content Stream Size', fmtBytes(pd.contentStream.compressedSize));
+            rows += analysisRow('Stream Filter', pd.contentStream.filter);
+            if (pd.resources.colorSpaces.length > 0) rows += analysisRow('Image Color Spaces', pd.resources.colorSpaces.join(', '));
+            const issueHtml = pd.renderingIssues.length > 0
+                ? `<div style="margin-top:4px; color:#ff6b35; font-size:10.5px;">${pd.renderingIssues.map(i => `⚠ ${i}`).join('<br>')}</div>`
+                : '';
+            return `<div class="analysis-page-block">
+                <div class="analysis-page-title">Page ${pd.index + 1}</div>
+                ${rows}${issueHtml}
+            </div>`;
+        }).join('');
+    }
+
+    // --- ISSUES ---
+    if (issuesListEl && issuesSectionEl) {
+        if (data.issues.length > 0) {
+            issuesSectionEl.style.display = '';
+            issuesListEl.innerHTML = data.issues.map(iss =>
+                `<div class="analysis-issue-item"><span class="analysis-issue-label">[${iss.severity}]</span>${escapeHtml(iss.message)}<div style="font-size:10.5px;opacity:0.7;margin-top:2px;">${escapeHtml(iss.detail)}</div></div>`
+            ).join('');
+        } else {
+            issuesSectionEl.style.display = '';
+            issuesListEl.innerHTML = '<div style="color:var(--accent-neon,#39ff14);">✓ No critical issues detected.</div>';
+        }
+    }
+
+    // --- WARNINGS ---
+    if (warningsListEl && warningsSectionEl) {
+        if (data.warnings.length > 0) {
+            warningsSectionEl.style.display = '';
+            warningsListEl.innerHTML = data.warnings.map(w =>
+                `<div class="analysis-warn-item">• ${escapeHtml(w)}</div>`
+            ).join('');
+        } else {
+            warningsSectionEl.style.display = 'none';
+        }
+    }
+
+    // --- RECOMMENDATIONS ---
+    if (recommendationsListEl && recommendationsSectionEl) {
+        recommendationsSectionEl.style.display = '';
+        recommendationsListEl.innerHTML = data.recommendations.map((r, i) =>
+            `<div class="analysis-rec-item"><span class="analysis-rec-num">${i + 1}.</span><span>${escapeHtml(r)}</span></div>`
+        ).join('');
+    }
+
+    // Log full data to console for power users
+    console.log('[PDF Analyzer] Full analysis data:', data);
+}
+
+/**
+ * Simple HTML escape helper.
+ */
+function escapeHtml(str) {
+    if (!str || typeof str !== 'string') return String(str || '');
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+if (analyzePdfBtn) {
+    analyzePdfBtn.addEventListener('click', async () => {
+        const file = pdfFixerInput && pdfFixerInput.files[0];
+        if (!file) return;
+
+        if (typeof PDFLib === 'undefined') {
+            if (fixerStatusDiv) fixerStatusDiv.textContent = '⚠️ PDF library is still loading, please try again.';
+            return;
+        }
+
+        const { PDFDocument } = PDFLib;
+
+        try {
+            analyzePdfBtn.disabled = true;
+            document.body.style.cursor = 'wait';
+
+            // Hide previous results
+            if (analysisResultsPanel) analysisResultsPanel.style.display = 'none';
+            if (analysisProgress) {
+                analysisProgress.style.display = '';
+                analysisProgressFill.style.width = '0%';
+            }
+            if (analysisStatus) analysisStatus.textContent = 'Loading PDF…';
+
+            const arrayBuffer = await file.arrayBuffer();
+            if (analysisProgressFill) analysisProgressFill.style.width = '20%';
+            if (analysisStatus) analysisStatus.textContent = 'Parsing PDF structure…';
+
+            const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+            if (analysisProgressFill) analysisProgressFill.style.width = '40%';
+            if (analysisStatus) analysisStatus.textContent = 'Analyzing pages…';
+
+            const analysisData = await analyzePdfComprehensive(file, arrayBuffer, pdfDoc);
+            if (analysisProgressFill) analysisProgressFill.style.width = '90%';
+            if (analysisStatus) analysisStatus.textContent = 'Rendering results…';
+            await new Promise(r => setTimeout(r, 0));
+
+            displayAnalysisResults(analysisData);
+
+            if (analysisProgressFill) analysisProgressFill.style.width = '100%';
+            if (analysisStatus) {
+                analysisStatus.textContent = `✓ Analysis complete — ${analysisData.pageCount} page${analysisData.pageCount !== 1 ? 's' : ''} scanned.`;
+            }
+            await new Promise(r => setTimeout(r, 600));
+            if (analysisProgress) analysisProgress.style.display = 'none';
+
+            document.body.style.cursor = 'default';
+            analyzePdfBtn.disabled = false;
+
+        } catch (err) {
+            console.error(err);
+            if (analysisStatus) analysisStatus.textContent = '✕ Analysis failed: ' + err.message;
+            document.body.style.cursor = 'default';
+            analyzePdfBtn.disabled = false;
+        }
+    });
 }

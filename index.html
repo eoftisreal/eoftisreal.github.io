@@ -115,25 +115,25 @@
 
         <!-- PDF Fixer Tool -->
         <div class="project-card glass-panel">
-            <h4>PDF Fixer</h4>
-            <div class="desc">Fix problematic PDFs in one click. Decompresses vector streams, removes rotation metadata, normalizes dimensions, and cleans corrupted structures. Ideal for large PDFs (50 MB+) with blank pages.</div>
+            <h4>PDF Fixer &amp; Analyzer</h4>
+            <div class="desc">Upload any PDF to get a complete diagnostic analysis and automated fixes. Diagnoses complex vector streams, rotation metadata, CropBox issues, and rendering problems. Ideal for large PDFs (50 MB+) with blank pages.</div>
 
             <div class="pdf-fixer-ui">
                 <div class="upload-section">
                     <input type="file" id="pdfFixerInput" accept=".pdf" style="display: none;">
-                    <label for="pdfFixerInput" class="file-label">Choose PDF to Fix</label>
+                    <label for="pdfFixerInput" class="file-label">Choose PDF File</label>
                     <div class="file-info">
                         <span id="fixerFileName">No file chosen</span>
                     </div>
                 </div>
 
                 <div id="fixerIssuesPanel" class="fixer-issues-panel" style="display:none;">
-                    <div class="fixer-issues-title">Issues Detected:</div>
+                    <div class="fixer-issues-title">Quick Scan — Issues Detected:</div>
                     <div id="fixerIssuesList"></div>
                 </div>
 
                 <div id="fixerOptionsPanel" style="display:none; margin: 15px 0; padding: 12px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px;">
-                    <div style="font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;">Optimization Options:</div>
+                    <div style="font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;">Fix Options:</div>
                     <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer; font-size: 12px; color: var(--text-secondary);">
                         <input type="checkbox" id="decompressStreams" checked style="margin-right: 8px; accent-color: var(--accent);">
                         <span>Decompress Streams <em style="opacity:0.6; font-size:11px;">(required for large PDFs with complex vectors)</em></span>
@@ -149,7 +149,8 @@
                 </div>
 
                 <div class="pdf-btn-group">
-                    <button id="fixPdfBtn" disabled>Fix &amp; Optimize PDF</button>
+                    <button id="analyzePdfBtn" disabled>&#128202; Analyze PDF</button>
+                    <button id="fixPdfBtn" disabled>&#128295; Fix &amp; Optimize</button>
                     <button id="fixerResetBtn">Reset</button>
                 </div>
 
@@ -157,6 +158,63 @@
                     <div id="fixerProgressFill"></div>
                 </div>
                 <div id="fixerStatus"></div>
+
+                <!-- Analysis Progress -->
+                <div id="analysisProgress" style="display:none; margin-top: 12px;">
+                    <div id="analysisStatus" style="font-size: 12px; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px;">Analyzing…</div>
+                    <div id="analysisProgressBar"><div id="analysisProgressFill"></div></div>
+                </div>
+
+                <!-- Analysis Results Panel -->
+                <div id="analysisResultsPanel" style="display:none; margin-top: 20px;">
+
+                    <!-- Summary -->
+                    <div class="analysis-section">
+                        <div class="analysis-header">&#128203; FILE SUMMARY</div>
+                        <div id="fileSummary" class="analysis-content"></div>
+                    </div>
+
+                    <!-- File-Level Details -->
+                    <div class="analysis-section">
+                        <div class="analysis-header">&#128269; FILE DETAILS</div>
+                        <div id="fileDetails" class="analysis-content"></div>
+                    </div>
+
+                    <!-- Page Overview -->
+                    <div class="analysis-section">
+                        <div class="analysis-header">&#128196; PAGE OVERVIEW</div>
+                        <div id="pageOverview" class="analysis-content"></div>
+                    </div>
+
+                    <!-- Detailed Page Analysis (Expandable) -->
+                    <div class="analysis-section">
+                        <div class="analysis-header analysis-header-toggle" onclick="togglePageDetails()">
+                            &#128209; DETAILED PAGE ANALYSIS <span id="pageDetailsToggleHint" style="opacity:0.6; font-weight:400;">(click to expand)</span>
+                        </div>
+                        <div id="pageDetailsPanel" class="analysis-content" style="display:none; max-height: 420px; overflow-y: auto;">
+                            <div id="pageDetailsList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Issues Found -->
+                    <div class="analysis-section" id="issuesSectionEl" style="display:none;">
+                        <div class="analysis-header analysis-header-critical">&#9888;&#65039; ISSUES DETECTED</div>
+                        <div id="issuesList" class="analysis-content"></div>
+                    </div>
+
+                    <!-- Warnings -->
+                    <div class="analysis-section" id="warningsSectionEl" style="display:none;">
+                        <div class="analysis-header analysis-header-warn">&#9889; WARNINGS</div>
+                        <div id="warningsList" class="analysis-content"></div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="analysis-section" id="recommendationsSectionEl" style="display:none;">
+                        <div class="analysis-header">&#128161; RECOMMENDATIONS</div>
+                        <div id="recommendationsList" class="analysis-content"></div>
+                    </div>
+
+                </div>
             </div>
         </div>
 
