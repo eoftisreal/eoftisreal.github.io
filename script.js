@@ -844,11 +844,13 @@ if (processBtn) {
                     // Normalize existing /Rotate value
                     const srcRot = ((srcPage.getRotation().angle % 360) + 360) % 360;
 
-                    // Total rotation = source /Rotate + user-chosen rotation
-                    const totalRotation = (srcRot + rotationAngle) % 360;
-                    const θRad = totalRotation * Math.PI / 180;
-                    const cosT = Math.cos(θRad);
-                    const sinT = Math.sin(θRad);
+                    // pdf-lib's embedPages bakes the page's /Rotate value into the XObject
+                    // Matrix, so the embedded form already renders in the page's natural
+                    // (display) orientation. Only the user-chosen rotation should be applied
+                    // via drawPage — adding srcRot again would double-rotate the page.
+                    const θRad = rotationAngle * Math.PI / 180;
+                    const cosRot = Math.cos(θRad);
+                    const sinRot = Math.sin(θRad);
 
                     // Use CropBox as the effective visible bounds — this is exactly what
                     // embedPages sets as the XObject BBox. Using MediaBox here causes
@@ -860,9 +862,14 @@ if (processBtn) {
                     const visX = cropBox.x, visY = cropBox.y;
                     const visW = cropBox.width, visH = cropBox.height;
 
-                    // Bounding box dimensions of the visible area after rotation
-                    const finalVisW = Math.abs(visW * cosT) + Math.abs(visH * sinT);
-                    const finalVisH = Math.abs(visW * sinT) + Math.abs(visH * cosT);
+                    // Natural dimensions after the XObject Matrix applies srcRot:
+                    // 90°/270° swap width ↔ height; 0°/180° keep them the same.
+                    const natW = (srcRot % 180 === 0) ? visW : visH;
+                    const natH = (srcRot % 180 === 0) ? visH : visW;
+
+                    // Bounding box dimensions of the visible area after user rotation
+                    const finalVisW = Math.abs(natW * cosRot) + Math.abs(natH * sinRot);
+                    const finalVisH = Math.abs(natW * sinRot) + Math.abs(natH * cosRot);
 
                     // Scale to fit within slot
                     const scale = Math.min(slotW / finalVisW, slotH / finalVisH);
@@ -883,18 +890,22 @@ if (processBtn) {
                     const cx = slotW * col + slotW / 2;
                     const cy = sheetH - (slotH * row + slotH / 2);
 
-                    // Compute the bounding box of the rotated CropBox in page coordinates,
-                    // relative to the draw anchor. This accounts for the CropBox origin offset
-                    // so the visible content is precisely centered in the slot.
-                    // pdf-lib rotates CCW around the anchor: (px,py) → (px·cosθ − py·sinθ, px·sinθ + py·cosθ)
-                    const cX = [visX, visX + visW, visX + visW, visX];
-                    const cY = [visY, visY, visY + visH, visY + visH];
-                    const rotX = cX.map((px, i) => scale * (px * cosT - cY[i] * sinT));
-                    const rotY = cX.map((px, i) => scale * (px * sinT + cY[i] * cosT));
+                    // Compute the bounding box of the visible area in natural coordinates
+                    // (after srcRot is applied by the XObject Matrix), then rotate it by the
+                    // user-chosen angle to find the draw anchor.
+                    // For srcRot ∈ {0,180}: natural axes align with raw axes — preserve the
+                    //   CropBox origin offset (visX, visY) so off-origin crops center correctly.
+                    // For srcRot ∈ {90,270}: natural width/height are swapped; CropBox origin
+                    //   is (0,0) in virtually all real-world rotated PDFs.
+                    // pdf-lib rotates CCW around the anchor: (nx,ny) → (nx·cosθ − ny·sinθ, nx·sinθ + ny·cosθ)
+                    const natCoordsX = (srcRot % 180 === 0) ? [visX, visX + visW, visX + visW, visX] : [0, natW, natW, 0];
+                    const natCoordsY = (srcRot % 180 === 0) ? [visY, visY, visY + visH, visY + visH] : [0, 0, natH, natH];
+                    const rotX = natCoordsX.map((nx, i) => scale * (nx * cosRot - natCoordsY[i] * sinRot));
+                    const rotY = natCoordsX.map((nx, i) => scale * (nx * sinRot + natCoordsY[i] * cosRot));
                     const bbCxRel = (Math.min(...rotX) + Math.max(...rotX)) / 2;
                     const bbCyRel = (Math.min(...rotY) + Math.max(...rotY)) / 2;
 
-                    // Anchor so that the CropBox center lands on the slot center (cx, cy)
+                    // Anchor so that the natural-CropBox center lands on the slot center (cx, cy)
                     const x = cx - bbCxRel;
                     const y = cy - bbCyRel;
 
@@ -903,7 +914,7 @@ if (processBtn) {
                         y,
                         xScale: scale,
                         yScale: scale,
-                        rotate: degrees(totalRotation)
+                        rotate: degrees(rotationAngle)  // srcRot already handled by XObject Matrix
                     });
                 }
             }
