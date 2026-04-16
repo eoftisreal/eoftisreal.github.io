@@ -1324,6 +1324,156 @@ main > .content-split {
 }
 
 /* ============================================ */
+/* PDF Fixer Tool                               */
+/* ============================================ */
+
+.pdf-fixer-ui {
+    margin-top: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 2px;
+    padding: 24px;
+    position: relative;
+}
+
+.pdf-fixer-ui::before {
+    content: 'FIXER INTERFACE';
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--metallic-mid);
+    background: var(--bg-base);
+    padding: 0 8px;
+}
+
+[data-theme="light"] .pdf-fixer-ui {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .pdf-fixer-ui::before {
+    background: var(--bg-base);
+}
+
+.fixer-issues-panel {
+    margin: 15px 0;
+    padding: 12px 14px;
+    background: rgba(255, 106, 0, 0.07);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    font-size: 12px;
+}
+
+.fixer-issues-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+}
+
+#fixerIssuesList {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+    font-family: 'Inter', sans-serif;
+}
+
+#fixPdfBtn {
+    flex: 1;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 12px;
+    border-radius: 2px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+#fixPdfBtn:disabled {
+    border-color: var(--metallic-mid);
+    color: var(--metallic-mid);
+    cursor: not-allowed;
+    opacity: 0.4;
+    box-shadow: none;
+}
+
+#fixPdfBtn:not(:disabled):hover {
+    background: var(--accent);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px var(--accent-glow);
+}
+
+#fixerResetBtn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--metallic-mid);
+    padding: 12px 18px;
+    border-radius: 2px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+#fixerResetBtn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background: rgba(255,255,255,0.04);
+}
+
+#fixerProgressBar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+#fixerProgressFill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+#fixerStatus {
+    margin-top: 4px;
+    font-size: 12px;
+    text-align: center;
+    color: var(--accent);
+    font-weight: 500;
+    letter-spacing: 2px;
+}
+
+#fixerStatus.status-success {
+    color: var(--accent-neon);
+}
+
+#fixerStatus.status-error {
+    color: #ff4d4d;
+    letter-spacing: 1px;
+}
+
+/* ============================================ */
 /* PDF Options Menu – Redesigned                */
 /* ============================================ */
 
