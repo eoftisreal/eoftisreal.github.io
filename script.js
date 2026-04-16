@@ -617,8 +617,10 @@ function setRotationValue(val) {
     const rotInput = document.getElementById('rotationAngle');
     const customInput = document.querySelector('.rot-custom-input');
     if (val === 'custom') {
-        if (customInput) customInput.style.display = '';
-        if (customInput) customInput.focus();
+        if (customInput) {
+            customInput.style.display = '';
+            customInput.focus();
+        }
     } else {
         if (customInput) customInput.style.display = 'none';
         if (rotInput) rotInput.value = val;

@@ -1481,7 +1481,6 @@ main > .content-split {
     font-family: 'Inter', sans-serif;
     font-weight: 400;
     color: var(--text-primary);
-    white-space: nowrap;
     z-index: 100;
     pointer-events: none;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);

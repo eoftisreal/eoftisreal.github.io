@@ -163,7 +163,7 @@
                     <div class="pdf-option-row">
                         <div class="pdf-option-label">
                             Pages per Sheet
-                            <span class="pdf-tip" tabindex="0" aria-label="Combine multiple source pages onto each output page. 1 = no combining, 2 = vertical stack, 4 = 2×2 grid.">?<span class="pdf-tip-text">Combine multiple source pages onto each output page.<br>1 = no combining &nbsp;2 = vertical stack &nbsp;4 = 2×2 grid</span></span>
+                            <span class="pdf-tip" tabindex="0" aria-label="Combine pages per sheet">?<span class="pdf-tip-text" aria-hidden="true">Combine multiple source pages onto each output page.<br>1 = no combining &nbsp;2 = vertical stack &nbsp;4 = 2×2 grid</span></span>
                         </div>
                         <div class="pps-selector" role="group" aria-label="Pages per sheet">
                             <button type="button" class="pps-btn" data-value="1" aria-pressed="false" title="One source page per output page — no combining">
@@ -180,7 +180,7 @@
                             </button>
                         </div>
                         <!-- Hidden select keeps existing JS compatibility -->
-                        <select id="pagesPerSheet" style="display:none;" aria-hidden="true" title="How many source pages to combine onto one output page">
+                        <select id="pagesPerSheet" style="display:none;" aria-hidden="true">
                             <option value="1">1</option>
                             <option value="2" selected>2</option>
                             <option value="4">4</option>
@@ -191,7 +191,7 @@
                     <div class="pdf-option-row">
                         <div class="pdf-option-label">
                             Rotation
-                            <span class="pdf-tip" tabindex="0" aria-label="Rotate each page clockwise. 0° = no change, 90° = quarter turn right, 180° = upside down, 270° = quarter turn left.">?<span class="pdf-tip-text">Rotate pages clockwise.<br>0° = no change &nbsp; 90° = quarter turn<br>180° = flip &nbsp; 270° = three-quarter turn</span></span>
+                            <span class="pdf-tip" tabindex="0" aria-label="Rotation angle help">?<span class="pdf-tip-text" aria-hidden="true">Rotate pages clockwise.<br>0° = no change &nbsp; 90° = quarter turn<br>180° = flip &nbsp; 270° = three-quarter turn</span></span>
                         </div>
                         <div class="rotation-selector" role="group" aria-label="Rotation angle">
                             <button type="button" class="rot-btn" data-value="0" aria-pressed="false" title="No rotation">0°</button>
@@ -214,7 +214,7 @@
                         <div class="pdf-option-row">
                             <div class="pdf-option-label">
                                 Page Size
-                                <span class="pdf-tip" tabindex="0" aria-label="Output page dimensions. 'Original' keeps the source page size. Other options resize to standard paper sizes.">?<span class="pdf-tip-text">Output page dimensions.<br>'Original' keeps the source size.<br>Other options resize to standard paper.</span></span>
+                                <span class="pdf-tip" tabindex="0" aria-label="Page size help">?<span class="pdf-tip-text" aria-hidden="true">Output page dimensions.<br>'Original' keeps the source size.<br>Other options resize to standard paper.</span></span>
                             </div>
                             <select id="pageSize" class="pdf-select" title="Output page dimensions">
                                 <optgroup label="Auto">
@@ -238,7 +238,7 @@
                         <div class="pdf-option-row">
                             <div class="pdf-option-label">
                                 Keep Unchanged
-                                <span class="pdf-tip" tabindex="0" aria-label="Page numbers to skip — these pages won't be rotated or combined. Use commas and ranges, e.g. '1,3,5-7'.">?<span class="pdf-tip-text">Pages to skip rotation &amp; combining.<br>Use commas and ranges:<br><em>1,3,5-7</em> → pages 1, 3, and 5 through 7</span></span>
+                                <span class="pdf-tip" tabindex="0" aria-label="Keep unchanged pages help">?<span class="pdf-tip-text" aria-hidden="true">Pages to skip rotation &amp; combining.<br>Use commas and ranges:<br><em>1,3,5-7</em> → pages 1, 3, and 5 through 7</span></span>
                             </div>
                             <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3,7" class="pdf-text-input" title="Page numbers to leave untouched (not rotated or combined). Use commas or ranges like 1-3." aria-label="Pages to keep unchanged">
                             <span class="pdf-input-hint">Skip rotation &amp; combining for these pages</span>
