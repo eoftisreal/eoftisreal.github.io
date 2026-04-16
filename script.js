@@ -201,8 +201,12 @@ const errorContainer = document.querySelector(".error");
 // PDF Elements
 const pdfInput = document.getElementById('pdfInput');
 const processBtn = document.getElementById('processBtn');
+const resetBtn = document.getElementById('resetBtn');
 const fileNameDisplay = document.getElementById('fileName');
+const pageInfoSpan = document.getElementById('pageInfo');
 const statusDiv = document.getElementById('status');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
 
 // Random Cities
 const cities = [
@@ -572,17 +576,46 @@ function parseUnchangedPages(input, totalPages) {
     return pages;
 }
 
+function resetPdfTool() {
+    if (pdfInput) pdfInput.value = '';
+    if (fileNameDisplay) fileNameDisplay.textContent = 'No file chosen';
+    if (pageInfoSpan) pageInfoSpan.textContent = '';
+    if (processBtn) processBtn.disabled = true;
+    if (statusDiv) { statusDiv.textContent = ''; statusDiv.className = ''; }
+    if (progressBar) progressBar.style.display = 'none';
+    if (progressFill) progressFill.style.width = '0%';
+    document.body.style.cursor = 'default';
+}
+
+function setProgress(current, total) {
+    if (!progressBar || !progressFill) return;
+    progressBar.style.display = 'block';
+    progressFill.style.width = total > 0 ? Math.round((current / total) * 100) + '%' : '0%';
+}
+
 if (pdfInput) {
     pdfInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            const BYTES_PER_MB = 1024 * 1024;
+            const size = file.size >= BYTES_PER_MB
+                ? (file.size / BYTES_PER_MB).toFixed(1) + ' MB'
+                : Math.ceil(file.size / 1024) + ' KB';
             fileNameDisplay.textContent = file.name;
+            if (pageInfoSpan) pageInfoSpan.textContent = size;
             processBtn.disabled = false;
+            if (statusDiv) { statusDiv.textContent = ''; statusDiv.className = ''; }
+            if (progressBar) progressBar.style.display = 'none';
         } else {
-            fileNameDisplay.textContent = "No file chosen";
+            fileNameDisplay.textContent = 'No file chosen';
+            if (pageInfoSpan) pageInfoSpan.textContent = '';
             processBtn.disabled = true;
         }
     });
+}
+
+if (resetBtn) {
+    resetBtn.addEventListener('click', resetPdfTool);
 }
 
 if (processBtn) {
@@ -592,28 +625,31 @@ if (processBtn) {
 
         // Lazy-load PDFLib (loaded async, may not be ready at page load)
         if (typeof PDFLib === 'undefined') {
-            statusDiv.textContent = "PDF library is still loading, please try again.";
+            statusDiv.textContent = "⚠️ PDF library is still loading, please try again in a moment.";
             return;
         }
         const { PDFDocument, degrees } = PDFLib;
 
         try {
-            statusDiv.textContent = "Processing...";
+            statusDiv.textContent = "Loading PDF…";
+            statusDiv.className = '';
+            if (progressBar) progressBar.style.display = 'none';
             processBtn.disabled = true;
             document.body.style.cursor = "wait";
-
-            // Read user options — rotation accepts any degree value (including non-multiples of 90)
             const rotationAngle = ((parseFloat(document.getElementById('rotationAngle').value) || 0) % 360 + 360) % 360;
             const pageSizeKey = document.getElementById('pageSize').value;
             const pagesPerSheet = parseInt(document.getElementById('pagesPerSheet').value, 10);
             const unchangedInput = document.getElementById('unchangedPages').value;
 
             const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFDocument.load(arrayBuffer);
+            // ignoreEncryption allows loading password-protected or restricted PDFs
+            const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
             const newPdf = await PDFDocument.create();
 
             const totalPages = pdfDoc.getPageCount();
             const unchangedSet = parseUnchangedPages(unchangedInput, totalPages);
+
+            statusDiv.textContent = `Loaded ${totalPages} page${totalPages !== 1 ? 's' : ''}. Building output…`;
 
             // Compute grid layout (cols/rows depend only on pagesPerSheet, not page size)
             let cols, rows;
@@ -649,7 +685,13 @@ if (processBtn) {
             }
 
             // Execute operations in document order
-            for (const op of operations) {
+            for (let opIdx = 0; opIdx < operations.length; opIdx++) {
+                const op = operations[opIdx];
+
+                // Update progress
+                setProgress(opIdx, operations.length);
+                statusDiv.textContent = `Processing… (${opIdx + 1} / ${operations.length})`;
+
                 if (op.type === 'unchanged') {
                     const [copiedPage] = await newPdf.copyPages(pdfDoc, [op.index]);
                     newPdf.addPage(copiedPage);
@@ -666,16 +708,18 @@ if (processBtn) {
                 }
 
                 // Determine output sheet dimensions for this group.
-                // "original" uses the bounding box of the first group page after applying all rotations.
+                // "original" uses the CropBox of the first group page after rotation.
                 let sheetW, sheetH;
                 if (pageSizeKey === 'original') {
                     const refPage = pdfDoc.getPages()[group[0]];
-                    const { width: rW, height: rH } = refPage.getSize();
+                    const refCropBox = typeof refPage.getCropBox === 'function'
+                        ? refPage.getCropBox()
+                        : { x: 0, y: 0, ...refPage.getSize() };
                     const refSrcRot = ((refPage.getRotation().angle % 360) + 360) % 360;
                     const refTotal = (refSrcRot + rotationAngle) % 360;
                     const refθ = refTotal * Math.PI / 180;
-                    sheetW = Math.abs(rW * Math.cos(refθ)) + Math.abs(rH * Math.sin(refθ));
-                    sheetH = Math.abs(rW * Math.sin(refθ)) + Math.abs(rH * Math.cos(refθ));
+                    sheetW = Math.abs(refCropBox.width * Math.cos(refθ)) + Math.abs(refCropBox.height * Math.sin(refθ));
+                    sheetH = Math.abs(refCropBox.width * Math.sin(refθ)) + Math.abs(refCropBox.height * Math.cos(refθ));
                 } else {
                     sheetW = PAGE_SIZES[pageSizeKey].width;
                     sheetH = PAGE_SIZES[pageSizeKey].height;
@@ -691,8 +735,6 @@ if (processBtn) {
                     const srcPage = pdfDoc.getPages()[srcIdx];
                     const [embedded] = await newPdf.embedPages([srcPage]);
 
-                    const { width: rawW, height: rawH } = srcPage.getSize();
-
                     // Normalize existing /Rotate value
                     const srcRot = ((srcPage.getRotation().angle % 360) + 360) % 360;
 
@@ -702,15 +744,22 @@ if (processBtn) {
                     const cosT = Math.cos(θRad);
                     const sinT = Math.sin(θRad);
 
-                    // Bounding box of the unscaled source page after rotation
-                    const finalVisW = Math.abs(rawW * cosT) + Math.abs(rawH * sinT);
-                    const finalVisH = Math.abs(rawW * sinT) + Math.abs(rawH * cosT);
+                    // Use CropBox as the effective visible bounds — this is exactly what
+                    // embedPages sets as the XObject BBox. Using MediaBox here causes
+                    // "half blank" output when CropBox ≠ MediaBox (e.g. scanned PDFs,
+                    // documents with trimmed margins, or mixed-content pages).
+                    const cropBox = typeof srcPage.getCropBox === 'function'
+                        ? srcPage.getCropBox()
+                        : { x: 0, y: 0, ...srcPage.getSize() };
+                    const visX = cropBox.x, visY = cropBox.y;
+                    const visW = cropBox.width, visH = cropBox.height;
+
+                    // Bounding box dimensions of the visible area after rotation
+                    const finalVisW = Math.abs(visW * cosT) + Math.abs(visH * sinT);
+                    const finalVisH = Math.abs(visW * sinT) + Math.abs(visH * cosT);
 
                     // Scale to fit within slot
                     const scale = Math.min(slotW / finalVisW, slotH / finalVisH);
-
-                    const sw = rawW * scale;
-                    const sh = rawH * scale;
 
                     // Determine grid position for this page in the sheet
                     let col, row;
@@ -728,17 +777,18 @@ if (processBtn) {
                     const cx = slotW * col + slotW / 2;
                     const cy = sheetH - (slotH * row + slotH / 2);
 
-                    // Compute where the bounding box of the rotated scaled page sits relative
-                    // to the anchor (bottom-left of unrotated page). pdf-lib rotates CCW around
-                    // the anchor, so corners transform as: (px,py) → (px·cosθ − py·sinθ, px·sinθ + py·cosθ)
-                    const cornerXValues = [0, sw, sw, 0];
-                    const cornerYValues = [0, 0, sh, sh];
-                    const rotX = cornerXValues.map((px, i) => px * cosT - cornerYValues[i] * sinT);
-                    const rotY = cornerXValues.map((px, i) => px * sinT + cornerYValues[i] * cosT);
+                    // Compute the bounding box of the rotated CropBox in page coordinates,
+                    // relative to the draw anchor. This accounts for the CropBox origin offset
+                    // so the visible content is precisely centered in the slot.
+                    // pdf-lib rotates CCW around the anchor: (px,py) → (px·cosθ − py·sinθ, px·sinθ + py·cosθ)
+                    const cX = [visX, visX + visW, visX + visW, visX];
+                    const cY = [visY, visY, visY + visH, visY + visH];
+                    const rotX = cX.map((px, i) => scale * (px * cosT - cY[i] * sinT));
+                    const rotY = cX.map((px, i) => scale * (px * sinT + cY[i] * cosT));
                     const bbCxRel = (Math.min(...rotX) + Math.max(...rotX)) / 2;
                     const bbCyRel = (Math.min(...rotY) + Math.max(...rotY)) / 2;
 
-                    // Anchor so that the bounding box center lands on (cx, cy)
+                    // Anchor so that the CropBox center lands on the slot center (cx, cy)
                     const x = cx - bbCxRel;
                     const y = cy - bbCyRel;
 
@@ -752,19 +802,24 @@ if (processBtn) {
                 }
             }
 
+            setProgress(operations.length, operations.length);
+
             const pdfBytes = await newPdf.save();
             const baseName = file.name.replace(/\.pdf$/i, '');
             downloadPDF(pdfBytes, baseName + "_updated.pdf");
 
-            statusDiv.textContent = "Done! Downloading...";
+            statusDiv.textContent = `✓ Done! ${totalPages} page${totalPages !== 1 ? 's' : ''} processed — downloading now.`;
+            statusDiv.className = 'status-success';
             document.body.style.cursor = "default";
             processBtn.disabled = false;
 
         } catch (error) {
             console.error(error);
-            statusDiv.textContent = "Error: " + error.message;
+            statusDiv.textContent = "✕ Error: " + error.message;
+            statusDiv.className = 'status-error';
             document.body.style.cursor = "default";
             processBtn.disabled = false;
+            if (progressBar) progressBar.style.display = 'none';
         }
     });
 }

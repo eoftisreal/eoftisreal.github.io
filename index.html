@@ -120,18 +120,22 @@
                 <div class="upload-section">
                     <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
                     <label for="pdfInput" class="file-label">Choose PDF File</label>
-                    <span id="fileName">No file chosen</span>
+                    <div class="file-info">
+                        <span id="fileName">No file chosen</span>
+                        <span id="pageInfo" class="page-info"></span>
+                    </div>
                 </div>
 
                 <div class="options-grid">
                     <div class="option-group">
                         <label for="rotationAngle">Rotation (°)</label>
-                        <input type="number" id="rotationAngle" value="90" step="1" placeholder="e.g. 45">
+                        <input type="number" id="rotationAngle" value="90" step="1" placeholder="e.g. 45" title="Degrees to rotate each page (0 = no rotation, 90 = quarter turn)">
+                        <span class="option-hint">Applied to all non-kept pages</span>
                     </div>
 
                     <div class="option-group">
                         <label for="pageSize">Page Size</label>
-                        <select id="pageSize">
+                        <select id="pageSize" title="Output page dimensions">
                             <option value="original">Original (source size)</option>
                             <option value="a4-portrait" selected>A4 Portrait</option>
                             <option value="a4-landscape">A4 Landscape</option>
@@ -142,24 +146,33 @@
                             <option value="legal-portrait">Legal Portrait</option>
                             <option value="legal-landscape">Legal Landscape</option>
                         </select>
+                        <span class="option-hint">Size of each output page</span>
                     </div>
 
                     <div class="option-group">
                         <label for="pagesPerSheet">Pages per Sheet</label>
-                        <select id="pagesPerSheet">
-                            <option value="1">1</option>
-                            <option value="2" selected>2</option>
-                            <option value="4">4 (2×2)</option>
+                        <select id="pagesPerSheet" title="How many source pages to combine onto one output page">
+                            <option value="1">1 (no combining)</option>
+                            <option value="2" selected>2 (stacked)</option>
+                            <option value="4">4 (2×2 grid)</option>
                         </select>
+                        <span class="option-hint">How many pages to combine</span>
                     </div>
 
                     <div class="option-group">
                         <label for="unchangedPages">Keep Unchanged</label>
-                        <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3">
+                        <input type="text" id="unchangedPages" placeholder="e.g. 1 or 1-3,7" title="Page numbers to leave untouched (not rotated or combined). Use commas or ranges like 1-3.">
+                        <span class="option-hint">Pages to skip (e.g. 1-3,7)</span>
                     </div>
                 </div>
 
-                <button id="processBtn" disabled>Process & Download PDF</button>
+                <div class="pdf-btn-group">
+                    <button id="processBtn" disabled>Process &amp; Download PDF</button>
+                    <button id="resetBtn" title="Clear file and reset all options">Reset</button>
+                </div>
+                <div id="progressBar" style="display:none;">
+                    <div id="progressFill"></div>
+                </div>
                 <div id="status"></div>
             </div>
         </div>
