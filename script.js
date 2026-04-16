@@ -996,8 +996,8 @@ function detectPdfIssues(pdfDoc) {
         // Get MediaBox and CropBox
         let mediaBox = null;
         let cropBox = null;
-        try { mediaBox = page.getMediaBox(); } catch (_) {}
-        try { cropBox = typeof page.getCropBox === 'function' ? page.getCropBox() : null; } catch (_) {}
+        try { mediaBox = page.getMediaBox(); } catch (e) { console.warn(`PDF Fixer: failed to read MediaBox on page ${i + 1}:`, e); }
+        try { cropBox = typeof page.getCropBox === 'function' ? page.getCropBox() : null; } catch (e) { console.warn(`PDF Fixer: failed to read CropBox on page ${i + 1}:`, e); }
 
         if (!mediaBox) continue;
 
@@ -1095,7 +1095,7 @@ async function fixPdfIssues(pdfDoc) {
 
             // 2. Normalize CropBox to match MediaBox
             let mediaBox = null;
-            try { mediaBox = page.getMediaBox(); } catch (_) {}
+            try { mediaBox = page.getMediaBox(); } catch (e) { console.warn(`PDF Fixer: failed to read MediaBox on page ${i + 1}:`, e); }
             if (mediaBox && mediaBox.width > 0 && mediaBox.height > 0) {
                 try {
                     page.setMediaBox(mediaBox.x, mediaBox.y, mediaBox.width, mediaBox.height);
@@ -1109,17 +1109,21 @@ async function fixPdfIssues(pdfDoc) {
                             mediaBox.x + mediaBox.width, mediaBox.y + mediaBox.height
                         ]));
                     }
-                } catch (_) {}
+                } catch (e) {
+                    console.warn(`PDF Fixer: failed to normalize CropBox on page ${i + 1}:`, e);
+                }
 
                 // 3. Remove annotations (Annots key) to clean up form fields and interactive elements
                 try {
                     page.node.delete(PDFName.of('Annots'));
-                } catch (_) {}
+                } catch (e) {
+                    console.warn(`PDF Fixer: failed to remove annotations on page ${i + 1}:`, e);
+                }
             }
 
             fixed++;
-        } catch (_) {
-            // Skip pages that fail — they'll remain as-is
+        } catch (e) {
+            console.warn(`PDF Fixer: skipping page ${i + 1} due to error:`, e);
         }
 
         // Yield to UI thread periodically
