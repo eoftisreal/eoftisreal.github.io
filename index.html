@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="style.css">
     <!-- Load pdf-lib library asynchronously (only needed for PDF tool interaction) -->
     <script async src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <!-- Load pako for stream decompression in PDF Fixer (FlateDecode) -->
+    <script async src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
 </head>
 <body>
 
@@ -114,7 +116,7 @@
         <!-- PDF Fixer Tool -->
         <div class="project-card glass-panel">
             <h4>PDF Fixer</h4>
-            <div class="desc">Fix problematic PDFs in one click. Removes rotation metadata, normalizes dimensions, and cleans corrupted structures.</div>
+            <div class="desc">Fix problematic PDFs in one click. Decompresses vector streams, removes rotation metadata, normalizes dimensions, and cleans corrupted structures. Ideal for large PDFs (50 MB+) with blank pages.</div>
 
             <div class="pdf-fixer-ui">
                 <div class="upload-section">
@@ -130,8 +132,24 @@
                     <div id="fixerIssuesList"></div>
                 </div>
 
+                <div id="fixerOptionsPanel" style="display:none; margin: 15px 0; padding: 12px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px;">
+                    <div style="font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;">Optimization Options:</div>
+                    <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer; font-size: 12px; color: var(--text-secondary);">
+                        <input type="checkbox" id="decompressStreams" checked style="margin-right: 8px; accent-color: var(--accent);">
+                        <span>Decompress Streams <em style="opacity:0.6; font-size:11px;">(required for large PDFs with complex vectors)</em></span>
+                    </label>
+                    <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer; font-size: 12px; color: var(--text-secondary);">
+                        <input type="checkbox" id="removeMetadata" checked style="margin-right: 8px; accent-color: var(--accent);">
+                        <span>Remove Metadata &amp; Annotations</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 12px; color: var(--text-secondary);">
+                        <input type="checkbox" id="normalizeDimensions" checked style="margin-right: 8px; accent-color: var(--accent);">
+                        <span>Normalize Page Dimensions</span>
+                    </label>
+                </div>
+
                 <div class="pdf-btn-group">
-                    <button id="fixPdfBtn" disabled>Fix PDF</button>
+                    <button id="fixPdfBtn" disabled>Fix &amp; Optimize PDF</button>
                     <button id="fixerResetBtn">Reset</button>
                 </div>
 

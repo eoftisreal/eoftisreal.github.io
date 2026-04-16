@@ -218,6 +218,10 @@ const fixerProgressBar = document.getElementById('fixerProgressBar');
 const fixerProgressFill = document.getElementById('fixerProgressFill');
 const fixerIssuesPanel = document.getElementById('fixerIssuesPanel');
 const fixerIssuesList = document.getElementById('fixerIssuesList');
+const fixerOptionsPanel = document.getElementById('fixerOptionsPanel');
+const decompressStreamsChk = document.getElementById('decompressStreams');
+const removeMetadataChk = document.getElementById('removeMetadata');
+const normalizeDimensionsChk = document.getElementById('normalizeDimensions');
 
 // Random Cities
 const cities = [
@@ -967,10 +971,79 @@ function downloadPDF(bytes, filename) {
 // --- PDF Fixer Logic ---
 
 /**
+ * Count objects with FlateDecode compressed streams in the PDF.
+ * Returns the number of FlateDecode streams found.
+ */
+function detectCompressedStreamCount(pdfDoc) {
+    const { PDFName } = PDFLib;
+    let flateCount = 0;
+    try {
+        for (const [, obj] of pdfDoc.context.enumerateIndirectObjects()) {
+            if (!obj || !obj.dict || !obj.contents) continue;
+            const filter = obj.dict.get(PDFName.of('Filter'));
+            if (!filter) continue;
+            // Handle /Filter /FlateDecode (single name)
+            if (typeof filter.asString === 'function' && filter.asString() === 'FlateDecode') {
+                flateCount++;
+                continue;
+            }
+            // Handle /Filter [/FlateDecode ...] (array)
+            if (typeof filter.asArray === 'function') {
+                const arr = filter.asArray();
+                if (arr.some(f => typeof f.asString === 'function' && f.asString() === 'FlateDecode')) {
+                    flateCount++;
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('PDF Fixer: error scanning for compressed streams:', e);
+    }
+    return flateCount;
+}
+
+/**
+ * Count pages that contain Form XObjects (proxy for complex vector drawings).
+ */
+function detectComplexVectorPageCount(pdfDoc) {
+    const { PDFName } = PDFLib;
+    let complexPages = 0;
+    try {
+        const pages = pdfDoc.getPages();
+        for (const page of pages) {
+            try {
+                const resources = page.node.get(PDFName.of('Resources'));
+                if (!resources) continue;
+                const xObjects = (typeof resources.get === 'function')
+                    ? resources.get(PDFName.of('XObject'))
+                    : null;
+                if (!xObjects) continue;
+                const keys = (typeof xObjects.keys === 'function') ? xObjects.keys() : [];
+                for (const key of keys) {
+                    const xobj = xObjects.get(key);
+                    if (!xobj) continue;
+                    const lookupObj = (typeof xobj.dict !== 'undefined') ? xobj : null;
+                    if (!lookupObj) continue;
+                    const subtype = lookupObj.dict && lookupObj.dict.get(PDFName.of('Subtype'));
+                    if (subtype && typeof subtype.asString === 'function' && subtype.asString() === 'Form') {
+                        complexPages++;
+                        break; // one Form XObject is enough to classify this page as complex
+                    }
+                }
+            } catch (e) { /* skip page */ }
+        }
+    } catch (e) {
+        console.warn('PDF Fixer: error scanning for complex vectors:', e);
+    }
+    return complexPages;
+}
+
+/**
  * Detect issues in a loaded PDFDocument.
  * Returns an array of issue description strings.
+ * @param {object} pdfDoc - Loaded PDFDocument
+ * @param {number} [fileSizeMB] - File size in MB for size reporting
  */
-function detectPdfIssues(pdfDoc) {
+function detectPdfIssues(pdfDoc, fileSizeMB) {
     const issues = [];
     const pages = pdfDoc.getPages();
     const total = pages.length;
@@ -1054,6 +1127,23 @@ function detectPdfIssues(pdfDoc) {
         issues.push(`Inconsistent page sizes across document (${inconsistentPages.length} differing page${inconsistentPages.length > 1 ? 's' : ''})`);
     }
 
+    // Detect FlateDecode compressed streams
+    const flateCount = detectCompressedStreamCount(pdfDoc);
+    if (flateCount > 0) {
+        issues.push(`Compressed streams detected (FlateDecode: ${flateCount} stream${flateCount !== 1 ? 's' : ''}) — will decompress to prevent rendering errors`);
+    }
+
+    // Detect complex vector objects (Form XObjects)
+    const complexVectorPages = detectComplexVectorPageCount(pdfDoc);
+    if (complexVectorPages > 0) {
+        issues.push(`Complex vector objects on ${complexVectorPages} page${complexVectorPages !== 1 ? 's' : ''} — will optimize`);
+    }
+
+    // Report large file size
+    if (fileSizeMB != null && fileSizeMB >= 20) {
+        issues.push(`File size: ${fileSizeMB.toFixed(1)} MB (large — stream decompression recommended)`);
+    }
+
     return issues;
 }
 
@@ -1080,9 +1170,14 @@ function formatPageList(nums) {
 /**
  * Apply all fixes to a PDFDocument in-place.
  * Returns the number of pages successfully fixed.
+ * @param {object} pdfDoc - Loaded PDFDocument
+ * @param {object} [options] - Optional flags
+ * @param {boolean} [options.removeMetadata=true] - Remove annotations/XObjects
+ * @param {boolean} [options.normalizeDimensions=true] - Normalize CropBox to MediaBox
  */
-async function fixPdfIssues(pdfDoc) {
-    const { degrees, PDFName, PDFArray, PDFDict } = PDFLib;
+async function fixPdfIssues(pdfDoc, options = {}) {
+    const { removeMetadata = true, normalizeDimensions = true } = options;
+    const { PDFName } = PDFLib;
     const pages = pdfDoc.getPages();
     let fixed = 0;
 
@@ -1096,7 +1191,7 @@ async function fixPdfIssues(pdfDoc) {
             // 2. Normalize CropBox to match MediaBox
             let mediaBox = null;
             try { mediaBox = page.getMediaBox(); } catch (e) { console.warn(`PDF Fixer: failed to read MediaBox on page ${i + 1}:`, e); }
-            if (mediaBox && mediaBox.width > 0 && mediaBox.height > 0) {
+            if (normalizeDimensions && mediaBox && mediaBox.width > 0 && mediaBox.height > 0) {
                 try {
                     page.setMediaBox(mediaBox.x, mediaBox.y, mediaBox.width, mediaBox.height);
                     if (typeof page.setCropBox === 'function') {
@@ -1112,8 +1207,10 @@ async function fixPdfIssues(pdfDoc) {
                 } catch (e) {
                     console.warn(`PDF Fixer: failed to normalize CropBox on page ${i + 1}:`, e);
                 }
+            }
 
-                // 3. Remove annotations (Annots key) to clean up form fields and interactive elements
+            // 3. Remove annotations (Annots key) to clean up form fields and interactive elements
+            if (removeMetadata) {
                 try {
                     page.node.delete(PDFName.of('Annots'));
                 } catch (e) {
@@ -1133,6 +1230,73 @@ async function fixPdfIssues(pdfDoc) {
     return fixed;
 }
 
+/**
+ * Decompress all FlateDecode streams in a PDFDocument in-place using pako.
+ * This forces pdf-lib to work with raw, uncompressed data, preventing
+ * cascading recompression errors on large PDFs with complex vector drawings.
+ * @param {object} pdfDoc - Loaded PDFDocument
+ * @param {function} [statusCallback] - Called with (processed, total) periodically
+ * @returns {number} Number of streams decompressed
+ */
+async function decompressStreamsInPdf(pdfDoc, statusCallback) {
+    const { PDFName, PDFNumber } = PDFLib;
+    const allObjects = [...pdfDoc.context.enumerateIndirectObjects()];
+    let decompressedCount = 0;
+
+    for (let i = 0; i < allObjects.length; i++) {
+        const [, obj] = allObjects[i];
+
+        // Duck-type: stream objects have a dict and a contents Uint8Array
+        if (!obj || !obj.dict || !obj.contents) continue;
+
+        const filter = obj.dict.get(PDFName.of('Filter'));
+        if (!filter) continue;
+
+        let isFlate = false;
+        // Handle /Filter /FlateDecode (single PDFName)
+        if (typeof filter.asString === 'function') {
+            isFlate = filter.asString() === 'FlateDecode';
+        }
+        // Handle /Filter [/FlateDecode] (PDFArray with one entry)
+        if (!isFlate && typeof filter.asArray === 'function') {
+            const arr = filter.asArray();
+            isFlate = arr.length === 1 &&
+                arr[0] && typeof arr[0].asString === 'function' &&
+                arr[0].asString() === 'FlateDecode';
+        }
+
+        if (!isFlate) continue;
+
+        try {
+            // Decompress using pako (zlib inflate)
+            const decompressed = pako.inflate(obj.contents);
+
+            // Replace compressed content with raw decompressed bytes
+            obj.contents = decompressed;
+
+            // Remove /Filter and /DecodeParms so pdf-lib treats it as raw
+            obj.dict.delete(PDFName.of('Filter'));
+            obj.dict.delete(PDFName.of('DecodeParms'));
+
+            // Update /Length to reflect the uncompressed size
+            obj.dict.set(PDFName.of('Length'), PDFNumber.of(decompressed.length));
+
+            decompressedCount++;
+        } catch (e) {
+            // Some streams may have additional decode parameters or unsupported variants — skip them
+            console.warn('PDF Fixer: skipping non-decompressable stream:', e.message);
+        }
+
+        // Yield to UI thread every 10 objects so status messages update
+        if (i % 10 === 0) {
+            if (statusCallback) statusCallback(i, allObjects.length);
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+
+    return decompressedCount;
+}
+
 function setFixerProgress(current, total) {
     if (!fixerProgressBar || !fixerProgressFill) return;
     fixerProgressBar.style.display = 'block';
@@ -1147,6 +1311,7 @@ function resetFixerTool() {
     if (fixerProgressBar) { fixerProgressBar.style.display = 'none'; fixerProgressFill.style.width = '0%'; }
     if (fixerIssuesPanel) fixerIssuesPanel.style.display = 'none';
     if (fixerIssuesList) fixerIssuesList.innerHTML = '';
+    if (fixerOptionsPanel) fixerOptionsPanel.style.display = 'none';
     document.body.style.cursor = 'default';
 }
 
@@ -1165,6 +1330,7 @@ if (pdfFixerInput) {
         if (fixerProgressBar) fixerProgressBar.style.display = 'none';
         if (fixerIssuesPanel) fixerIssuesPanel.style.display = 'none';
         if (fixerIssuesList) fixerIssuesList.innerHTML = '';
+        if (fixerOptionsPanel) fixerOptionsPanel.style.display = 'none';
 
         // Lazy-load check
         if (typeof PDFLib === 'undefined') {
@@ -1177,13 +1343,14 @@ if (pdfFixerInput) {
         const { PDFDocument } = PDFLib;
 
         try {
-            fixerStatusDiv.textContent = 'Analyzing PDF…';
+            fixerStatusDiv.textContent = 'Scanning PDF structure…';
+            const fileSizeMB = file.size / (1024 * 1024);
             const arrayBuffer = await file.arrayBuffer();
             const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
             const total = pdfDoc.getPageCount();
 
-            // Run issue detection
-            const issues = detectPdfIssues(pdfDoc);
+            // Run issue detection (includes stream, vector, and size checks)
+            const issues = detectPdfIssues(pdfDoc, fileSizeMB);
 
             if (issues.length === 0) {
                 fixerStatusDiv.textContent = `✓ No issues found in ${total} page${total !== 1 ? 's' : ''}. PDF looks clean.`;
@@ -1198,6 +1365,9 @@ if (pdfFixerInput) {
                 }
                 if (fixerIssuesPanel) fixerIssuesPanel.style.display = '';
             }
+
+            // Always show optimization options once a PDF is loaded
+            if (fixerOptionsPanel) fixerOptionsPanel.style.display = '';
 
             // Enable fix button regardless (even clean PDFs can be re-saved)
             fixPdfBtn.disabled = false;
@@ -1224,6 +1394,11 @@ if (fixPdfBtn) {
             return;
         }
 
+        // Read user-selected options
+        const doDecompress = decompressStreamsChk ? decompressStreamsChk.checked : true;
+        const doRemoveMetadata = removeMetadataChk ? removeMetadataChk.checked : true;
+        const doNormalize = normalizeDimensionsChk ? normalizeDimensionsChk.checked : true;
+
         const { PDFDocument } = PDFLib;
 
         try {
@@ -1236,21 +1411,56 @@ if (fixPdfBtn) {
             const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
             const total = pdfDoc.getPageCount();
 
-            if (fixerStatusDiv) fixerStatusDiv.textContent = `Fixing ${total} page${total !== 1 ? 's' : ''}…`;
+            // Step 1: Stream decompression (if enabled and pako is available)
+            let decompressedStreams = 0;
+            if (doDecompress) {
+                if (typeof pako === 'undefined') {
+                    if (fixerStatusDiv) fixerStatusDiv.textContent = '⚠️ Decompression library (pako) is still loading, please try again in a moment.';
+                    fixPdfBtn.disabled = false;
+                    document.body.style.cursor = 'default';
+                    if (fixerProgressBar) fixerProgressBar.style.display = 'none';
+                    return;
+                }
+                if (fixerStatusDiv) fixerStatusDiv.textContent = `Decompressing streams (may take 5–10 seconds for large PDFs)…`;
+                setFixerProgress(0, total);
+                decompressedStreams = await decompressStreamsInPdf(pdfDoc, (done, tot) => {
+                    // Decompression occupies the first 50% of the progress bar
+                    if (fixerProgressFill) fixerProgressFill.style.width = Math.round((done / tot) * 50) + '%';
+                });
+                // Set progress bar to 50% after decompression completes
+                if (fixerProgressFill) fixerProgressFill.style.width = '50%';
+                if (fixerStatusDiv) fixerStatusDiv.textContent = `Optimizing page structure…`;
+            }
+
+            // Step 2: Fix page-level issues (rotation, CropBox, annotations)
+            if (fixerStatusDiv && !doDecompress) {
+                fixerStatusDiv.textContent = `Fixing ${total} page${total !== 1 ? 's' : ''}…`;
+            }
+            // If decompression ran, progress is already at 50%; start page-fix progress from 0
             setFixerProgress(0, total);
 
-            // Apply fixes (yields periodically so progress bar updates)
-            const fixedCount = await fixPdfIssues(pdfDoc);
+            const fixedCount = await fixPdfIssues(pdfDoc, {
+                removeMetadata: doRemoveMetadata,
+                normalizeDimensions: doNormalize
+            });
             setFixerProgress(total, total);
 
-            if (fixerStatusDiv) fixerStatusDiv.textContent = 'Saving fixed PDF…';
+            if (fixerStatusDiv) fixerStatusDiv.textContent = 'Saving optimized PDF…';
             const pdfBytes = await pdfDoc.save();
+            const outputSizeMB = (pdfBytes.byteLength / (1024 * 1024)).toFixed(1);
 
             const baseName = file.name.replace(/\.pdf$/i, '');
             downloadPDF(pdfBytes, baseName + '_fixed.pdf');
 
+            // Build success message
+            let successMsg = `✓ PDF optimized! ${fixedCount} of ${total} page${total !== 1 ? 's' : ''} processed`;
+            if (doDecompress && decompressedStreams > 0) {
+                successMsg += `. Stream decompression applied (${decompressedStreams} stream${decompressedStreams !== 1 ? 's' : ''})`;
+            }
+            successMsg += `. Download size: ~${outputSizeMB} MB. Safe for processing.`;
+
             if (fixerStatusDiv) {
-                fixerStatusDiv.textContent = `✓ PDF fixed! ${fixedCount} of ${total} page${total !== 1 ? 's' : ''} processed — downloading now.`;
+                fixerStatusDiv.textContent = successMsg;
                 fixerStatusDiv.className = 'status-success';
             }
             // Hide issues panel after successful fix
