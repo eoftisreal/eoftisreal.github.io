@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
-import { getAuthToken } from '@/lib/storage';
 import { Search } from 'lucide-react';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
