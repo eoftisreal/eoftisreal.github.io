@@ -1,0 +1,53 @@
+name: ecommerce
+services:
+  - name: web
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: YOUR_USERNAME/ecommerce-platform
+    source_dir: .
+    dockerfile_path: Dockerfile
+    http_port: 4000
+    envs:
+      - key: MONGODB_URI
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: SENDGRID_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: R2_ACCESS_KEY_ID
+        scope: RUN_TIME
+        type: SECRET
+      - key: R2_SECRET_ACCESS_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: R2_ENDPOINT
+        scope: RUN_TIME
+        type: SECRET
+      - key: R2_BUCKET_NAME
+        scope: RUN_TIME
+        type: SECRET
+      - key: R2_PUBLIC_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: RAZORPAY_KEY_ID
+        scope: RUN_TIME
+        type: SECRET
+      - key: RAZORPAY_KEY_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: FRONTEND_URL
+        scope: RUN_TIME
+        value: https://coinrx.me
+      - key: APP_URL
+        scope: RUN_TIME
+        value: https://coinrx.me
+      - key: NODE_ENV
+        scope: RUN_TIME
+        value: production
+      - key: VITE_API_URL
+        scope: BUILD_TIME
+        value: /api
