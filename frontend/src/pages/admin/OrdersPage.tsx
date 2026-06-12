@@ -198,6 +198,7 @@ export default function AdminOrdersPage() {
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-semibold text-slate-500">Shipping Status:</span>
                             <select
+                              disabled={!['payment_verified', 'processing', 'shipped', 'delivered', 'cancelled'].includes(order.status)}
                               value={['processing', 'shipped', 'delivered', 'cancelled'].includes(order.status) ? order.status : ''}
                               onChange={async (e) => {
                                 const newStatus = e.target.value;

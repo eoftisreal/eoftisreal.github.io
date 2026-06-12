@@ -300,13 +300,36 @@ router.put('/orders/:id/status', async (req, res, next) => {
 
     const oldStatus = order.status;
 
+    // Validation: masterAdminOnly for payment statuses
+    const paymentStatuses = ['pending_payment', 'awaiting_verification', 'payment_verified', 'rejected'];
+    if (paymentStatuses.includes(status) && req.user.role !== 'master_admin') {
+      return res.status(403).json({ message: 'Only superadmins can modify payment status' });
+    }
+
+    // Validation: shipping statuses only allowed if payment is verified (or beyond)
+    const shippingStatuses = ['processing', 'shipped', 'delivered', 'cancelled'];
+    const requiresPaymentVerified = ['processing', 'shipped', 'delivered'];
+    if (requiresPaymentVerified.includes(status)) {
+       const hasBeenVerified = order.timeline.some(t => t.status === 'payment_verified') || order.status === 'payment_verified' || ['processing', 'shipped', 'delivered'].includes(order.status);
+       if (!hasBeenVerified) {
+          return res.status(400).json({ message: 'Cannot update shipping status until payment is approved' });
+       }
+    }
+
     // Don't do anything if the status is the same
     if (oldStatus === status) {
       return res.json(order);
     }
 
     order.status = status;
-    order.timeline.push({ status, note: `Status updated to ${status} by admin` });
+
+    let note;
+    if (['processing', 'shipped', 'delivered'].includes(status)) {
+      note = `Order status updated to ${status}`;
+    } else {
+      note = `Status updated to ${status} by admin`;
+    }
+    order.timeline.push({ status, note });
     await order.save();
 
     await OrderStatusHistory.create({
