@@ -125,7 +125,7 @@ export default function AdminOrdersPage() {
                       {order.screenshotUrl && <div><a href={order.screenshotUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">View Screenshot</a></div>}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {order.status === 'awaiting_verification' && (
+                      {order.status === 'awaiting_verification' && isMasterAdmin && (
                         <div className="flex gap-2 justify-end">
                           <button
                             onClick={async () => {
@@ -198,6 +198,7 @@ export default function AdminOrdersPage() {
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-semibold text-slate-500">Shipping Status:</span>
                             <select
+                              disabled={!['payment_verified', 'processing', 'shipped', 'delivered', 'cancelled'].includes(order.status)}
                               value={['processing', 'shipped', 'delivered', 'cancelled'].includes(order.status) ? order.status : ''}
                               onChange={async (e) => {
                                 const newStatus = e.target.value;
