@@ -2,13 +2,25 @@ import { useEffect, useState, Fragment } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 
+import { getAuthToken } from '@/lib/storage';
+function parseJwt(token: string) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; }
+}
+
+
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+
+  const token = getAuthToken();
+  const payload = token ? parseJwt(token) : null;
+  const isMasterAdmin = payload?.role === 'master_admin';
+
 
   useEffect(() => {
     async function fetchOrders() {
@@ -182,38 +194,68 @@ export default function AdminOrdersPage() {
 
                         </div>
 
-                        <div className="mt-6 flex items-center gap-3 border-t border-slate-200 pt-4">
-                          <span className="text-xs font-semibold text-slate-500">Change Status:</span>
-                          <select
-                            value={order.status}
-                            onChange={async (e) => {
-                              const newStatus = e.target.value;
-                              try {
-                                const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/status`, {
-                                  method: 'PUT',
-                                  headers: {
-                                    'Content-Type': 'application/json'
-                                  },
-                                  body: JSON.stringify({ status: newStatus })
-                                });
-                                if (res.ok) {
-                                  setOrders(orders.map(o => o._id === order._id ? { ...o, status: newStatus } : o));
+                        <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-6 border-t border-slate-200 pt-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-semibold text-slate-500">Shipping Status:</span>
+                            <select
+                              value={['processing', 'shipped', 'delivered', 'cancelled'].includes(order.status) ? order.status : ''}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                if (!newStatus) return;
+                                try {
+                                  const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/status`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ status: newStatus })
+                                  });
+                                  if (res.ok) {
+                                    setOrders(orders.map(o => o._id === order._id ? { ...o, status: newStatus } : o));
+                                  }
+                                } catch (err) {
+                                  console.error('Failed to update status', err);
                                 }
-                              } catch (err) {
-                                console.error('Failed to update status', err);
-                              }
-                            }}
-                            className="border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-foreground bg-white"
-                          >
-                            <option value="pending_payment">Pending Payment</option>
-                            <option value="awaiting_verification">Awaiting Verification</option>
-                            <option value="payment_verified">Payment Verified</option>
-                            <option value="processing">Processing</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="rejected">Rejected</option>
-                          </select>
+                              }}
+                              className="border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-foreground bg-white"
+                            >
+                              <option value="" disabled>Select Shipping Status</option>
+                              <option value="processing">Processing</option>
+                              <option value="shipped">Shipped</option>
+                              <option value="delivered">Delivered</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </div>
+
+                          {isMasterAdmin && (
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-semibold text-slate-500">Payment Status:</span>
+                              <select
+                                value={['pending_payment', 'awaiting_verification', 'payment_verified', 'rejected'].includes(order.status) ? order.status : ''}
+                                onChange={async (e) => {
+                                  const newStatus = e.target.value;
+                                  if (!newStatus) return;
+                                  try {
+                                    const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/status`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: newStatus })
+                                    });
+                                    if (res.ok) {
+                                      setOrders(orders.map(o => o._id === order._id ? { ...o, status: newStatus } : o));
+                                    }
+                                  } catch (err) {
+                                    console.error('Failed to update status', err);
+                                  }
+                                }}
+                                className="border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-foreground bg-white"
+                              >
+                                <option value="" disabled>Select Payment Status</option>
+                                <option value="pending_payment">Pending Payment</option>
+                                <option value="awaiting_verification">Awaiting Verification</option>
+                                <option value="payment_verified">Payment Verified</option>
+                                <option value="rejected">Rejected</option>
+                              </select>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
