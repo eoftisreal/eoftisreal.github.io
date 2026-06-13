@@ -77,12 +77,12 @@ function dotSVG(kind: DotKind, color: string, s: number): string {
 // ── Item / Dot data types ─────────────────────────────────────────────────────
 interface Item {
   id: number; type: 'shirt' | 'mug';
-  color: string; x: number; y: number;
+  colorIdx: number; x: number; y: number;
   sz: number; rot: number; dy: number; dur: number; del: number;
 }
 interface Dot {
   id: number; kind: DotKind;
-  color: string; x: number; y: number;
+  colorIdx: number; x: number; y: number;
   s: number; dy: number; dur: number; del: number;
 }
 
@@ -118,28 +118,32 @@ export default function FloatingBackground({
   const [items, setItems]   = useState<Item[]>([]);
   const [dots,  setDots]    = useState<Dot[]>([]);
 
-  const build = useCallback((W: number, H: number, pidx: number) => {
-    const pal: Palette = PALETTES[pidx];
-
+  // Build only generates positions and assigns random color indices.
+  // It does NOT depend on the active palette index, avoiding jumpy resets.
+  const build = useCallback((W: number, H: number) => {
     const itemPts = scatter(itemCount, W, H, 115);
-    const newItems: Item[] = itemPts.map((p, i) => ({
-      id: i,
-      type:  ITEM_PATTERN[i % ITEM_PATTERN.length],
-      color: ITEM_PATTERN[i % ITEM_PATTERN.length] === 'shirt' ? pick(pal.shirts) : pick(pal.mugs),
-      x: (p.x / W) * 100,
-      y: (p.y / H) * 100,
-      sz:  pick(SIZES),
-      rot: parseFloat(rnd(-13, 13).toFixed(1)),
-      dy:  parseFloat(rnd(-16, 16).toFixed(1)),
-      dur: parseFloat(rnd(3.5, 7).toFixed(2)),
-      del: parseFloat(rnd(-7, 0).toFixed(2)),
-    }));
+    const newItems: Item[] = itemPts.map((p, i) => {
+      const type = ITEM_PATTERN[i % ITEM_PATTERN.length];
+      return {
+        id: i,
+        type,
+        // Save an index to pick consistently from whatever the current palette is
+        colorIdx: Math.floor(Math.random() * 10),
+        x: (p.x / W) * 100,
+        y: (p.y / H) * 100,
+        sz:  pick(SIZES),
+        rot: parseFloat(rnd(-13, 13).toFixed(1)),
+        dy:  parseFloat(rnd(-16, 16).toFixed(1)),
+        dur: parseFloat(rnd(3.5, 7).toFixed(2)),
+        del: parseFloat(rnd(-7, 0).toFixed(2)),
+      };
+    });
 
     const dotPts = scatter(dotCount, W, H, 42);
     const newDots: Dot[] = dotPts.map((p, i) => ({
       id: i,
       kind:  pick(DOT_KINDS),
-      color: pick(pal.dots),
+      colorIdx: Math.floor(Math.random() * 10),
       x: (p.x / W) * 100,
       y: (p.y / H) * 100,
       s:   Math.round(rnd(8, 15)),
@@ -152,16 +156,16 @@ export default function FloatingBackground({
     setDots(newDots);
   }, [itemCount, dotCount]);
 
-  // ResizeObserver
+  // ResizeObserver - Only rebuilds if the container dimensions change.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const obs = new ResizeObserver(([entry]) => {
-      build(entry.contentRect.width, entry.contentRect.height, palIdx);
+      build(entry.contentRect.width, entry.contentRect.height);
     });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [palIdx, build]);
+  }, [build]);
 
   // Scroll → palette
   useEffect(() => {
@@ -189,13 +193,6 @@ export default function FloatingBackground({
     return () => window.removeEventListener('scroll', handler);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Rebuild on palette flip
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    build(el.offsetWidth, el.offsetHeight, palIdx);
-  }, [palIdx, build]);
-
   const pal = PALETTES[palIdx];
 
   const baseClasses = fixed
@@ -209,58 +206,65 @@ export default function FloatingBackground({
       style={{ background: pal.bg, transition: 'background 1.3s ease' }}
     >
       {/* Scatter dots */}
-      {dots.map((d) => (
-        <span
-          key={d.id}
-          className="absolute"
-          style={{
-            left: `${d.x.toFixed(1)}%`,
-            top:  `${d.y.toFixed(1)}%`,
-            transform: 'translate(-50%,-50%)',
-            animation: `fb-bob ${d.dur}s ease-in-out ${d.del}s infinite`,
-            // @ts-expect-error custom prop
-            '--dy': `${d.dy}px`,
-          }}
-          dangerouslySetInnerHTML={{ __html: dotSVG(d.kind, d.color, d.s) }}
-        />
-      ))}
+      {dots.map((d) => {
+        const color = pal.dots[d.colorIdx % pal.dots.length];
+        return (
+          <span
+            key={d.id}
+            className="absolute"
+            style={{
+              left: `${d.x.toFixed(1)}%`,
+              top:  `${d.y.toFixed(1)}%`,
+              transform: 'translate(-50%,-50%)',
+              animation: `fb-bob ${d.dur}s ease-in-out ${d.del}s infinite`,
+              // @ts-expect-error custom prop
+              '--dy': `${d.dy}px`,
+            }}
+            dangerouslySetInnerHTML={{ __html: dotSVG(d.kind, color, d.s) }}
+          />
+        );
+      })}
 
       {/* Floating t-shirts & mugs */}
-      {items.map((item) => (
-        <span
-          key={item.id}
-          className="absolute"
-          style={{
-            left: `${item.x.toFixed(1)}%`,
-            top:  `${item.y.toFixed(1)}%`,
-            transform: 'translate(-50%,-50%)',
-            animation: `fb-float ${item.dur}s ease-in-out ${item.del}s infinite`,
-            // @ts-expect-error custom props
-            '--r':  `${item.rot}deg`,
-            '--dy': `${item.dy}px`,
-            width: `${item.sz}px`,
-            height: `${item.sz}px`,
-          }}
-        >
-          {/* Using CSS mask to dynamically color the white PNGs */}
-          <div
+      {items.map((item) => {
+        const colorsArr = item.type === 'shirt' ? pal.shirts : pal.mugs;
+        const color = colorsArr[item.colorIdx % colorsArr.length];
+        return (
+          <span
+            key={item.id}
+            className="absolute"
             style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: item.color,
-              maskImage: `url(${item.type === 'shirt' ? SHIRT_URL : MUG_URL})`,
-              WebkitMaskImage: `url(${item.type === 'shirt' ? SHIRT_URL : MUG_URL})`,
-              maskSize: 'contain',
-              WebkitMaskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              WebkitMaskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              WebkitMaskPosition: 'center',
-              transition: 'background-color 1.3s ease',
+              left: `${item.x.toFixed(1)}%`,
+              top:  `${item.y.toFixed(1)}%`,
+              transform: 'translate(-50%,-50%)',
+              animation: `fb-float ${item.dur}s ease-in-out ${item.del}s infinite`,
+              // @ts-expect-error custom props
+              '--r':  `${item.rot}deg`,
+              '--dy': `${item.dy}px`,
+              width: `${item.sz}px`,
+              height: `${item.sz}px`,
             }}
-          />
-        </span>
-      ))}
+          >
+            {/* Using CSS mask to dynamically color the white PNGs */}
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: color,
+                maskImage: `url(${item.type === 'shirt' ? SHIRT_URL : MUG_URL})`,
+                WebkitMaskImage: `url(${item.type === 'shirt' ? SHIRT_URL : MUG_URL})`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                transition: 'background-color 1.3s ease',
+              }}
+            />
+          </span>
+        );
+      })}
 
       <style>{`
         @keyframes fb-float {
