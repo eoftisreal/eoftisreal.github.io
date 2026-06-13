@@ -22,8 +22,8 @@ export default function HolographicBackground({ className = '' }: Props) {
     let W = window.innerWidth;
     let H = window.innerHeight;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1)); // Drastically reduces pixel fill rate overhead
     renderer.setSize(W, H);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
@@ -71,7 +71,7 @@ export default function HolographicBackground({ className = '' }: Props) {
     // Outer ring — flat glass band (torus with rectangular feel via thin tube)
     const outerMat = makeGlass(0.58);
     mats.push(outerMat);
-    const outerGeo = new THREE.TorusGeometry(1.5, 0.28, 64, 320);
+    const outerGeo = new THREE.TorusGeometry(1.5, 0.28, 32, 128); // Reduced poly count for performance
     geos.push(outerGeo);
     const outerMesh = new THREE.Mesh(outerGeo, outerMat);
     group.add(outerMesh);
@@ -79,7 +79,7 @@ export default function HolographicBackground({ className = '' }: Props) {
     // Inner ring — tilted, different hue for layered holographic depth
     const innerMat = makeGlass(0.82);
     mats.push(innerMat);
-    const innerGeo = new THREE.TorusGeometry(0.72, 0.2, 48, 240);
+    const innerGeo = new THREE.TorusGeometry(0.72, 0.2, 32, 96); // Reduced poly count for performance
     geos.push(innerGeo);
     const innerMesh = new THREE.Mesh(innerGeo, innerMat);
     innerMesh.rotation.set(Math.PI * 0.28, 0, Math.PI * 0.1);
