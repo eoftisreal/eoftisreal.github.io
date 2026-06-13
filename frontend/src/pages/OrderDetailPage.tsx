@@ -103,6 +103,10 @@ function OrderTrackingContent() {
       if (screenshotFile) {
         const formData = new FormData();
         formData.append('file', screenshotFile);
+        formData.append('folder', 'customers/payment-screenshots');
+        if (order && order._id) {
+          formData.append('fileNamePrefix', order._id);
+        }
 
         // We use the custom upload endpoint since we just need to host the image
         const token = getAuthToken();

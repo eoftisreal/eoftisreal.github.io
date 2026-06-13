@@ -174,7 +174,10 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
       }
     }
 
-    const key = await uploadToR2(bufferToUpload, mimeType, originalName);
+    const folder = req.body.folder || 'uploads';
+    const fileNamePrefix = req.body.fileNamePrefix || '';
+
+    const key = await uploadToR2(bufferToUpload, mimeType, originalName, folder, fileNamePrefix);
     const url = getObjectUrl(key);
 
     res.json({ key, url });
