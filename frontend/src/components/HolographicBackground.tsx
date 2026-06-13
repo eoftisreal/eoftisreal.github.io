@@ -68,21 +68,21 @@ export default function HolographicBackground({ className = '' }: Props) {
     const mats: THREE.MeshPhysicalMaterial[] = [];
     const geos: THREE.BufferGeometry[] = [];
 
-    // Outer toroidal core
+    // Outer ring — flat glass band (torus with rectangular feel via thin tube)
     const outerMat = makeGlass(0.58);
     mats.push(outerMat);
-    const outerGeo = new THREE.TorusKnotGeometry(1.05, 0.3, 280, 40, 2, 3);
+    const outerGeo = new THREE.TorusGeometry(1.5, 0.28, 64, 320);
     geos.push(outerGeo);
     const outerMesh = new THREE.Mesh(outerGeo, outerMat);
     group.add(outerMesh);
 
-    // Inner toroidal core
-    const innerMat = makeGlass(0.84);
+    // Inner ring — tilted, different hue for layered holographic depth
+    const innerMat = makeGlass(0.82);
     mats.push(innerMat);
-    const innerGeo = new THREE.TorusKnotGeometry(0.55, 0.17, 240, 36, 3, 4);
+    const innerGeo = new THREE.TorusGeometry(0.72, 0.2, 48, 240);
     geos.push(innerGeo);
     const innerMesh = new THREE.Mesh(innerGeo, innerMat);
-    innerMesh.rotation.set(Math.PI * 0.3, Math.PI * 0.4, Math.PI * 0.1);
+    innerMesh.rotation.set(Math.PI * 0.28, 0, Math.PI * 0.1);
     group.add(innerMesh);
 
     // ── Lighting ──
@@ -141,9 +141,8 @@ export default function HolographicBackground({ className = '' }: Props) {
 
       group.position.y = Math.sin(t * 0.35) * 0.06;
 
-      outerMesh.rotation.y = t * 0.05;
-      innerMesh.rotation.x = Math.PI * 0.3 + t * 0.07;
-      innerMesh.rotation.y = Math.PI * 0.4 + t * 0.1;
+      innerMesh.rotation.x = Math.PI * 0.28 + t * 0.055;
+      innerMesh.rotation.y = t * 0.085;
 
       group.scale.setScalar(1 + scrollP * 0.14);
       renderer.render(scene, camera);
