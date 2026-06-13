@@ -197,8 +197,9 @@ router.post('/upload-custom', uploadCustomImage.single('file'), async (req, res,
     }
 
     const folder = req.body.folder || 'uploads';
+    const fileNamePrefix = req.body.fileNamePrefix || '';
 
-    const key = await uploadToR2(bufferToUpload, mimeType, originalName, folder);
+    const key = await uploadToR2(bufferToUpload, mimeType, originalName, folder, fileNamePrefix);
     const url = getObjectUrl(key);
 
     res.json({ key, url });

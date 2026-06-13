@@ -48,7 +48,7 @@ function getObjectUrl(objectKey) {
   return `${baseUrl}/${encodeURI(key)}`;
 }
 
-async function uploadToR2(fileBuffer, mimeType, originalName, folder = 'uploads') {
+async function uploadToR2(fileBuffer, mimeType, originalName, folder = 'uploads', fileNamePrefix = '') {
   if (!s3Client || !env.r2BucketName) {
     throw new Error('Cloudflare R2 is not properly configured for uploading');
   }
@@ -60,7 +60,12 @@ async function uploadToR2(fileBuffer, mimeType, originalName, folder = 'uploads'
     cleanFolder += '/';
   }
 
-  const key = `${cleanFolder}${nanoid()}.${extension}`;
+  let finalFileName = `${nanoid()}.${extension}`;
+  if (fileNamePrefix && fileNamePrefix.trim()) {
+    finalFileName = `${fileNamePrefix.trim()}-${finalFileName}`;
+  }
+
+  const key = `${cleanFolder}${finalFileName}`;
 
   const command = new PutObjectCommand({
     Bucket: env.r2BucketName,
