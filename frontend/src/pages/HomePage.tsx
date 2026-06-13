@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { apiGet, Product } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
-import FloatingBackground from '@/components/FloatingBackground';
 
 type Category = {
   _id: string;
@@ -42,44 +41,27 @@ export default function Home() {
   return (
     <div className="space-y-10 md:space-y-16 pb-10 md:pb-16">
       {/* Hero Section */}
-      {heroBannerUrl ? (
-        <section className="relative overflow-hidden aspect-[2/1] w-full max-h-[70vh] flex items-center justify-center bg-secondary-bg">
+      <section className="relative overflow-hidden aspect-[2/1] w-full max-h-[70vh] flex items-center justify-center bg-secondary-bg">
+        {heroBannerUrl ? (
           <div className="absolute inset-0 z-0">
             <img src={heroBannerUrl} alt="Hero Banner" className="w-full h-full object-cover object-center" loading="eager" fetchPriority="high" />
             <div className="absolute inset-0 bg-black/20"></div>
           </div>
-          <div className="relative z-10 text-center max-w-2xl px-2 sm:px-4 flex flex-col items-center">
-            <h1 className="text-2xl sm:text-3xl md:text-6xl font-heading text-foreground mb-2 md:mb-6 leading-tight">
-              <span className="text-white drop-shadow-md">Discover the Art of Style</span>
-            </h1>
-            <p className="text-[10px] sm:text-xs md:text-base text-secondary-text mb-4 md:mb-8 max-w-md mx-auto px-4">
-              <span className="text-white/90 drop-shadow-md">Explore our latest collection of curated pieces designed for the modern aesthetic.</span>
-            </p>
-            <Link to="/products" className="inline-block border border-foreground bg-btn-bg text-btn-text px-4 py-1.5 md:px-10 md:py-3 text-[9px] md:text-sm tracking-widest uppercase transition-colors hover:bg-transparent hover:text-white hover:border-white">
-              Shop Collection
-            </Link>
-          </div>
-        </section>
-      ) : (
-        <FloatingBackground
-          itemCount={14}
-          dotCount={38}
-          height={560}
-          className="w-full"
-        >
-          <div className="text-center max-w-2xl px-2 sm:px-4 flex flex-col items-center pointer-events-auto">
-            <h1 className="text-2xl sm:text-3xl md:text-6xl font-heading text-foreground mb-2 md:mb-6 leading-tight">
-              Discover the Art of Style
-            </h1>
-            <p className="text-[10px] sm:text-xs md:text-base text-secondary-text mb-4 md:mb-8 max-w-md mx-auto px-4">
-              Explore our latest collection of curated pieces designed for the modern aesthetic.
-            </p>
-            <Link to="/products" className="inline-block border border-foreground bg-btn-bg text-btn-text px-4 py-1.5 md:px-10 md:py-3 text-[9px] md:text-sm tracking-widest uppercase transition-colors hover:bg-transparent hover:text-foreground">
-              Shop Collection
-            </Link>
-          </div>
-        </FloatingBackground>
-      )}
+        ) : (
+          <div className="absolute inset-0 z-0 bg-accent/30"></div>
+        )}
+        <div className="relative z-10 text-center max-w-2xl px-2 sm:px-4 flex flex-col items-center">
+          <h1 className="text-2xl sm:text-3xl md:text-6xl font-heading text-foreground mb-2 md:mb-6 leading-tight">
+            {heroBannerUrl ? <span className="text-white drop-shadow-md">Discover the Art of Style</span> : "Discover the Art of Style"}
+          </h1>
+          <p className="text-[10px] sm:text-xs md:text-base text-secondary-text mb-4 md:mb-8 max-w-md mx-auto px-4">
+            {heroBannerUrl ? <span className="text-white/90 drop-shadow-md">Explore our latest collection of curated pieces designed for the modern aesthetic.</span> : "Explore our latest collection of curated pieces designed for the modern aesthetic."}
+          </p>
+          <Link to="/products" className="inline-block border border-foreground bg-btn-bg text-btn-text px-4 py-1.5 md:px-10 md:py-3 text-[9px] md:text-sm tracking-widest uppercase transition-colors hover:bg-transparent hover:text-foreground">
+            Shop Collection
+          </Link>
+        </div>
+      </section>
 
       {/* Category Grid Section */}
       <section className="px-4 md:px-8 max-w-7xl mx-auto">
