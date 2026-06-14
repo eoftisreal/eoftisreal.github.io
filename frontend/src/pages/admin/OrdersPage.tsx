@@ -1,6 +1,7 @@
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, Fragment, useRef } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
-import { Search, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, RefreshCw, X } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 import { getAuthToken } from '@/lib/storage';
 function parseJwt(token: string) {
@@ -16,6 +17,12 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
 
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+
+  const [labelModalOpen, setLabelModalOpen] = useState(false);
+  const [currentLabelOrder, setCurrentLabelOrder] = useState<any>(null);
+  const [labelFrom, setLabelFrom] = useState("KK Crafted\nPatna, Bihar\nPhone: 9XXXXXXXXX");
+  const [labelBlackText, setLabelBlackText] = useState("BLACK");
+  const labelRef = useRef<HTMLDivElement>(null);
 
   const token = getAuthToken();
   const payload = token ? parseJwt(token) : null;
@@ -36,6 +43,21 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const generateLabelImage = async () => {
+    if (!labelRef.current || !currentLabelOrder) return;
+    try {
+      const canvas = await html2canvas(labelRef.current, { scale: 2 });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `Label_${currentLabelOrder._id}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Failed to generate label image", err);
+      alert("Failed to generate label image.");
+    }
+  };
 
   const filteredOrders = orders.filter(o => {
     const term = searchTerm.toLowerCase();
@@ -204,6 +226,34 @@ export default function AdminOrdersPage() {
 
                         </div>
 
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                          <div className="text-xs font-semibold text-slate-500 mb-2">Admin Remark (Special Note):</div>
+                          <div className="flex gap-2">
+                            <textarea
+                              className="w-full sm:w-1/2 p-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500"
+                              rows={2}
+                              placeholder="Add an admin remark..."
+                              defaultValue={order.adminRemark || ''}
+                              onBlur={async (e) => {
+                                const newRemark = e.target.value;
+                                if (newRemark === order.adminRemark) return;
+                                try {
+                                  const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/remark`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ remark: newRemark })
+                                  });
+                                  if (res.ok) {
+                                    setOrders(orders.map(o => o._id === order._id ? { ...o, adminRemark: newRemark } : o));
+                                  }
+                                } catch (err) {
+                                  console.error('Failed to update remark', err);
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+
                         <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-6 border-t border-slate-200 pt-4">
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-semibold text-slate-500">Shipping Status:</span>
@@ -267,6 +317,18 @@ export default function AdminOrdersPage() {
                               </select>
                             </div>
                           )}
+
+                          <div className="ml-auto">
+                            <button
+                              onClick={() => {
+                                setCurrentLabelOrder(order);
+                                setLabelModalOpen(true);
+                              }}
+                              className="rounded bg-slate-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700"
+                            >
+                              Generate Label
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -285,6 +347,81 @@ export default function AdminOrdersPage() {
           </table>
         </div>
       </div>
+
+      {labelModalOpen && currentLabelOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h2 className="text-lg font-bold">Generate Label</h2>
+              <button onClick={() => setLabelModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto flex-1 flex flex-col md:flex-row gap-6">
+              <div className="flex-1 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Top Right Text</label>
+                  <input
+                    type="text"
+                    value={labelBlackText}
+                    onChange={e => setLabelBlackText(e.target.value)}
+                    className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">From Address</label>
+                  <textarea
+                    rows={4}
+                    value={labelFrom}
+                    onChange={e => setLabelFrom(e.target.value)}
+                    className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+                  />
+                </div>
+                <button
+                  onClick={generateLabelImage}
+                  className="w-full rounded bg-foreground px-4 py-2 text-sm font-bold text-white hover:bg-foreground/90 mt-4"
+                >
+                  Download Label Image
+                </button>
+              </div>
+
+              <div className="flex-1 flex justify-center items-start bg-slate-100 p-4 rounded border border-slate-200 overflow-x-auto">
+                {/* The actual label to be captured */}
+                <div
+                  ref={labelRef}
+                  className="bg-white border border-black p-6 w-full max-w-sm text-sm font-mono text-black shadow-sm"
+                  style={{ minWidth: '320px' }}
+                >
+                  <div className="flex justify-between items-center border-b border-black pb-2 mb-4">
+                    <div className="font-bold text-lg">ORD-{currentLabelOrder._id.slice(-6).toUpperCase()}</div>
+                    <div className="font-bold text-lg uppercase">{labelBlackText}</div>
+                  </div>
+
+                  <div className="mb-4 border-b border-black pb-4">
+                    <div className="font-bold mb-1">TO:</div>
+                    <div>{currentLabelOrder.shippingAddress?.name || currentLabelOrder.userId?.name || 'Customer'}</div>
+                    {currentLabelOrder.shippingAddress?.line1 && <div>{currentLabelOrder.shippingAddress.line1}</div>}
+                    {currentLabelOrder.shippingAddress?.line2 && <div>{currentLabelOrder.shippingAddress.line2}</div>}
+                    <div>
+                      {currentLabelOrder.shippingAddress?.city || ''}{currentLabelOrder.shippingAddress?.state ? `, ${currentLabelOrder.shippingAddress.state}` : ''}
+                      {currentLabelOrder.shippingAddress?.postalCode ? ` - ${currentLabelOrder.shippingAddress.postalCode}` : ''}
+                    </div>
+                    {(currentLabelOrder.shippingAddress?.phone || currentLabelOrder.userId?.phone) && (
+                      <div className="mt-1">Phone: {currentLabelOrder.shippingAddress?.phone || currentLabelOrder.userId?.phone}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="font-bold mb-1">FROM:</div>
+                    <div className="whitespace-pre-wrap">{labelFrom}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
