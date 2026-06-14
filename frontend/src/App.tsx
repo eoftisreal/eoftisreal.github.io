@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,6 +9,8 @@ import HolographicBackground from '@/components/HolographicBackground';
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
 export default function App() {
+  const location = useLocation();
+  const isHomepage = location.pathname === '/';
   useEffect(() => {
     const syncToken = async () => {
       const token = getAuthToken();
@@ -35,7 +37,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-foreground antialiased relative">
-      <HolographicBackground />
+      <HolographicBackground blurOverlay={!isHomepage} />
       <Toaster position="bottom-center" reverseOrder={true} />
       <Header />
       <main className="mx-auto min-h-[70vh] max-w-6xl px-4 py-8">

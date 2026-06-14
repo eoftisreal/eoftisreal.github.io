@@ -4,10 +4,12 @@ import * as THREE from 'three'
 
 interface Props {
   className?: string
+  blurOverlay?: boolean
 }
 
 export default function HolographicBackground({
   className = '',
+  blurOverlay = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -350,12 +352,19 @@ export default function HolographicBackground({
 
   return (
     <div
-      ref={containerRef}
       className={`fixed inset-0 w-full h-full z-[-1] pointer-events-none ${className}`}
       style={{
         background:
           'radial-gradient(120% 100% at 50% 30%, #faf8f6 0%, #f4f2f0 45%, #ece6df 80%, #e2dad0 100%)',
       }}
-    />
+    >
+      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+      {/* Darkening & Blur Overlay */}
+      <div
+        className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out ${
+          blurOverlay ? 'backdrop-blur-md bg-[#1a1512]/50' : 'backdrop-blur-none bg-transparent'
+        }`}
+      />
+    </div>
   )
 }
