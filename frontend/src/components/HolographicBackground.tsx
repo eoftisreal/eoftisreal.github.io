@@ -18,8 +18,8 @@ export default function HolographicBackground({
     let W = window.innerWidth
     let H = window.innerHeight
 
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1))
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(W, H)
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
@@ -146,8 +146,8 @@ export default function HolographicBackground({
     }
 
     function makePolishMaps() {
-      const MW = 512
-      const MH = 128
+      const MW = 1024
+      const MH = 256
 
       const rc = document.createElement('canvas')
       rc.width = MW
@@ -155,7 +155,7 @@ export default function HolographicBackground({
       const rx = rc.getContext('2d')!
       rx.fillStyle = '#2e2e2e'
       rx.fillRect(0, 0, MW, MH)
-      for (let i = 0; i < 150; i++) {
+      for (let i = 0; i < 280; i++) {
         const y = Math.random() * MH
         const a = 0.03 + Math.random() * 0.06
         rx.strokeStyle = `rgba(150,150,150,${a})`
@@ -163,7 +163,7 @@ export default function HolographicBackground({
         rx.beginPath()
         const x0 = Math.random() * MW
         rx.moveTo(x0, y)
-        rx.lineTo(x0 + 100 + Math.random() * 200, y)
+        rx.lineTo(x0 + 200 + Math.random() * 500, y)
         rx.stroke()
       }
       const roughnessMap = new THREE.CanvasTexture(rc)
@@ -177,7 +177,7 @@ export default function HolographicBackground({
       const nx = nc.getContext('2d')!
       nx.fillStyle = '#8080ff'
       nx.fillRect(0, 0, MW, MH)
-      for (let i = 0; i < 120; i++) {
+      for (let i = 0; i < 220; i++) {
         const y = Math.random() * MH
         const gch = 128 + Math.round((Math.random() - 0.5) * 18)
         nx.strokeStyle = `rgba(128,${gch},255,${0.03 + Math.random() * 0.06})`
@@ -185,7 +185,7 @@ export default function HolographicBackground({
         nx.beginPath()
         const x0 = Math.random() * MW
         nx.moveTo(x0, y)
-        nx.lineTo(x0 + 100 + Math.random() * 200, y)
+        nx.lineTo(x0 + 200 + Math.random() * 500, y)
         nx.stroke()
       }
       const normalMap = new THREE.CanvasTexture(nc)
@@ -222,7 +222,7 @@ export default function HolographicBackground({
 
     const mat1 = makeMetalMat(GOLD)
     mats.push(mat1)
-    const outerGeo = makeOpenBand(1.5, 0.55, 0.36, 0.55, 160)
+    const outerGeo = makeOpenBand(1.5, 0.55, 0.36, 0.55, 320)
     geos.push(outerGeo)
     const ring1 = new THREE.Mesh(outerGeo, mat1)
     ring1.rotation.set(0.5, -0.35, 0.2)
@@ -230,7 +230,7 @@ export default function HolographicBackground({
 
     const mat2 = makeMetalMat(SILVER)
     mats.push(mat2)
-    const innerGeo = makeOpenBand(0.95, 0.42, 0.28, 0.5, 120)
+    const innerGeo = makeOpenBand(0.95, 0.42, 0.28, 0.5, 280)
     geos.push(innerGeo)
     const ring2 = new THREE.Mesh(innerGeo, mat2)
     ring2.rotation.set(0.7, 0.4, -0.25)
