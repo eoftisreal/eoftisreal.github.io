@@ -296,10 +296,10 @@ export default function HolographicBackground({
       scrollP += (targetP - scrollP) * 0.06
       const p = ease(scrollP)
 
-      ring1.rotation.z = 0.2 + t * 0.07 + p * Math.PI * 1.2
-      ring1.rotation.x = 0.5 + Math.sin(t * 0.2) * 0.08 + p * 0.6
-      ring2.rotation.z = -0.25 - t * 0.09 - p * Math.PI * 1.4
-      ring2.rotation.x = 0.7 + Math.cos(t * 0.18) * 0.08 - p * 0.5
+      ring1.rotation.z = 0.2 + t * 0.21 + p * Math.PI * 1.2
+      ring1.rotation.x = 0.5 + Math.sin(t * 0.6) * 0.08 + p * 0.6
+      ring2.rotation.z = -0.25 - t * 0.27 - p * Math.PI * 1.4
+      ring2.rotation.x = 0.7 + Math.cos(t * 0.54) * 0.08 - p * 0.5
 
       ring1.position.set(
         ring1Home.x - p * 1.4,
@@ -313,7 +313,7 @@ export default function HolographicBackground({
       )
 
       group.rotation.y = p * Math.PI * 0.35
-      group.position.y = Math.sin(t * 0.3) * 0.05 - p * 0.2
+      group.position.y = Math.sin(t * 0.9) * 0.05 - p * 0.2
       group.scale.setScalar(1 + p * 0.18)
 
       camera.position.z = lerp(7, 4.6, p)
