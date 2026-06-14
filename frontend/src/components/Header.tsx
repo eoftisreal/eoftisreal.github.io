@@ -85,7 +85,7 @@ export default function Header() {
             <img
               src="/logo.png"
               alt="Kapda Kraft"
-              className="h-8 md:h-10 w-full object-contain mix-blend-multiply"
+              className="h-8 md:h-12 w-full object-contain mix-blend-multiply"
               loading="eager" fetchPriority="high"
         />
           </Link>
