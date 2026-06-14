@@ -3,6 +3,7 @@ import { fetchWithAuth } from "@/lib/apiClient";
 import { useEffect, useState } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { parseJwt } from '@/lib/jwt';
+import * as XLSX from 'xlsx';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -10,6 +11,9 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const token = getAuthToken();
   const payload = token ? parseJwt(token) : null;
@@ -58,12 +62,104 @@ export default function SettingsPage() {
     }
   };
 
+  const handleExportOrders = async () => {
+    try {
+      setExporting(true);
+      const query = new URLSearchParams();
+      if (exportStartDate) query.append('startDate', new Date(exportStartDate).toISOString());
+      if (exportEndDate) {
+        const end = new Date(exportEndDate);
+        end.setHours(23, 59, 59, 999);
+        query.append('endDate', end.toISOString());
+      }
+
+      const res = await fetchWithAuth(`${apiBase}/admin/orders/export?${query.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch orders for export');
+
+      const orders = await res.json();
+      if (!orders || orders.length === 0) {
+        alert('No orders found for the selected date range.');
+        return;
+      }
+
+      const exportData = orders.map((o: any) => {
+        const customerName = o.userId?.name || o.shippingAddress?.name || 'N/A';
+        const customerPhone = o.userId?.phone || o.shippingAddress?.phone || 'N/A';
+        const customerEmail = o.guestEmail || o.userId?.email || 'N/A';
+        const address = o.shippingAddress ? `${o.shippingAddress.line1 || ''} ${o.shippingAddress.line2 || ''}, ${o.shippingAddress.city || ''}, ${o.shippingAddress.state || ''} ${o.shippingAddress.postalCode || ''}, ${o.shippingAddress.country || ''}` : 'N/A';
+
+        const products = o.items ? o.items.map((i: any) => `${i.title} (x${i.quantity})`).join(', ') : 'N/A';
+
+        return {
+          'Order ID': o._id,
+          'Date': new Date(o.createdAt).toLocaleString('en-GB'),
+          'Customer Email': customerEmail,
+          'Customer Phone': customerPhone,
+          'Customer Name': customerName,
+          'Address': address.trim(),
+          'Products': products,
+          'Subtotal': o.subtotal,
+          'Tax': o.tax,
+          'Delivery Charge': o.deliveryCharge,
+          'Discount': o.discount,
+          'Total': o.total,
+          'Status': o.status,
+          'Admin Remark': o.adminRemark || ''
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Orders");
+      XLSX.writeFile(wb, `Orders_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    } catch (err: any) {
+      alert(`Export failed: ${err.message}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-secondary-text">{error}</div>;
 
   return (
     <div>
       <h1 className="text-2xl font-black mb-6">Platform Settings</h1>
+
+      <div className="rounded-lg bg-white p-6 border border-secondary-bg mb-6">
+        <h2 className="text-lg font-semibold mb-4">Export Orders (Excel)</h2>
+        <div className="flex flex-col md:flex-row gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">From Date</label>
+            <input
+              type="date"
+              value={exportStartDate}
+              onChange={(e) => setExportStartDate(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">To Date</label>
+            <input
+              type="date"
+              value={exportEndDate}
+              onChange={(e) => setExportEndDate(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <button
+              onClick={handleExportOrders}
+              disabled={exporting}
+              className="rounded bg-green-600 px-6 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {exporting ? 'Exporting...' : 'Export Excel'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6 mb-6">
       <div className="rounded-lg bg-white p-6 border border-secondary-bg">
         <h2 className="text-lg font-semibold mb-4">Hero Banner</h2>

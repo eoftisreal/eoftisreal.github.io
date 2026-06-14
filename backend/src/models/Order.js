@@ -66,6 +66,7 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
     timeline: [timelineSchema],
+    adminRemark: { type: String, default: '' },
   },
   { timestamps: true }
 );

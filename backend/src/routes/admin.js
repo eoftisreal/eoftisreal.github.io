@@ -278,6 +278,39 @@ router.post('/orders/:id/reject', async (req, res, next) => {
 });
 
 
+router.put('/orders/:id/remark', async (req, res, next) => {
+  try {
+    const { remark } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    order.adminRemark = remark || '';
+    await order.save();
+    res.json({ message: 'Remark updated', order });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/orders/export', masterAdminOnly, async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let filter = {};
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const orders = await Order.find(filter).populate('userId').sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.put('/orders/:id/status', async (req, res, next) => {
   try {
     const { status } = req.body;
