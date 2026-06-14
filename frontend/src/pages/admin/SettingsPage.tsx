@@ -90,8 +90,13 @@ export default function SettingsPage() {
 
         const products = o.items ? o.items.map((i: any) => `${i.title} (x${i.quantity})`).join(', ') : 'N/A';
 
+        const orderIdStr = String(o._id);
+        const formattedOrderId = orderIdStr.length > 6
+          ? `${orderIdStr.slice(0, -6)}-${orderIdStr.slice(-6)}`
+          : orderIdStr;
+
         return {
-          'Order ID': o._id,
+          'Order ID': formattedOrderId,
           'Date': new Date(o.createdAt).toLocaleString('en-GB'),
           'Customer Email': customerEmail,
           'Customer Phone': customerPhone,
