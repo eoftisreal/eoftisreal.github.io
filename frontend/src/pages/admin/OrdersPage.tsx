@@ -400,7 +400,7 @@ export default function AdminOrdersPage() {
 
                   <div className="mb-4 border-b border-black pb-4">
                     <div className="font-bold mb-1">TO:</div>
-                    <div>{currentLabelOrder.shippingAddress?.name || currentLabelOrder.userId?.name || 'Customer'}</div>
+                    <div>{currentLabelOrder.shippingAddress?.name || currentLabelOrder.userId?.name || currentLabelOrder.guestEmail || 'Customer'}</div>
                     {currentLabelOrder.shippingAddress?.line1 && <div>{currentLabelOrder.shippingAddress.line1}</div>}
                     {currentLabelOrder.shippingAddress?.line2 && <div>{currentLabelOrder.shippingAddress.line2}</div>}
                     <div>
