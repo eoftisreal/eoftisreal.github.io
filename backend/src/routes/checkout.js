@@ -36,6 +36,8 @@ async function generateUniquePaymentAmount(baseTotal) {
 const checkoutSchema = z.object({
   body: z.object({
     shippingAddress: z.object({
+      name: z.string().optional(),
+      phone: z.string().optional(),
       line1: z.string().min(2),
       line2: z.string().optional(),
       city: z.string().min(2),
