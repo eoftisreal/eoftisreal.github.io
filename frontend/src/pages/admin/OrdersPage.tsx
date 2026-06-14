@@ -22,6 +22,7 @@ export default function AdminOrdersPage() {
   const [currentLabelOrder, setCurrentLabelOrder] = useState<any>(null);
   const [labelFrom, setLabelFrom] = useState("KK Crafted\nPatna, Bihar\nPhone: 9XXXXXXXXX");
   const [labelBlackText, setLabelBlackText] = useState("BLACK");
+  const [labelToName, setLabelToName] = useState("Customer");
   const labelRef = useRef<HTMLDivElement>(null);
 
   const token = getAuthToken();
@@ -322,6 +323,7 @@ export default function AdminOrdersPage() {
                             <button
                               onClick={() => {
                                 setCurrentLabelOrder(order);
+                                setLabelToName(order.shippingAddress?.name || order.userId?.name || order.guestEmail || 'Customer');
                                 setLabelModalOpen(true);
                               }}
                               className="rounded bg-slate-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700"
@@ -370,6 +372,15 @@ export default function AdminOrdersPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Customer Name (To)</label>
+                  <input
+                    type="text"
+                    value={labelToName}
+                    onChange={e => setLabelToName(e.target.value)}
+                    className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">From Address</label>
                   <textarea
                     rows={4}
@@ -390,17 +401,17 @@ export default function AdminOrdersPage() {
                 {/* The actual label to be captured */}
                 <div
                   ref={labelRef}
-                  className="bg-white border border-black p-6 w-full max-w-sm text-sm font-mono text-black shadow-sm"
+                  className="bg-white border border-black p-6 w-full max-w-sm text-sm font-mono text-black shadow-sm shrink-0"
                   style={{ minWidth: '320px' }}
                 >
-                  <div className="flex justify-between items-center border-b border-black pb-2 mb-4">
-                    <div className="font-bold text-lg">ORD-{currentLabelOrder._id.slice(-6).toUpperCase()}</div>
-                    <div className="font-bold text-lg uppercase">{labelBlackText}</div>
+                  <div className="flex justify-between items-center border-b border-black pb-2 mb-4 gap-4">
+                    <div className="font-bold text-lg break-all">ORD-{currentLabelOrder._id.slice(-6).toUpperCase()}</div>
+                    <div className="font-bold text-lg uppercase text-right break-words">{labelBlackText}</div>
                   </div>
 
                   <div className="mb-4 border-b border-black pb-4">
                     <div className="font-bold mb-1">TO:</div>
-                    <div>{currentLabelOrder.shippingAddress?.name || currentLabelOrder.userId?.name || currentLabelOrder.guestEmail || 'Customer'}</div>
+                    <div>{labelToName}</div>
                     {currentLabelOrder.shippingAddress?.line1 && <div>{currentLabelOrder.shippingAddress.line1}</div>}
                     {currentLabelOrder.shippingAddress?.line2 && <div>{currentLabelOrder.shippingAddress.line2}</div>}
                     <div>
