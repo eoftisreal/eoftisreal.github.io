@@ -83,8 +83,8 @@ export default function SettingsPage() {
       }
 
       const exportData = orders.map((o: any) => {
-        const customerName = o.userId?.name || o.shippingAddress?.name || 'N/A';
-        const customerPhone = o.userId?.phone || o.shippingAddress?.phone || 'N/A';
+        const customerName = o.shippingAddress?.name || o.userId?.name || o.guestEmail || 'N/A';
+        const customerPhone = o.shippingAddress?.phone || o.userId?.phone || 'N/A';
         const customerEmail = o.guestEmail || o.userId?.email || 'N/A';
         const address = o.shippingAddress ? `${o.shippingAddress.line1 || ''} ${o.shippingAddress.line2 || ''}, ${o.shippingAddress.city || ''}, ${o.shippingAddress.state || ''} ${o.shippingAddress.postalCode || ''}, ${o.shippingAddress.country || ''}` : 'N/A';
 
