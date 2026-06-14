@@ -10,6 +10,8 @@ type OrderItem = {
   unitPrice: number;
   image?: string;
   customImage?: string;
+  size?: string;
+  color?: string;
   productId?: { images?: string[] } | string;
 };
 
@@ -88,6 +90,13 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm text-slate-700 truncate">{item.title}</p>
+                          {(item.size || item.color) && (
+                            <p className="text-xs text-slate-500">
+                              {item.size && `Size: ${item.size}`}
+                              {item.size && item.color && ' | '}
+                              {item.color && `Color: ${item.color}`}
+                            </p>
+                          )}
                           <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
                         </div>
                       </div>

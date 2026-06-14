@@ -45,7 +45,7 @@ export default function Cart() {
       <h1 className="text-3xl font-black mb-8">Your Cart</h1>
       <ul className="divide-y divide-border border-y border-border">
         {items.map((item) => (
-          <li key={item.productId} className="flex gap-6 py-6">
+          <li key={`${item.productId}-${item.size || ''}-${item.color || ''}`} className="flex gap-6 py-6">
             <div className="h-24 w-24 shrink-0 overflow-hidden bg-secondary-bg rounded border border-border flex items-center justify-center">
               {item.image || item.customImage ? (
                 <img
@@ -62,6 +62,13 @@ export default function Cart() {
               <div className="flex justify-between">
                 <div>
                   <h3 className="font-semibold text-lg">{item.title}</h3>
+                  {(item.size || item.color) && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {item.size && `Size: ${item.size}`}
+                      {item.size && item.color && ' | '}
+                      {item.color && `Color: ${item.color}`}
+                    </p>
+                  )}
                   <p className="mt-1 text-sm text-secondary-text">
                     ₹{item.unitPrice}
                   </p>
@@ -75,6 +82,8 @@ export default function Cart() {
                       onClick={() =>
                         updateQuantity(
                           item.productId,
+                          item.size,
+                          item.color,
                           Math.max(1, item.quantity - 1),
                         )
                       }
@@ -88,7 +97,7 @@ export default function Cart() {
                     </span>
                     <button
                       onClick={() =>
-                        updateQuantity(item.productId, item.quantity + 1)
+                        updateQuantity(item.productId, item.size, item.color, item.quantity + 1)
                       }
                       className="p-2 text-secondary-text hover:text-foreground hover:bg-secondary-bg transition-colors"
                       title="Increase quantity"
@@ -97,7 +106,7 @@ export default function Cart() {
                     </button>
                   </div>
                   <button
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(item.productId, item.size, item.color)}
                     className="p-2 text-secondary-text hover:text-foreground transition-colors"
                     title="Remove item"
                   >

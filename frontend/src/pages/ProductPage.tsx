@@ -26,6 +26,9 @@ export default function ProductDetailPage() {
   const [uploadingCustom, setUploadingCustom] = useState(false);
   const [customImageUrl, setCustomImageUrl] = useState<string>('');
 
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
+
   useEffect(() => {
     let active = true;
 
@@ -36,6 +39,12 @@ export default function ProductDetailPage() {
           setProduct(data);
           if (data.images && data.images.length > 0) {
             setActiveImage(data.images[0]);
+          }
+          if (data.enableSizes && data.sizes && data.sizes.length > 0) {
+            setSelectedSize(data.sizes[0]);
+          }
+          if (data.enableColors && data.colors && data.colors.length > 0) {
+            setSelectedColor(data.colors[0]);
           }
         }
       } catch {
@@ -149,6 +158,40 @@ export default function ProductDetailPage() {
           </p>
         )}
 
+        {product.enableSizes && product.sizes && product.sizes.length > 0 && (
+          <div className="pt-4 border-t border-border">
+            <h3 className="font-bold mb-2">Size</h3>
+            <div className="flex flex-wrap gap-2">
+              {product.sizes.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setSelectedSize(s)}
+                  className={`border px-4 py-2 text-sm font-medium rounded transition-colors ${selectedSize === s ? 'border-foreground bg-foreground text-white' : 'border-slate-300 hover:border-slate-500'}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {product.enableColors && product.colors && product.colors.length > 0 && (
+          <div className="pt-4 border-t border-border">
+            <h3 className="font-bold mb-2">Color</h3>
+            <div className="flex flex-wrap gap-2">
+              {product.colors.map(c => (
+                <button
+                  key={c}
+                  onClick={() => setSelectedColor(c)}
+                  className={`border px-4 py-2 text-sm font-medium rounded transition-colors ${selectedColor === c ? 'border-foreground bg-foreground text-white' : 'border-slate-300 hover:border-slate-500'}`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {product.isCustomizable ? (
           <div className="space-y-4 pt-4 border-t border-border">
             <h3 className="font-bold">Customize Product</h3>
@@ -202,13 +245,13 @@ export default function ProductDetailPage() {
 
             {customImageUrl && (
               <div className="pt-2">
-                <AddToCartButton productId={product._id} title={product.title} price={product.price} image={product.images?.[0]} customImage={customImageUrl} />
+                <AddToCartButton productId={product._id} title={product.title} price={product.price} image={product.images?.[0]} customImage={customImageUrl} size={selectedSize} color={selectedColor} />
               </div>
             )}
           </div>
         ) : (
           <div className="pt-4 border-t border-border">
-            <AddToCartButton productId={product._id} title={product.title} price={product.price} image={product.images?.[0]} />
+            <AddToCartButton productId={product._id} title={product.title} price={product.price} image={product.images?.[0]} size={selectedSize} color={selectedColor} />
           </div>
         )}
 

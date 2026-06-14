@@ -21,6 +21,10 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
   const [isFeatured, setIsFeatured] = useState(false);
   const [isCustomizable, setIsCustomizable] = useState(false);
+  const [enableSizes, setEnableSizes] = useState(false);
+  const [sizes, setSizes] = useState('');
+  const [enableColors, setEnableColors] = useState(false);
+  const [colors, setColors] = useState('');
   const [minDeliveryDays, setMinDeliveryDays] = useState('');
   const [maxDeliveryDays, setMaxDeliveryDays] = useState('');
 
@@ -111,6 +115,10 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         r2ImageKeys: r2Key ? [r2Key] : [],
         isFeatured,
         isCustomizable,
+        enableSizes,
+        sizes: sizes ? sizes.split(',').map(s => s.trim()).filter(Boolean) : [],
+        enableColors,
+        colors: colors ? colors.split(',').map(c => c.trim()).filter(Boolean) : [],
         minDeliveryDays: minDeliveryDays ? Number(minDeliveryDays) : undefined,
         maxDeliveryDays: maxDeliveryDays ? Number(maxDeliveryDays) : undefined,
       };
@@ -242,6 +250,28 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
         <div className="flex flex-col gap-2 mt-4">
           <div className="flex items-center gap-2">
+            <input type="checkbox" id="enableSizes" checked={enableSizes} onChange={e => setEnableSizes(e.target.checked)} className="rounded border-gray-300 text-foreground focus:ring-foreground" />
+            <label htmlFor="enableSizes" className="text-sm font-medium text-gray-700">Enable Size Selector</label>
+          </div>
+          {enableSizes && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sizes (comma separated)</label>
+              <input value={sizes} onChange={e => setSizes(e.target.value)} placeholder="S, M, L, XL" className="w-full rounded border px-3 py-2 text-sm" />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="enableColors" checked={enableColors} onChange={e => setEnableColors(e.target.checked)} className="rounded border-gray-300 text-foreground focus:ring-foreground" />
+            <label htmlFor="enableColors" className="text-sm font-medium text-gray-700">Enable Color Selector</label>
+          </div>
+          {enableColors && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Colors (comma separated)</label>
+              <input value={colors} onChange={e => setColors(e.target.value)} placeholder="Red, Blue, Green" className="w-full rounded border px-3 py-2 text-sm" />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 mt-2 pt-4 border-t">
             <input type="checkbox" id="isFeatured" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} className="rounded border-gray-300 text-foreground focus:ring-foreground" />
             <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">Showcase on Home Page (Featured)</label>
           </div>
@@ -251,7 +281,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
           </div>
         </div>
 
-        <button disabled={loading} className="w-full rounded bg-foreground hover:bg-black px-4 py-2 font-semibold text-white disabled:opacity-50">
+        <button disabled={loading} className="w-full rounded bg-foreground hover:bg-black px-4 py-2 font-semibold text-white disabled:opacity-50 mt-4">
           {loading ? 'Creating Product...' : 'Create Product'}
         </button>
       </form>

@@ -17,6 +17,8 @@ const orderItemSchema = new mongoose.Schema(
     unitPrice: { type: Number, required: true },
     image: { type: String },
     customImage: { type: String },
+    size: { type: String },
+    color: { type: String },
   },
   { _id: false }
 );

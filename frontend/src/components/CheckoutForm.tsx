@@ -202,6 +202,8 @@ export default function CheckoutForm() {
           },
           body: JSON.stringify({
             shippingAddress: {
+              name: formData.name,
+              phone: formData.phone,
               line1: formData.line1,
               line2: formData.line2,
               city: formData.city,
@@ -279,7 +281,7 @@ export default function CheckoutForm() {
               <h2 className="text-lg font-semibold text-foreground mb-3">Order Summary</h2>
               <div className="space-y-3 mb-6">
                 {items.map((item) => (
-                  <div key={item.productId} className="flex items-center gap-3">
+                  <div key={`${item.productId}-${item.size || ''}-${item.color || ''}`} className="flex items-center gap-3">
                     <div className="flex gap-2 shrink-0 bg-white rounded border border-slate-200 p-1">
                       {item.image && (
                         <img src={item.image} alt={item.title} className="h-20 w-20 object-cover rounded" />
@@ -293,6 +295,13 @@ export default function CheckoutForm() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{item.title}</p>
+                      {(item.size || item.color) && (
+                        <p className="text-xs text-slate-500">
+                          {item.size && `Size: ${item.size}`}
+                          {item.size && item.color && ' | '}
+                          {item.color && `Color: ${item.color}`}
+                        </p>
+                      )}
                       <p className="text-xs text-slate-500">Qty: {item.quantity} × ₹{item.unitPrice}</p>
                     </div>
                     <div className="font-semibold text-sm">

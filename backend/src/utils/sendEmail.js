@@ -112,13 +112,19 @@ async function sendPasswordResetEmail(email, resetUrl) {
 }
 
 async function sendOrderConfirmationEmail(order, userEmail) {
-  const itemsHtml = order.items.map(item => `
+  const itemsHtml = order.items.map(item => {
+    let variations = [];
+    if (item.size) variations.push(`Size: ${item.size}`);
+    if (item.color) variations.push(`Color: ${item.color}`);
+    const variationsStr = variations.length > 0 ? `<br><span style="color: #666; font-size: 12px;">${variations.join(' | ')}</span>` : '';
+
+    return `
     <tr>
       ${item.customImage ? `<td style="padding: 10px; border-bottom: 1px solid #eee;"><img src="${item.customImage}" alt="${item.title}" style="max-width: 100px; max-height: 100px; border-radius: 4px;" /></td>` : '<td style="padding: 10px; border-bottom: 1px solid #eee;"></td>'}
-      <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${item.title}</strong><br>Qty: ${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${item.title}</strong>${variationsStr}<br>Qty: ${item.quantity}</td>
       <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${(item.quantity * item.unitPrice).toFixed(2)}</td>
     </tr>
-  `).join('');
+  `}).join('');
 
   const html = `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; color: #333333;">

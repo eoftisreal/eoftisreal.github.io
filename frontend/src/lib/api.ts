@@ -20,6 +20,10 @@ export type Product = {
   stock: number;
   isFeatured?: boolean;
   isCustomizable?: boolean;
+  enableSizes?: boolean;
+  sizes?: string[];
+  enableColors?: boolean;
+  colors?: string[];
   minDeliveryDays?: number;
   maxDeliveryDays?: number;
   tags?: string[];

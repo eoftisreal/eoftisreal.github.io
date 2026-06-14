@@ -29,6 +29,10 @@ export default function AdminProductEditPage() {
   const [tags, setTags] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [isCustomizable, setIsCustomizable] = useState(false);
+  const [enableSizes, setEnableSizes] = useState(false);
+  const [sizes, setSizes] = useState('');
+  const [enableColors, setEnableColors] = useState(false);
+  const [colors, setColors] = useState('');
   const [minDeliveryDays, setMinDeliveryDays] = useState('');
   const [maxDeliveryDays, setMaxDeliveryDays] = useState('');
 
@@ -70,6 +74,10 @@ export default function AdminProductEditPage() {
           setTags((prodRes.tags || []).join(', '));
           setIsFeatured(prodRes.isFeatured || false);
           setIsCustomizable(prodRes.isCustomizable || false);
+          setEnableSizes(prodRes.enableSizes || false);
+          setSizes((prodRes.sizes || []).join(', '));
+          setEnableColors(prodRes.enableColors || false);
+          setColors((prodRes.colors || []).join(', '));
           setMinDeliveryDays(prodRes.minDeliveryDays?.toString() || '');
           setMaxDeliveryDays(prodRes.maxDeliveryDays?.toString() || '');
           setImages(prodRes.images || []);
@@ -155,6 +163,10 @@ export default function AdminProductEditPage() {
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         isFeatured,
         isCustomizable,
+        enableSizes,
+        sizes: sizes ? sizes.split(',').map(s => s.trim()).filter(Boolean) : [],
+        enableColors,
+        colors: colors ? colors.split(',').map(c => c.trim()).filter(Boolean) : [],
         minDeliveryDays: minDeliveryDays ? Number(minDeliveryDays) : undefined,
         maxDeliveryDays: maxDeliveryDays ? Number(maxDeliveryDays) : undefined,
       };
@@ -319,8 +331,30 @@ export default function AdminProductEditPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 mt-2">
+          <div className="flex flex-col gap-2 mt-4">
             <div className="flex items-center gap-2">
+              <input type="checkbox" id="enableSizesEdit" checked={enableSizes} onChange={e => setEnableSizes(e.target.checked)} className="rounded border-gray-300 text-foreground focus:ring-foreground" />
+              <label htmlFor="enableSizesEdit" className="text-sm font-medium text-gray-700">Enable Size Selector</label>
+            </div>
+            {enableSizes && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sizes (comma separated)</label>
+                <input value={sizes} onChange={e => setSizes(e.target.value)} placeholder="S, M, L, XL" className="w-full rounded border px-3 py-2 text-sm" />
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="enableColorsEdit" checked={enableColors} onChange={e => setEnableColors(e.target.checked)} className="rounded border-gray-300 text-foreground focus:ring-foreground" />
+              <label htmlFor="enableColorsEdit" className="text-sm font-medium text-gray-700">Enable Color Selector</label>
+            </div>
+            {enableColors && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Colors (comma separated)</label>
+                <input value={colors} onChange={e => setColors(e.target.value)} placeholder="Red, Blue, Green" className="w-full rounded border px-3 py-2 text-sm" />
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mt-2 pt-4 border-t">
               <input type="checkbox" id="isFeaturedEdit" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} className="rounded border-gray-300 text-foreground focus:ring-foreground" />
               <label htmlFor="isFeaturedEdit" className="text-sm font-medium text-gray-700">Showcase on Home Page (Featured)</label>
             </div>
