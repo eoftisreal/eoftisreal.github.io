@@ -118,7 +118,9 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
       quantity: item.quantity,
       unitPrice: item.productId.price,
       image: item.productId.images?.[0] || '',
-      customImage: item.customImage
+      customImage: item.customImage,
+      size: item.size,
+      color: item.color
     }));
 
     const order = await Order.create({

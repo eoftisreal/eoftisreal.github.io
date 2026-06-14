@@ -13,14 +13,16 @@ export type CartItem = {
   quantity: number;
   image?: string;
   customImage?: string;
+  size?: string;
+  color?: string;
 };
 
 type CartState = {
   items: CartItem[];
   fetchCart: () => Promise<void>;
-  addItem: (product: Pick<CartItem, 'productId' | 'title' | 'unitPrice' | 'image' | 'customImage'>) => Promise<void>;
-  updateQuantity: (productId: string, quantity: number) => Promise<void>;
-  removeItem: (productId: string) => Promise<void>;
+  addItem: (product: Pick<CartItem, 'productId' | 'title' | 'unitPrice' | 'image' | 'customImage' | 'size' | 'color'>) => Promise<void>;
+  updateQuantity: (productId: string, size: string | undefined, color: string | undefined, quantity: number) => Promise<void>;
+  removeItem: (productId: string, size: string | undefined, color: string | undefined) => Promise<void>;
   syncLocalCartToBackend: () => Promise<void>;
   clearLocalCart: () => void;
 };
@@ -50,6 +52,8 @@ export const useCartStore = create<CartState>()(
           quantity: item.quantity,
           image: item.productId.images?.[0] || undefined,
           customImage: item.customImage || undefined,
+          size: item.size || undefined,
+          color: item.color || undefined,
         }));
         set({ items: mappedItems });
       }
@@ -63,11 +67,19 @@ export const useCartStore = create<CartState>()(
     if (!token) {
       // Guest: update Zustand directly, it will persist
       const currentItems = get().items;
-      const existing = currentItems.find((item) => item.productId === product.productId);
+      const existing = currentItems.find((item) =>
+        item.productId === product.productId &&
+        item.size === product.size &&
+        item.color === product.color
+      );
 
       let updatedItems;
       if (existing) {
-        updatedItems = currentItems.map(item => item.productId === product.productId ? { ...item, quantity: item.quantity + 1 } : item);
+        updatedItems = currentItems.map(item =>
+          item.productId === product.productId && item.size === product.size && item.color === product.color
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
       } else {
         updatedItems = [...currentItems, { ...product, quantity: 1 }];
       }
@@ -79,11 +91,19 @@ export const useCartStore = create<CartState>()(
 
     // Logged in: update optimistically
     const currentItems = get().items;
-    const existing = currentItems.find((item) => item.productId === product.productId);
+    const existing = currentItems.find((item) =>
+      item.productId === product.productId &&
+      item.size === product.size &&
+      item.color === product.color
+    );
     const newQuantity = existing ? existing.quantity + 1 : 1;
 
     const updatedItems = existing
-      ? currentItems.map(item => item.productId === product.productId ? { ...item, quantity: newQuantity } : item)
+      ? currentItems.map(item =>
+          item.productId === product.productId && item.size === product.size && item.color === product.color
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
       : [...currentItems, { ...product, quantity: 1 }];
 
     set({ items: updatedItems });
@@ -98,7 +118,9 @@ export const useCartStore = create<CartState>()(
         body: JSON.stringify({
           productId: product.productId,
           quantity: newQuantity,
-          customImage: product.customImage
+          customImage: product.customImage,
+          size: product.size,
+          color: product.color
         }),
       });
 
@@ -112,7 +134,7 @@ export const useCartStore = create<CartState>()(
     }
   },
 
-  updateQuantity: async (productId, quantity) => {
+  updateQuantity: async (productId, size, color, quantity) => {
     const newQuantity = Math.max(1, quantity);
     const token = getAuthToken();
 
@@ -120,7 +142,7 @@ export const useCartStore = create<CartState>()(
       // Guest
       const currentItems = get().items;
       const updated = currentItems.map(item =>
-        item.productId === productId ? { ...item, quantity: newQuantity } : item
+        item.productId === productId && item.size === size && item.color === color ? { ...item, quantity: newQuantity } : item
       );
       setCartItems(updated);
       set({ items: updated });
@@ -130,7 +152,7 @@ export const useCartStore = create<CartState>()(
     // Logged in: update optimistically
     const currentItems = get().items;
     const updated = currentItems.map(item =>
-      item.productId === productId ? { ...item, quantity: newQuantity } : item
+      item.productId === productId && item.size === size && item.color === color ? { ...item, quantity: newQuantity } : item
     );
     set({ items: updated });
 
@@ -141,7 +163,7 @@ export const useCartStore = create<CartState>()(
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ productId, quantity: newQuantity }),
+        body: JSON.stringify({ productId, quantity: newQuantity, size, color }),
       });
 
       if (!res.ok) {
@@ -154,13 +176,15 @@ export const useCartStore = create<CartState>()(
     }
   },
 
-  removeItem: async (productId) => {
+  removeItem: async (productId, size, color) => {
     const token = getAuthToken();
+
+    const isMatch = (item: CartItem) => item.productId === productId && item.size === size && item.color === color;
 
     if (!token) {
       // Guest
       const currentItems = get().items;
-      const updated = currentItems.filter(item => item.productId !== productId);
+      const updated = currentItems.filter(item => !isMatch(item));
       setCartItems(updated);
       set({ items: updated });
       return;
@@ -168,13 +192,17 @@ export const useCartStore = create<CartState>()(
 
     // Logged in: update optimistically
     const currentItems = get().items;
-    const updated = currentItems.filter(item => item.productId !== productId);
+    const updated = currentItems.filter(item => !isMatch(item));
     set({ items: updated });
 
     try {
       const res = await fetchWithAuth(`${apiBase}/cart/items/${productId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ size, color })
       });
 
       if (!res.ok) {

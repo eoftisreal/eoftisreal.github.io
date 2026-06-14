@@ -27,7 +27,9 @@ const itemSchema = z.object({
   body: z.object({
     productId: z.string(),
     quantity: z.number().int().min(1),
-    customImage: z.string().optional()
+    customImage: z.string().optional(),
+    size: z.string().optional(),
+    color: z.string().optional()
   }),
   query: z.object({}),
   params: z.object({}),
@@ -35,7 +37,7 @@ const itemSchema = z.object({
 
 router.post('/items', validate(itemSchema), async (req, res, next) => {
   try {
-    const { productId, quantity, customImage } = req.validated.body;
+    const { productId, quantity, customImage, size, color } = req.validated.body;
     const product = await Product.findById(productId);
     if (!product || !product.isActive) {
       const err = new Error('Product unavailable');
@@ -44,12 +46,16 @@ router.post('/items', validate(itemSchema), async (req, res, next) => {
     }
 
     const cart = await getCart(req.user.id);
-    const existing = cart.items.find((item) => item.productId.toString() === productId);
+    const existing = cart.items.find((item) =>
+      item.productId.toString() === productId &&
+      item.size === size &&
+      item.color === color
+    );
     if (existing) {
       existing.quantity = quantity;
       if (customImage) existing.customImage = customImage;
     } else {
-      cart.items.push({ productId, quantity, customImage });
+      cart.items.push({ productId, quantity, customImage, size, color });
     }
 
     await cart.save();
@@ -65,7 +71,9 @@ const syncSchema = z.object({
     items: z.array(z.object({
       productId: z.string(),
       quantity: z.number().int().min(1),
-      customImage: z.string().optional()
+      customImage: z.string().optional(),
+      size: z.string().optional(),
+      color: z.string().optional()
     }))
   }),
   query: z.object({}),
@@ -78,7 +86,11 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
     const cart = await getCart(req.user.id);
 
     for (const item of items) {
-      const existing = cart.items.find((i) => i.productId.toString() === item.productId);
+      const existing = cart.items.find((i) =>
+        i.productId.toString() === item.productId &&
+        i.size === item.size &&
+        i.color === item.color
+      );
       if (existing) {
         existing.quantity += item.quantity;
         if (item.customImage) existing.customImage = item.customImage;
@@ -88,7 +100,9 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
           cart.items.push({
             productId: item.productId,
             quantity: item.quantity,
-            customImage: item.customImage
+            customImage: item.customImage,
+            size: item.size,
+            color: item.color
           });
         }
       }
@@ -102,10 +116,28 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
   }
 });
 
-router.delete('/items/:productId', async (req, res, next) => {
+const deleteItemSchema = z.object({
+  body: z.object({
+    size: z.string().optional(),
+    color: z.string().optional()
+  }),
+  query: z.object({}),
+  params: z.object({
+    productId: z.string()
+  }),
+});
+
+router.delete('/items/:productId', validate(deleteItemSchema), async (req, res, next) => {
   try {
+    const { size, color } = req.validated.body;
     const cart = await getCart(req.user.id);
-    cart.items = cart.items.filter((item) => item.productId.toString() !== req.params.productId);
+    cart.items = cart.items.filter((item) => {
+      const isSameProduct = item.productId.toString() === req.validated.params.productId;
+      const isSameSize = item.size === size;
+      const isSameColor = item.color === color;
+      // Filter out the exact match
+      return !(isSameProduct && isSameSize && isSameColor);
+    });
     await cart.save();
     await cart.populate('items.productId');
     res.json(cart);

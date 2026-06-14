@@ -217,6 +217,13 @@ export default function AdminOrdersPage() {
                                 </div>
                                 <div>
                                   <div className="font-semibold text-slate-800">{item.title}</div>
+                                  {(item.size || item.color) && (
+                                    <div className="text-xs text-slate-500 mt-0.5">
+                                      {item.size && `Size: ${item.size}`}
+                                      {item.size && item.color && ' | '}
+                                      {item.color && `Color: ${item.color}`}
+                                    </div>
+                                  )}
                                   <div className="text-slate-500 mt-1">
                                     Qty: {item.quantity} &times; ₹{item.unitPrice} = <span className="font-medium text-slate-700">₹{item.quantity * item.unitPrice}</span>
                                   </div>
