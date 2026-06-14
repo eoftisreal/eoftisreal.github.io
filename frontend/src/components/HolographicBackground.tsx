@@ -362,7 +362,7 @@ export default function HolographicBackground({
       {/* Darkening & Blur Overlay */}
       <div
         className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out ${
-          blurOverlay ? 'backdrop-blur-md bg-[#1a1512]/50' : 'backdrop-blur-none bg-transparent'
+          blurOverlay ? 'backdrop-blur-md bg-[#faf8f6]/60' : 'backdrop-blur-none bg-transparent'
         }`}
       />
     </div>
