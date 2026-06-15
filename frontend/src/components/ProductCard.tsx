@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
 import type { Product } from '@/lib/api';
+import WishlistButton from './WishlistButton';
 
 export default function ProductCard({ product }: { product: Product }) {
   return (
     <Link to={`/products/${product._id}`} className="group flex flex-col overflow-hidden rounded-md border border-secondary-bg bg-white transition hover:border-border">
       <div className="relative aspect-square bg-secondary-bg overflow-hidden">
+        <div className="absolute top-2 right-2 z-20">
+          <WishlistButton productId={product._id} />
+        </div>
         <img
           src={product.images?.[0] || 'https://placehold.co/600x600?text=No+Image'}
           alt={product.title}

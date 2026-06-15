@@ -6,3 +6,8 @@ coverage/
 .env
 .env.local
 dist/
+backend.log
+backend.pid
+frontend.log
+frontend.pid
+test_output.log

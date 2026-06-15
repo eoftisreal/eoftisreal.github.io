@@ -1,0 +1,27 @@
+
+> backend@1.0.0 start
+> node src/server.js
+
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Backend listening on :4000
+MongoDB disconnected
+Failed to connect to database on startup. Server is still running. Failed to connect to MongoDB at mongodb://127.0.0.1:27017/ecommerce: connect ECONNREFUSED 127.0.0.1:27017
+MongoDB connection error connect ECONNREFUSED 127.0.0.1:27017
+[0mGET /api/products/categories [31m500[0m 10094.366 ms - 77[0m
+[0mGET /api/products?isFeatured=true&limit=4 [31m500[0m 10036.282 ms - 75[0m
+[0mGET /api/public/settings [31m500[0m 10021.752 ms - 75[0m
+[0mGET /api/products/categories [31m500[0m 10007.077 ms - 77[0m
+[0mGET /api/products?isFeatured=true&limit=4 [31m500[0m 10000.920 ms - 75[0m
+[0mGET /api/public/settings [31m500[0m 10008.336 ms - 75[0m
+[0mGET /api/products/categories [31m500[0m 10010.727 ms - 77[0m
+[0mGET /api/products?isFeatured=true&limit=4 [31m500[0m 10007.570 ms - 75[0m
+[0mGET /api/public/settings [31m500[0m 10006.764 ms - 75[0m
+[0mGET /api/products/categories [31m500[0m 10004.714 ms - 77[0m
+[0mGET /api/products?isFeatured=true&limit=4 [31m500[0m 10002.433 ms - 75[0m
+[0mGET /api/public/settings [31m500[0m 10002.304 ms - 75[0m
+[0mGET /api/products/categories [31m500[0m 10004.056 ms - 77[0m
+[0mGET /api/products/brands [31m500[0m 10006.509 ms - 73[0m
+[0mGET /api/products? [31m500[0m 10006.041 ms - 75[0m
+[0mGET /api/products/categories [31m500[0m 10008.743 ms - 77[0m
+[0mGET /api/products/brands [31m500[0m 10009.007 ms - 73[0m
+[0mGET /api/products? [31m500[0m 10003.759 ms - 75[0m
