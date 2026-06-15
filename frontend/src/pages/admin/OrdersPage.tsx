@@ -24,6 +24,7 @@ export default function AdminOrdersPage() {
   const [labelBlackText, setLabelBlackText] = useState("BLACK");
   const [labelToName, setLabelToName] = useState("Customer");
   const labelRef = useRef<HTMLDivElement>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   const token = getAuthToken();
   const payload = token ? parseJwt(token) : null;
@@ -80,6 +81,16 @@ export default function AdminOrdersPage() {
           <RefreshCw className="w-4 h-4" />
           Refresh
         </button>
+        <div className="flex items-center gap-2">
+          <label htmlFor="auto-refresh" className="text-sm text-slate-600 font-medium">Auto Refresh (10s)</label>
+          <input
+            type="checkbox"
+            id="auto-refresh"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            className="w-4 h-4 rounded border-slate-300 text-foreground focus:ring-foreground"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-md border border-secondary-bg">
@@ -140,7 +151,7 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="px-4 py-3 font-medium">#{order._id.slice(-6)}</td>
                     <td className="px-4 py-3 text-secondary-text">
-                      {new Date(order.createdAt).toLocaleDateString('en-GB')}
+                      {new Date(order.createdAt).toLocaleDateString('en-GB')} {new Date(order.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-4 py-3 text-secondary-text">
                       {order.guestEmail || (order.userId && order.userId.email) || 'N/A'}
