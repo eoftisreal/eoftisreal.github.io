@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { apiGet, Product } from '@/lib/api';
+import { Product } from '@/lib/api';
 import { useWishlistStore } from '@/store/wishlist';
 import ProductGrid from '@/components/ProductGrid';
 import { getAuthToken } from '@/lib/storage';
@@ -21,8 +21,15 @@ export default function AccountPage() {
       try {
         const token = getAuthToken();
         if (token) {
-          const userRes = await apiGet<any>('/auth/me');
-          setUser(userRes);
+          try {
+            const userRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/me`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              setUser(userData);
+            }
+          } catch (e) { console.error('Failed to fetch user'); }
 
           try {
              const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders/my-orders`, {
