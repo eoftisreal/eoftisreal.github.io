@@ -103,19 +103,19 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 <Link to="/account" className={`${linkClass} flex items-center`} title="Account">
-                  <img src="/icons/user.png" alt="Account" className="h-7 w-7 md:h-8 md:w-8 object-contain" loading="eager" fetchPriority="high" />
+                  <img src="/icons/user.png" alt="Account" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
                 </Link>
                 <button onClick={handleLogout} className={`${linkClass} hidden sm:flex items-center`} title="Logout">
-                  <img src="/icons/logout.png" alt="Logout" className="h-7 w-7 md:h-8 md:w-8 object-contain" loading="eager" fetchPriority="high" />
+                  <img src="/icons/logout.png" alt="Logout" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
                 </button>
               </>
             ) : (
               <Link to="/auth/login" className={`${linkClass} flex items-center`} title="Log In">
-                <img src="/icons/login.png" alt="Log In" className="h-7 w-7 md:h-8 md:w-8 object-contain" loading="eager" fetchPriority="high" />
+                <img src="/icons/login.png" alt="Log In" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
               </Link>
             )}
             <Link to="/account#wishlist" className={`${linkClass} flex items-center relative`} title="Wishlist">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart h-[22px] w-[22px] md:h-[26px] md:w-[26px]"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart h-[22px] w-[22px] md:h-7 md:w-7"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
               {wishlistItemCount > 0 && (
                 <span className="absolute -top-1 -right-2 bg-foreground text-white text-[10px] font-bold h-4 min-w-[16px] flex items-center justify-center rounded-full px-1">
                   {wishlistItemCount}
@@ -123,7 +123,7 @@ export default function Header() {
               )}
             </Link>
             <Link to="/cart" className={`${linkClass} flex items-center relative`} title="Cart">
-              <img src="/icons/cart.png" alt="Cart" className="h-7 w-7 md:h-8 md:w-8 object-contain" loading="eager" fetchPriority="high" />
+              <img src="/icons/cart.png" alt="Cart" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
               {cartItemCount > 0 && (
                 <span className="absolute -top-1 -right-2 bg-foreground text-white text-[10px] font-bold h-4 min-w-[16px] flex items-center justify-center rounded-full px-1">
                   {cartItemCount}
