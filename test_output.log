@@ -1,0 +1,77 @@
+
+> backend@1.0.0 test
+> jest --runInBand tests/wishlist.test.js
+
+  console.log
+    ◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+FAIL tests/wishlist.test.js
+  Wishlist API
+    ✕ should return empty wishlist for new user (171 ms)
+    ✕ should add to wishlist (12 ms)
+    ✕ should remove from wishlist (22 ms)
+    ✕ should sync wishlist (18 ms)
+
+  ● Wishlist API › should return empty wishlist for new user
+
+    TypeError: jwt.generateTokens is not a function
+
+      32 |   beforeEach(async () => {
+      33 |     user = await User.create({ email: 'test@test.com', password: 'password', role: 'user' });
+    > 34 |     token = jwt.generateTokens(user._id).accessToken;
+         |                 ^
+      35 |
+      36 |     product1 = await Product.create({ title: 'P1', handle: 'p1', price: 10 });
+      37 |     product2 = await Product.create({ title: 'P2', handle: 'p2', price: 20 });
+
+      at Object.generateTokens (tests/wishlist.test.js:34:17)
+
+  ● Wishlist API › should add to wishlist
+
+    TypeError: jwt.generateTokens is not a function
+
+      32 |   beforeEach(async () => {
+      33 |     user = await User.create({ email: 'test@test.com', password: 'password', role: 'user' });
+    > 34 |     token = jwt.generateTokens(user._id).accessToken;
+         |                 ^
+      35 |
+      36 |     product1 = await Product.create({ title: 'P1', handle: 'p1', price: 10 });
+      37 |     product2 = await Product.create({ title: 'P2', handle: 'p2', price: 20 });
+
+      at Object.generateTokens (tests/wishlist.test.js:34:17)
+
+  ● Wishlist API › should remove from wishlist
+
+    TypeError: jwt.generateTokens is not a function
+
+      32 |   beforeEach(async () => {
+      33 |     user = await User.create({ email: 'test@test.com', password: 'password', role: 'user' });
+    > 34 |     token = jwt.generateTokens(user._id).accessToken;
+         |                 ^
+      35 |
+      36 |     product1 = await Product.create({ title: 'P1', handle: 'p1', price: 10 });
+      37 |     product2 = await Product.create({ title: 'P2', handle: 'p2', price: 20 });
+
+      at Object.generateTokens (tests/wishlist.test.js:34:17)
+
+  ● Wishlist API › should sync wishlist
+
+    TypeError: jwt.generateTokens is not a function
+
+      32 |   beforeEach(async () => {
+      33 |     user = await User.create({ email: 'test@test.com', password: 'password', role: 'user' });
+    > 34 |     token = jwt.generateTokens(user._id).accessToken;
+         |                 ^
+      35 |
+      36 |     product1 = await Product.create({ title: 'P1', handle: 'p1', price: 10 });
+      37 |     product2 = await Product.create({ title: 'P2', handle: 'p2', price: 20 });
+
+      at Object.generateTokens (tests/wishlist.test.js:34:17)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 4 total
+Snapshots:   0 total
+Time:        2.039 s, estimated 7 s
+Ran all test suites matching /tests\/wishlist.test.js/i.
