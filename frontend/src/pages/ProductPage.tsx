@@ -178,17 +178,24 @@ export default function ProductDetailPage() {
 
         {product.enableColors && product.colors && product.colors.length > 0 && (
           <div className="pt-4 border-t border-border">
-            <h3 className="font-bold mb-2">Color</h3>
-            <div className="flex flex-wrap gap-2">
-              {product.colors.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setSelectedColor(c)}
-                  className={`border px-4 py-2 text-sm font-medium rounded transition-colors ${selectedColor === c ? 'border-foreground bg-foreground text-white' : 'border-slate-300 hover:border-slate-500'}`}
-                >
-                  {c}
-                </button>
-              ))}
+            <h3 className="font-bold mb-2">Color: <span className="font-normal text-secondary-text">{selectedColor}</span></h3>
+            <div className="flex flex-wrap gap-3">
+              {product.colors.map(c => {
+                // A quick check if string is hex or simple valid CSS color
+                const isColorCode = /^#([0-9A-F]{3}){1,2}$/i.test(c) || ['black', 'white', 'red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'gray', 'silver', 'gold', 'brown', 'navy'].includes(c.toLowerCase());
+
+                return (
+                  <button
+                    key={c}
+                    onClick={() => setSelectedColor(c)}
+                    className={`relative w-8 h-8 rounded-full border transition-all ${selectedColor === c ? 'ring-2 ring-foreground ring-offset-2 border-transparent shadow-md' : 'border-slate-300 hover:border-slate-400'}`}
+                    style={isColorCode ? { backgroundColor: c } : {}}
+                    title={c}
+                  >
+                    {!isColorCode && <span className="text-[10px] uppercase font-semibold text-foreground absolute inset-0 flex items-center justify-center truncate px-1">{c.slice(0,3)}</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

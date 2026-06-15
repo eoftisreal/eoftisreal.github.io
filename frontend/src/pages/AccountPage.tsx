@@ -17,7 +17,7 @@ export default function AccountPage() {
   }, [fetchWishlist]);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadUserData() {
       try {
         const token = getAuthToken();
         if (token) {
@@ -34,24 +34,32 @@ export default function AccountPage() {
              }
           } catch(e) { console.error('Failed to fetch orders'); }
         }
+      } catch (error) {
+        console.error('Error fetching user data', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadUserData();
+  }, []);
 
-        if (wishlistItems.length > 0) {
-          // Fetch products for wishlist items
+  useEffect(() => {
+    async function loadWishlistProducts() {
+      if (wishlistItems.length > 0) {
+        try {
           const promises = wishlistItems.map(id =>
              fetch(`${import.meta.env.VITE_API_URL || '/api'}/products/${id}`).then(res => res.ok ? res.json() : null)
           );
           const results = await Promise.all(promises);
           setProducts(results.filter(p => p !== null));
-        } else {
-          setProducts([]);
+        } catch (error) {
+          console.error('Error fetching wishlist products', error);
         }
-      } catch (error) {
-        console.error('Error fetching account data', error);
-      } finally {
-        setLoading(false);
+      } else {
+        setProducts([]);
       }
     }
-    loadData();
+    loadWishlistProducts();
   }, [wishlistItems]);
 
   if (loading) return <div className="py-10 text-center">Loading account...</div>;
