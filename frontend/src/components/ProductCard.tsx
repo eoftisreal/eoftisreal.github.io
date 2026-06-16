@@ -29,7 +29,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
       <div className="space-y-1 p-4 flex flex-col flex-grow">
         <h3 className="line-clamp-1 text-sm font-medium text-foreground">{product.title}</h3>
-        <p className="text-xs text-secondary-text mb-2 flex-grow">{product.artistName}</p>
+        {product.artistName && <p className="text-xs text-secondary-text mb-2 flex-grow">{product.artistName}</p>}
         <div className="flex items-center gap-2 mt-auto pt-1">
           <span className="text-sm font-medium text-foreground">₹{product.price}</span>
           {product.compareAtPrice && product.compareAtPrice > product.price ? <span className="text-xs text-secondary-text line-through">₹{product.compareAtPrice}</span> : null}
