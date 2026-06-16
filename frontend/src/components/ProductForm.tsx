@@ -206,13 +206,13 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Artist Name</label>
-          <input type="text" required value={artistName} onChange={e => setArtistName(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
+          <input type="text" value={artistName} onChange={e => setArtistName(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Category</label>
-            <select required value={category} onChange={e => setCategory(e.target.value)} className="mt-1 w-full rounded border px-3 py-2">
+            <select value={category} onChange={e => setCategory(e.target.value)} className="mt-1 w-full rounded border px-3 py-2">
               <option value="">Select a category</option>
               {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
             </select>
@@ -233,7 +233,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Stock</label>
-            <input type="number" required min="0" value={stock} onChange={e => setStock(Number(e.target.value))} className="mt-1 w-full rounded border px-3 py-2" />
+            <input type="number" min="0" value={stock} onChange={e => setStock(Number(e.target.value))} className="mt-1 w-full rounded border px-3 py-2" />
           </div>
         </div>
 
