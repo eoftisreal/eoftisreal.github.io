@@ -134,7 +134,7 @@ export default function ProductDetailPage() {
       </div>
       <div className="space-y-4">
         <h1 className="text-3xl font-black">{product.title}</h1>
-        <p className="text-slate-600">By {product.artistName}</p>
+        {product.artistName && <p className="text-slate-600">By {product.artistName}</p>}
 
         {product.tags && product.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
