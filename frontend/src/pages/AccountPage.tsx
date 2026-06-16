@@ -36,8 +36,12 @@ export default function AccountPage() {
                 headers: { Authorization: `Bearer ${token}` }
              });
              if (ordersRes.ok) {
-                 const ordersData = await ordersRes.json();
-                 setOrders(ordersData.slice(0, 3)); // show only recent 3
+                                  const ordersData = await ordersRes.json();
+                 let recentOrders = ordersData.filter((o: any) => o.status !== 'delivered');
+                 if (recentOrders.length === 0 && ordersData.length > 0) {
+                   recentOrders = [ordersData[0]];
+                 }
+                 setOrders(recentOrders.slice(0, 3));
              }
           } catch(e) { console.error('Failed to fetch orders'); }
         }
@@ -82,12 +86,14 @@ export default function AccountPage() {
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-6">
            <div className="border border-border p-6 bg-white">
-             <h2 className="text-sm font-bold uppercase tracking-widest mb-4 border-b border-border pb-2">Profile Details</h2>
+                          <div className="flex justify-between items-center mb-4 border-b border-border pb-2">
+               <h2 className="text-sm font-bold uppercase tracking-widest">Profile Details</h2>
+                              <button onClick={() => alert('Profile editing is currently available during checkout. Standalone profile editing coming soon.')} className="text-xs text-secondary-text hover:text-foreground">EDIT</button>
+             </div>
              {user ? (
                <div className="space-y-2 text-sm text-secondary-text">
                  <p><span className="font-medium text-foreground">Name:</span> {user.name || 'Not provided'}</p>
                  <p><span className="font-medium text-foreground">Email:</span> {user.email}</p>
-                 <p><span className="font-medium text-foreground">Role:</span> <span className="uppercase">{user.role}</span></p>
                </div>
              ) : (
                <p className="text-sm text-secondary-text">You are currently using a guest session.</p>
