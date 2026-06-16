@@ -100,8 +100,8 @@ const createSchema = z.object({
   body: z.object({
     title: z.string().min(2),
     description: z.string().min(10),
-    artistName: z.string().min(2),
-    category: z.string().min(2),
+    artistName: z.string().optional().or(z.literal("")),
+    category: z.string().optional().or(z.literal("")),
     brand: z.string().optional(),
     images: z.array(z.string().url()).default([]),
     r2ImageKeys: z.array(z.string()).default([]),
