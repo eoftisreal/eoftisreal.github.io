@@ -1,0 +1,10 @@
+<<<<<<< SEARCH
+          <Route path="about" element={<AboutPage />} />
+
+          <Route path="cart" element={<CartPage />} />
+=======
+          <Route path="about" element={<AboutPage />} />
+          <Route path="test-hero" element={React.createElement(React.lazy(() => import('@/pages/TestHero')))} />
+
+          <Route path="cart" element={<CartPage />} />
+>>>>>>> REPLACE
