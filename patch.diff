@@ -1,0 +1,26 @@
+<<<<<<< SEARCH
+          <Route path="products/:id" element={<ProductPage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="test-product-card" element={React.createElement(React.lazy(() => import('@/pages/TestProductCard')))} />
+
+          <Route path="cart" element={<CartPage />} />
+=======
+          <Route path="products/:id" element={<ProductPage />} />
+          <Route path="about" element={<AboutPage />} />
+
+          <Route path="cart" element={<CartPage />} />
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/:id" element={<OrderDetailPage />} />
+          <Route path="account" element={<AccountPage />} />
+          <Route path="test-product-card" element={React.createElement(React.lazy(() => import('@/pages/TestProductCard')))} />
+
+          <Route path="auth/login" element={<LoginPage />} />
+=======
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/:id" element={<OrderDetailPage />} />
+          <Route path="account" element={<AccountPage />} />
+
+          <Route path="auth/login" element={<LoginPage />} />
+>>>>>>> REPLACE
