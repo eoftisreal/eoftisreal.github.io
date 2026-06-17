@@ -17,6 +17,7 @@ export default function AccountPage() {
   }, [fetchWishlist]);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadData() {
       try {
         const token = getAuthToken();
@@ -27,7 +28,7 @@ export default function AccountPage() {
             });
             if (userRes.ok) {
               const userData = await userRes.json();
-              setUser(userData);
+              if (isMounted) setUser(userData);
             }
           } catch (e) { console.error('Failed to fetch user'); }
 
@@ -36,33 +37,41 @@ export default function AccountPage() {
                 headers: { Authorization: `Bearer ${token}` }
              });
              if (ordersRes.ok) {
-                                  const ordersData = await ordersRes.json();
+                 const ordersData = await ordersRes.json();
                  let recentOrders = ordersData.filter((o: any) => o.status !== 'delivered');
                  if (recentOrders.length === 0 && ordersData.length > 0) {
                    recentOrders = [ordersData[0]];
                  }
-                 setOrders(recentOrders.slice(0, 3));
+                 if (isMounted) setOrders(recentOrders.slice(0, 3));
              }
           } catch(e) { console.error('Failed to fetch orders'); }
         }
 
-        if (wishlistItems.length > 0) {
+        if (wishlistItems.length > 0 && isMounted) {
           // Fetch products for wishlist items
           const promises = wishlistItems.map(id =>
              fetch(`${import.meta.env.VITE_API_URL || '/api'}/products/${id}`).then(res => res.ok ? res.json() : null)
           );
           const results = await Promise.all(promises);
-          setProducts(results.filter(p => p !== null));
+          if (isMounted) setProducts(results.filter(p => p !== null));
         } else {
-          setProducts([]);
+          if (isMounted) setProducts([]);
         }
       } catch (error) {
         console.error('Error fetching account data', error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
     loadData();
+
+    const onFocus = () => loadData();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', onFocus);
+    };
   }, [wishlistItems]);
 
   if (loading) return <div className="py-10 text-center">Loading account...</div>;

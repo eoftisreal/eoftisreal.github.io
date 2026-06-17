@@ -46,6 +46,14 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, []);
 
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 10000);
+    return () => clearInterval(intervalId);
+  }, [autoRefresh]);
+
   const generateLabelImage = async () => {
     if (!labelRef.current || !currentLabelOrder) return;
     try {

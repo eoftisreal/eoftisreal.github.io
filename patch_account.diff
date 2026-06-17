@@ -1,0 +1,87 @@
+<<<<<<< SEARCH
+  useEffect(() => {
+    async function loadData() {
+      try {
+=======
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+              setUser(userData);
+            }
+          } catch (e) { console.error('Failed to fetch user'); }
+
+          try {
+             const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders/my-orders`, {
+                headers: { Authorization: `Bearer ${token}` }
+             });
+             if (ordersRes.ok) {
+                                  const ordersData = await ordersRes.json();
+                 let recentOrders = ordersData.filter((o: any) => o.status !== 'delivered');
+                 if (recentOrders.length === 0 && ordersData.length > 0) {
+                   recentOrders = [ordersData[0]];
+                 }
+                 setOrders(recentOrders.slice(0, 3));
+             }
+          } catch(e) { console.error('Failed to fetch orders'); }
+        }
+
+        if (wishlistItems.length > 0) {
+=======
+              if (isMounted) setUser(userData);
+            }
+          } catch (e) { console.error('Failed to fetch user'); }
+
+          try {
+             const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders/my-orders`, {
+                headers: { Authorization: `Bearer ${token}` }
+             });
+             if (ordersRes.ok) {
+                 const ordersData = await ordersRes.json();
+                 let recentOrders = ordersData.filter((o: any) => o.status !== 'delivered');
+                 if (recentOrders.length === 0 && ordersData.length > 0) {
+                   recentOrders = [ordersData[0]];
+                 }
+                 if (isMounted) setOrders(recentOrders.slice(0, 3));
+             }
+          } catch(e) { console.error('Failed to fetch orders'); }
+        }
+
+        if (wishlistItems.length > 0 && isMounted) {
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            setProducts(productsRes.products);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load account data', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [wishlistItems]);
+=======
+            if (isMounted) setProducts(productsRes.products);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load account data', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadData();
+
+    // Listen for focus to refresh orders when returning to tab
+    const onFocus = () => loadData();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [wishlistItems]);
+>>>>>>> REPLACE
