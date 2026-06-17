@@ -1,0 +1,127 @@
+ INFO  Accepting connections at http://localhost:3000
+ HTTP  6/17/2026 1:30:52 PM ::1 GET /
+ HTTP  6/17/2026 1:30:52 PM ::1 Returned 200 in 21 ms
+ HTTP  6/17/2026 1:30:52 PM ::1 GET /assets/index-Hod_6hCJ.js
+ HTTP  6/17/2026 1:30:52 PM ::1 GET /assets/index-djXyoIan.css
+ HTTP  6/17/2026 1:30:52 PM ::1 GET /registerSW.js
+ HTTP  6/17/2026 1:30:52 PM ::1 Returned 200 in 7 ms
+ HTTP  6/17/2026 1:30:52 PM ::1 Returned 200 in 6 ms
+ HTTP  6/17/2026 1:30:52 PM ::1 Returned 200 in 16 ms
+ HTTP  6/17/2026 1:30:52 PM ::1 GET /sw.js
+ HTTP  6/17/2026 1:30:52 PM ::1 Returned 200 in 3 ms
+ HTTP  6/17/2026 1:30:52 PM ::1 GET /workbox-9c191d2f.js
+ HTTP  6/17/2026 1:30:52 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/HomePage-DkT60Itx.js
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/api-BdnXIzaC.js
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/WishlistButton-C37m-8Av.js
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/ProductCard-DKhwU6GN.js
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/createLucideIcon-BeIrgb3k.js
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /icons/menu.png
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 9 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 9 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 9 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 9 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 9 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 8 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /logo.png
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 5 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /icons/login.png
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /icons/cart.png
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /registerSW.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 3 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 3 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /icons/menu.png
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /index.html
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 301 in 0 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /index
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 301 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/x-DHsRj3xQ.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/trash-2-CuLDyZ9x.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/shopping-bag-DwCjBJBZ.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/quill.snow-BcrdA4B-.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 3 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/quill-CkbfgUCq.css
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/plus-v_863rUj.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/index-djXyoIan.css
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 304 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/index-Hod_6hCJ.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 304 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/createLucideIcon-BeIrgb3k.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 304 in 0 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/api-BdnXIzaC.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 304 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/WishlistButton-C37m-8Av.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 304 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/VerifyEmailPage-Bq96V7bw.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/UsersPage-BPdGhT0j.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/SignupPage-az9kedea.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/SettingsPage-Ds0rS4rO.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/ResetPasswordPage-B6zu2aW3.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/ProductsPage-oGwiVnT9.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/ProductPage-jEPqPWmr.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 3 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/ProductGrid-DDwvVh8W.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/ProductCard-DKhwU6GN.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 304 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/OrdersPage-DZuqYtAf.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/OrdersPage-CZOazDpO.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/OrderDetailPage-DSAp8JFo.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/MagicLinkPage-Ct6EDRdg.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/LoginPage-D4ybLwT8.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/HomePage-DkT60Itx.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 304 in 0 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/ForgotPasswordPage-D78AuhIk.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/CouponsPage-P_onbPim.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/CheckoutPage-lChxsJ0T.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/CategoriesPage-nY3FJkSB.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/CartPage-BlAtl1j2.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/CallbackPage-BFLRUxZs.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/BrandsPage-Bm0wLP5B.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/AdminsPage-B2TDJAWF.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/AdminProductsPage-Cr4E8U0C.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 3 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/AdminProductEditPage-DBe8ByOW.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/AdminLayout-p9Xc_Mvk.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/AdminDashboard-sToOrz9c.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/AccountPage-FaN4Hm6a.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /assets/AboutPage-CcrSUinm.js
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 1 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /favicon.png
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+ HTTP  6/17/2026 1:30:53 PM ::1 GET /manifest.webmanifest
+ HTTP  6/17/2026 1:30:53 PM ::1 Returned 200 in 2 ms
+
+ INFO  Gracefully shutting down. Please wait...

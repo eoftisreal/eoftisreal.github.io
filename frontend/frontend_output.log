@@ -1,0 +1,16 @@
+
+> frontend@0.0.0 dev
+> vite
+
+
+  VITE v6.4.3  ready in 651 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+
+PWA v1.3.0
+mode      generateSW
+precache  2 entries (0.12 KiB)
+files generated
+  dev-dist/sw.js
+  dev-dist/workbox-7e5eb42b.js

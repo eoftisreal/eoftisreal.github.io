@@ -36,7 +36,7 @@ function generateEmailTemplate(title, message, buttonText, buttonUrl, expiration
   return `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; color: #333333;">
       <div style="text-align: center; margin-bottom: 30px;">
-        <img src="${LOGO_URL}" alt="${STORE_NAME}" style="max-width: 150px; height: auto; max-height: 80px; object-fit: contain;" />
+        <img src="${LOGO_URL}" alt="${STORE_NAME}" style="max-width: 250px; height: auto; max-height: 150px; object-fit: contain;" />
       </div>
 
       <div style="background-color: #f9f9f9; padding: 40px; border-radius: 8px; text-align: center; border: 1px solid #eeeeee;">
@@ -129,7 +129,7 @@ async function sendOrderConfirmationEmail(order, userEmail) {
   const html = `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; color: #333333;">
       <div style="text-align: center; margin-bottom: 30px;">
-        <img src="${LOGO_URL}" alt="${STORE_NAME}" style="max-width: 150px; height: auto; max-height: 80px; object-fit: contain;" />
+        <img src="${LOGO_URL}" alt="${STORE_NAME}" style="max-width: 250px; height: auto; max-height: 150px; object-fit: contain;" />
       </div>
       <h1 style="color: #111111; font-size: 24px; text-align: center;">Order Confirmation</h1>
       <p>Thank you for your order! Your order ID is <strong>#${order._id.toString().slice(-6)}</strong>.</p>
