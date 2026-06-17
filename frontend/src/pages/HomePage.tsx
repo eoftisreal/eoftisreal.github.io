@@ -41,7 +41,7 @@ export default function Home() {
   return (
     <div className="space-y-10 md:space-y-16 pb-10 md:pb-16">
       {/* Hero Section */}
-      <section className="relative overflow-hidden aspect-[2/1] w-full max-h-[70vh] flex items-center justify-center bg-secondary-bg">
+      <section className="relative overflow-hidden aspect-[2/1] w-full flex items-center justify-center bg-secondary-bg">
         {heroBannerUrl ? (
           <div className="absolute inset-0 z-0">
             <img src={heroBannerUrl} alt="Hero Banner" className="w-full h-full object-cover object-center" loading="eager" fetchPriority="high" />
