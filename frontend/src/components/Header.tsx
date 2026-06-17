@@ -75,7 +75,7 @@ export default function Header() {
           {/* Mobile Menu Icon */}
           <div className="md:hidden flex items-center flex-1">
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 -ml-2 text-foreground focus:outline-none" title="Menu">
-              <img src="/icons/menu.png" alt="Menu" className="h-8 w-8 object-contain" loading="eager" fetchPriority="high" />
+              <img src="/icons/menu.png" alt="Menu" className="h-10 w-10 object-contain" loading="eager" fetchPriority="high" />
             </button>
           </div>
 
@@ -103,15 +103,15 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 <Link to="/account" className={`${linkClass} flex items-center`} title="Account">
-                  <img src="/icons/user.png" alt="Account" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
+                  <img src="/icons/user.png" alt="Account" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" fetchPriority="high" />
                 </Link>
                 <button onClick={handleLogout} className={`${linkClass} hidden sm:flex items-center`} title="Logout">
-                  <img src="/icons/logout.png" alt="Logout" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
+                  <img src="/icons/logout.png" alt="Logout" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" fetchPriority="high" />
                 </button>
               </>
             ) : (
               <Link to="/auth/login" className={`${linkClass} flex items-center`} title="Log In">
-                <img src="/icons/login.png" alt="Log In" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
+                <img src="/icons/login.png" alt="Log In" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" fetchPriority="high" />
               </Link>
             )}
             <Link to="/account#wishlist" className={`${linkClass} flex items-center relative`} title="Wishlist">
@@ -123,7 +123,7 @@ export default function Header() {
               )}
             </Link>
             <Link to="/cart" className={`${linkClass} flex items-center relative`} title="Cart">
-              <img src="/icons/cart.png" alt="Cart" className="h-7 w-7 md:h-9 md:w-9 object-contain" loading="eager" fetchPriority="high" />
+              <img src="/icons/cart.png" alt="Cart" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" fetchPriority="high" />
               {cartItemCount > 0 && (
                 <span className="absolute -top-1 -right-2 bg-foreground text-white text-[10px] font-bold h-4 min-w-[16px] flex items-center justify-center rounded-full px-1">
                   {cartItemCount}
