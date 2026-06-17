@@ -14,3 +14,12 @@ precache  2 entries (0.12 KiB)
 files generated
   dev-dist/sw.js
   dev-dist/workbox-7e5eb42b.js
+5:18:56 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
+5:19:26 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
+5:19:34 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
+5:31:54 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
+5:33:26 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
+5:35:45 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
+5:35:45 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
+5:36:35 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
+5:37:59 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css

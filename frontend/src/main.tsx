@@ -44,6 +44,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
           <Route path="products" element={<ProductsPage />} />
           <Route path="products/:id" element={<ProductPage />} />
           <Route path="about" element={<AboutPage />} />
+          <Route path="test-product-card" element={React.createElement(React.lazy(() => import('@/pages/TestProductCard')))} />
 
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
@@ -51,6 +52,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="account" element={<AccountPage />} />
+          <Route path="test-product-card" element={React.createElement(React.lazy(() => import('@/pages/TestProductCard')))} />
 
           <Route path="auth/login" element={<LoginPage />} />
           <Route path="auth/signup" element={<SignupPage />} />
