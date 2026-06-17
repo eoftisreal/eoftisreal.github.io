@@ -1,31 +1,30 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Product } from '@/lib/api';
 import WishlistButton from './WishlistButton';
 import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
+import toast from 'react-hot-toast';
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
-  const navigate = useNavigate();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page
     e.stopPropagation();
 
-    // Default to first variant if sizes exist to ensure it gets added properly
-    // Or if sizes exist, perhaps we should redirect to the product page instead?
-    // Let's add it directly if no variants, or navigate to product page if variants exist
-    if (product.sizes && product.sizes.length > 0) {
-      navigate(`/products/${product._id}`);
-      return;
-    }
+    const size = product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined;
+    const color = product.colors && product.colors.length > 0 ? product.colors[0] : undefined;
 
     addItem({
       productId: product._id,
       title: product.title,
       unitPrice: product.price,
-      image: product.images?.[0]
+      image: product.images?.[0],
+      size,
+      color
     });
+
+    toast.success(`${product.title} added to cart!`);
   };
 
   return (
@@ -53,16 +52,17 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="space-y-2 p-4 flex flex-col flex-grow bg-secondary-bg/20">
-        <h3 className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-wide uppercase">{product.title}</h3>
+        <h3 className="line-clamp-2 text-sm font-medium text-foreground/90 tracking-normal capitalize">{product.title}</h3>
         {product.artistName && <p className="text-xs text-secondary-text flex-grow">{product.artistName}</p>}
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
           <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold text-foreground">₹{product.price}</span>
+            <span className="text-base font-medium text-foreground">₹{product.price}</span>
             {product.compareAtPrice && product.compareAtPrice > product.price ? <span className="text-xs text-secondary-text line-through">₹{product.compareAtPrice}</span> : null}
           </div>
           <button
             onClick={handleAddToCart}
-            className="p-2 rounded-full bg-foreground text-background hover:bg-secondary-text transition-colors"
+            className="p-2 rounded-full text-white hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#b01237' }}
             aria-label="Add to cart"
             title="Add to cart"
           >
