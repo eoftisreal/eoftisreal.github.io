@@ -32,7 +32,7 @@ export interface WishlistStore {
   clearLocalWishlist: () => void;
 }
 
-const LOCAL_STORAGE_KEY = 'guest_wishlist';
+const LOCAL_STORAGE_KEY = 'local_wishlist';
 
 export const useWishlistStore = create<WishlistStore>((set, get) => ({
   items: [],

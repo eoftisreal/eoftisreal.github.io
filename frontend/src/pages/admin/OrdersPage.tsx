@@ -72,7 +72,6 @@ export default function AdminOrdersPage() {
   const filteredOrders = orders.filter(o => {
     const term = searchTerm.toLowerCase();
     const matchSearch = o._id.toLowerCase().includes(term) ||
-                        (o.guestEmail && o.guestEmail.toLowerCase().includes(term)) ||
                         (o.userId && o.userId.email && o.userId.email.toLowerCase().includes(term));
     const matchStatus = statusFilter === '' || o.status === statusFilter;
     return matchSearch && matchStatus;
@@ -162,7 +161,7 @@ export default function AdminOrdersPage() {
                       {new Date(order.createdAt).toLocaleDateString('en-GB')} {new Date(order.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-4 py-3 text-secondary-text">
-                      {order.guestEmail || (order.userId && order.userId.email) || 'N/A'}
+                      {(order.userId && order.userId.email) || 'N/A'}
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-1 rounded border border-border bg-secondary-bg text-secondary-text">
@@ -349,7 +348,7 @@ export default function AdminOrdersPage() {
                             <button
                               onClick={() => {
                                 setCurrentLabelOrder(order);
-                                setLabelToName(order.shippingAddress?.name || order.userId?.name || order.guestEmail || 'Customer');
+                                setLabelToName(order.shippingAddress?.name || order.userId?.name || 'Customer');
                                 setLabelModalOpen(true);
                               }}
                               className="rounded bg-slate-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700"

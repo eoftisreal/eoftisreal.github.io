@@ -11,7 +11,6 @@ type RecentOrder = {
   total: number;
   status: string;
   createdAt: string;
-  guestEmail?: string;
   userId?: {
     email: string;
   };
@@ -164,8 +163,7 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                   <p className="text-xs text-secondary-text truncate">
-                    {order.guestEmail ||
-                      order.userId?.email ||
+                    {order.userId?.email ||
                       "Unknown Customer"}
                   </p>
                   <p className="text-sm font-bold mt-1">₹{order.total}</p>

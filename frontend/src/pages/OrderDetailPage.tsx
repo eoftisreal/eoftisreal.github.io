@@ -318,7 +318,8 @@ function OrderTrackingContent() {
               </button>
               <button
                 onClick={handleCancelOrder}
-                className="w-full md:w-auto rounded border border-red-500 text-red-500 px-6 py-3 font-bold hover:bg-red-50"
+                disabled={paymentDoneLoading}
+                className="w-full md:w-auto rounded border border-red-500 text-red-500 px-6 py-3 font-bold hover:bg-red-50 disabled:opacity-50"
               >
                 Order Cancel
               </button>

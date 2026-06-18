@@ -99,13 +99,11 @@ export default function AccountPage() {
                <h2 className="text-sm font-bold uppercase tracking-widest">Profile Details</h2>
                               <button onClick={() => alert('Profile editing is currently available during checkout. Standalone profile editing coming soon.')} className="text-xs text-secondary-text hover:text-foreground">EDIT</button>
              </div>
-             {user ? (
+             {user && (
                <div className="space-y-2 text-sm text-secondary-text">
                  <p><span className="font-medium text-foreground">Name:</span> {user.name || 'Not provided'}</p>
                  <p><span className="font-medium text-foreground">Email:</span> {user.email}</p>
                </div>
-             ) : (
-               <p className="text-sm text-secondary-text">You are currently using a guest session.</p>
              )}
            </div>
 
