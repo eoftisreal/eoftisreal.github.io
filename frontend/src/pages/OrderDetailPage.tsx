@@ -78,6 +78,22 @@ function OrderTrackingContent() {
   }, [order?.status]);
 
   useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (order?.status === 'pending_payment') {
+        const message = 'Please COMPLETE OR CANCEL YOUR ORDER before leaving this page.';
+        e.returnValue = message;
+        return message;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [order?.status]);
+
+  useEffect(() => {
     if (!qrSettings) return;
 
     const interval = setInterval(() => {
@@ -144,6 +160,26 @@ function OrderTrackingContent() {
       alert('An error occurred.');
     } finally {
       setPaymentDoneLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+
+    try {
+      const res = await fetchWithAuth(`${apiBase}/orders/${id}/cancel`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        fetchOrder();
+      } else {
+        const errData = await res.json();
+        alert(`Failed to cancel order: ${errData.message || 'Unknown error'}`);
+      }
+    } catch (e) {
+      alert('An error occurred while cancelling the order.');
     }
   };
 
@@ -272,13 +308,21 @@ function OrderTrackingContent() {
               </div>
             )}
 
-            <button
-              onClick={handlePaymentDone}
-              disabled={paymentDoneLoading || timeLeft === 0}
-              className="w-full md:w-auto rounded bg-foreground px-6 py-3 font-bold text-white hover:bg-foreground/90 disabled:opacity-50"
-            >
-              {paymentDoneLoading ? 'Submitting...' : 'I Have Made The Payment'}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handlePaymentDone}
+                disabled={paymentDoneLoading || timeLeft === 0}
+                className="w-full md:w-auto rounded bg-foreground px-6 py-3 font-bold text-white hover:bg-foreground/90 disabled:opacity-50"
+              >
+                {paymentDoneLoading ? 'Submitting...' : 'I Have Made The Payment'}
+              </button>
+              <button
+                onClick={handleCancelOrder}
+                className="w-full md:w-auto rounded border border-red-500 text-red-500 px-6 py-3 font-bold hover:bg-red-50"
+              >
+                Order Cancel
+              </button>
+            </div>
           </div>
           <div className="shrink-0 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
             {timeLeft > 0 ? (

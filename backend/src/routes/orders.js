@@ -36,6 +36,40 @@ router.get('/:id', auth, async (req, res, next) => {
   }
 });
 
+router.post('/:id/cancel', auth, async (req, res, next) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!order) {
+      const err = new Error('Order not found');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (order.status !== 'pending_payment') {
+      const err = new Error('Only pending orders can be cancelled');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const oldStatus = order.status;
+    order.status = 'cancelled';
+    order.timeline.push({ status: 'cancelled', note: 'Order cancelled by customer' });
+    await order.save();
+
+    await OrderStatusHistory.create({
+      orderId: order._id,
+      oldStatus,
+      newStatus: 'cancelled',
+      changedBy: req.user.id,
+      note: 'Order cancelled by customer'
+    });
+
+    res.json(order);
+  } catch (error) {
+    next(error);
+  }
+});
+
 const trackGuestSchema = z.object({
   body: z.object({}),
   query: z.object({ email: z.string().email() }),

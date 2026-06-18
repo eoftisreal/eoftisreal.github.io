@@ -3,7 +3,7 @@
 > vite
 
 
-  VITE v6.4.3  ready in 651 ms
+  VITE v6.4.3  ready in 537 ms
 
   ➜  Local:   http://localhost:3000/
   ➜  Network: use --host to expose
@@ -14,96 +14,3 @@ precache  2 entries (0.12 KiB)
 files generated
   dev-dist/sw.js
   dev-dist/workbox-7e5eb42b.js
-5:18:56 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
-5:19:26 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
-5:19:34 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
-5:31:54 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-5:33:26 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
-5:35:45 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
-5:35:45 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
-5:36:35 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-5:37:59 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
-6:43:07 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-6:43:20 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-7:19:26 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
-7:19:47 PM [vite] (client) hmr update /src/components/ProductCard.tsx, /src/index.css
-7:19:59 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
-7:20:21 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-7:23:52 PM [vite] (client) hmr update /src/pages/TestProductCard.tsx, /src/index.css
-7:26:12 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-9:53:56 PM [vite] (client) hmr update /src/pages/HomePage.tsx, /src/index.css
-9:55:44 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-9:56:09 PM [vite] http proxy error: /api/products/categories
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-9:56:09 PM [vite] http proxy error: /api/products?isFeatured=true&limit=4
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-9:56:09 PM [vite] http proxy error: /api/public/settings
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-9:56:09 PM [vite] http proxy error: /api/products/categories
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-9:56:09 PM [vite] http proxy error: /api/products?isFeatured=true&limit=4
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-9:56:09 PM [vite] http proxy error: /api/public/settings
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-9:56:59 PM [vite] (client) hmr update /src/pages/TestHero.tsx, /src/index.css
-9:58:37 PM [vite] (client) hmr update /src/main.tsx, /src/index.css
-10:27:05 PM [vite] http proxy error: /api/products/categories
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:27:05 PM [vite] http proxy error: /api/products?isFeatured=true&limit=4
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:27:05 PM [vite] http proxy error: /api/public/settings
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:27:05 PM [vite] http proxy error: /api/products/categories
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:27:05 PM [vite] http proxy error: /api/products?isFeatured=true&limit=4
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:27:05 PM [vite] http proxy error: /api/public/settings
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:28:37 PM [vite] http proxy error: /api/products?isFeatured=true&limit=4
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:28:37 PM [vite] http proxy error: /api/public/settings
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:28:37 PM [vite] http proxy error: /api/products/categories
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:28:37 PM [vite] http proxy error: /api/products/categories
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:28:37 PM [vite] http proxy error: /api/products?isFeatured=true&limit=4
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-10:28:37 PM [vite] http proxy error: /api/public/settings
-AggregateError [ECONNREFUSED]:
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
