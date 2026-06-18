@@ -119,8 +119,8 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
       unitPrice: item.productId.price,
       image: item.productId.images?.[0] || '',
       customImage: item.customImage,
-      size: item.size,
-      color: item.color
+      size: item.productId.enableSizes ? item.size : undefined,
+      color: item.productId.enableColors ? item.color : undefined
     }));
 
     const order = await Order.create({

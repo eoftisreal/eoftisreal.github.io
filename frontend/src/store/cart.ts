@@ -45,16 +45,19 @@ export const useCartStore = create<CartState>()(
       });
       if (res.ok) {
         const data = await res.json();
-        const mappedItems = data.items.map((item: any) => ({
-          productId: item.productId._id || item.productId,
-          title: item.productId.title || 'Unknown Item',
-          unitPrice: item.productId.price || 0,
-          quantity: item.quantity,
-          image: item.productId.images?.[0] || undefined,
-          customImage: item.customImage || undefined,
-          size: item.size || undefined,
-          color: item.color || undefined,
-        }));
+        const mappedItems = data.items.map((item: any) => {
+          const product = item.productId;
+          return {
+            productId: product._id || product,
+            title: product.title || 'Unknown Item',
+            unitPrice: product.price || 0,
+            quantity: item.quantity,
+            image: product.images?.[0] || undefined,
+            customImage: item.customImage || undefined,
+            size: product.enableSizes ? item.size : undefined,
+            color: product.enableColors ? item.color : undefined,
+          };
+        });
         set({ items: mappedItems });
       }
     } catch (err) {
