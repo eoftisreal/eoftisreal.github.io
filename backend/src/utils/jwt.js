@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 
 function signAccessToken(payload) {
-  return jwt.sign(payload, env.jwtAccessSecret, { expiresIn: '15m' }); // 15 minutes as per doc
+  return jwt.sign(payload, env.jwtAccessSecret, { expiresIn: '30m' }); // 30 minutes as per doc
 }
 
 function signRefreshToken(payload) {

@@ -64,7 +64,7 @@ export default function Home() {
       </section>
 
       {/* Category Grid Section */}
-      <section className="px-4 md:px-8 max-w-7xl mx-auto">
+      <section className="px-4 md:px-8 max-w-[1600px] mx-auto">
         <h2 className="mb-6 md:mb-8 text-xl md:text-2xl font-heading text-center">Shop by Category</h2>
         <div className="grid gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((category) => (
@@ -102,7 +102,7 @@ export default function Home() {
 
       {/* Featured Products Section */}
       {featuredProducts.length > 0 && (
-        <section className="px-4 md:px-8 max-w-7xl mx-auto">
+        <section className="px-4 md:px-8 max-w-[1600px] mx-auto">
           <div className="flex justify-between items-end mb-6 md:mb-8">
             <h2 className="text-xl md:text-2xl font-heading">Featured Pieces</h2>
             <Link to="/products" className="text-xs md:text-sm border-b border-foreground pb-0.5 md:pb-1 hover:text-secondary-text hover:border-secondary-text transition-colors">
