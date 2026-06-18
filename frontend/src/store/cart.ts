@@ -65,7 +65,7 @@ export const useCartStore = create<CartState>()(
   addItem: async (product) => {
     const token = getAuthToken();
     if (!token) {
-      // Guest: update Zustand directly, it will persist
+      // update Zustand directly, it will persist locally until sync
       const currentItems = get().items;
       const existing = currentItems.find((item) =>
         item.productId === product.productId &&
@@ -139,7 +139,7 @@ export const useCartStore = create<CartState>()(
     const token = getAuthToken();
 
     if (!token) {
-      // Guest
+      // local update
       const currentItems = get().items;
       const updated = currentItems.map(item =>
         item.productId === productId && item.size === size && item.color === color ? { ...item, quantity: newQuantity } : item
@@ -182,7 +182,7 @@ export const useCartStore = create<CartState>()(
     const isMatch = (item: CartItem) => item.productId === productId && item.size === size && item.color === color;
 
     if (!token) {
-      // Guest
+      // local update
       const currentItems = get().items;
       const updated = currentItems.filter(item => !isMatch(item));
       setCartItems(updated);

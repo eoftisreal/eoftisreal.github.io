@@ -70,26 +70,6 @@ router.post('/:id/cancel', auth, async (req, res, next) => {
   }
 });
 
-const trackGuestSchema = z.object({
-  body: z.object({}),
-  query: z.object({ email: z.string().email() }),
-  params: z.object({ id: z.string() }),
-});
-
-router.get('/guest/track/:id', validate(trackGuestSchema), async (req, res, next) => {
-  try {
-    const order = await Order.findOne({ _id: req.validated.params.id, guestEmail: req.validated.query.email }).populate('items.productId', 'images');
-    if (!order) {
-      const err = new Error('Guest order not found');
-      err.statusCode = 404;
-      throw err;
-    }
-    res.json(order);
-  } catch (error) {
-    next(error);
-  }
-});
-
 const statusSchema = z.object({
   body: z.object({
     status: z.enum([

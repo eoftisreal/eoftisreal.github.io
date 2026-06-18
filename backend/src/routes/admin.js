@@ -39,7 +39,7 @@ router.get('/analytics', async (_req, res, next) => {
       Product.countDocuments(),
       Order.countDocuments(),
       Order.aggregate([{ $group: { _id: null, revenue: { $sum: '$total' } } }]),
-      Order.find().sort({ createdAt: -1 }).limit(10).populate('userId', 'email').select('total status createdAt guestEmail'),
+      Order.find().sort({ createdAt: -1 }).limit(10).populate('userId', 'email').select('total status createdAt'),
       Order.aggregate([
         { $match: { createdAt: { $gte: thirtyDaysAgo } } },
         {
@@ -216,8 +216,8 @@ router.post('/orders/:id/approve', async (req, res, next) => {
     });
 
     // Send order confirmation email asynchronously
-    let targetEmail = order.guestEmail;
-    if (!targetEmail && order.userId) {
+    let targetEmail = null;
+    if (order.userId) {
       if (typeof order.userId === 'object' && order.userId.email) {
         targetEmail = order.userId.email;
       } else {
