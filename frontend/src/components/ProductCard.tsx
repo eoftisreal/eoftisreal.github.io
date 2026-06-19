@@ -62,18 +62,18 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="space-y-2 p-4 flex flex-col flex-grow bg-secondary-bg/20">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 text-sm font-medium text-foreground/90 tracking-normal capitalize flex-grow">{product.title}</h3>
+        <div className="flex flex-col items-start gap-1 flex-grow">
+          <h3 className="line-clamp-2 text-sm font-medium text-foreground/90 tracking-normal capitalize">{product.title}</h3>
           {product.productType && (
             <span
-              className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white tracking-wider uppercase shadow-sm"
+              className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white tracking-wider uppercase shadow-sm mt-1"
               style={{ backgroundColor: stringToColor(product.productType) }}
             >
               {product.productType}
             </span>
           )}
         </div>
-        {!product.productType && <div className="flex-grow"></div>}
+
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
           <div className="flex items-baseline gap-2">
             <span className="text-base font-medium text-foreground">₹{product.price}</span>
@@ -81,12 +81,12 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
           <button
             onClick={handleAddToCart}
-            className="p-2 rounded-full text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#b01237' }}
+            className="p-1.5 md:p-2 rounded-full text-white hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#e04136' }}
             aria-label="Add to cart"
             title="Add to cart"
           >
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
           </button>
         </div>
       </div>
