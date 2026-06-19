@@ -31,6 +31,8 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
   const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
   const [brands, setBrands] = useState<{_id: string, name: string}[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [tags, setTags] = useState('');
 
   useEffect(() => {
     async function fetchOptions() {
@@ -38,15 +40,17 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         const token = getAuthToken();
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        const [catsRes, brsRes] = await Promise.all([
+        const [catsRes, brsRes, tagsRes] = await Promise.all([
           fetch(`${apiBase}/master/categories`, { headers }),
-          fetch(`${apiBase}/master/brands`, { headers })
+          fetch(`${apiBase}/master/brands`, { headers }),
+          fetch(`${apiBase}/products/tags`)
         ]);
 
         if (catsRes.ok) setCategories(await catsRes.json());
         if (brsRes.ok) setBrands(await brsRes.json());
+        if (tagsRes.ok) setAvailableTags(await tagsRes.json());
       } catch (e) {
-        console.error('Error fetching categories/brands', e);
+        console.error('Error fetching categories/brands/tags', e);
       }
     }
     fetchOptions();
@@ -115,6 +119,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         stock,
         images: uploadedUrl ? [uploadedUrl] : [],
         r2ImageKeys: r2Key ? [r2Key] : [],
+        tags: tags ? tags.split(',').map(s => s.trim()).filter(Boolean) : [],
         isFeatured,
         isCustomizable,
         enableSizes,
@@ -230,6 +235,14 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
               {brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Tags (comma separated, e.g. "20% OFF, Bestseller")</label>
+          <input type="text" list="tagSuggestions" value={tags} onChange={e => setTags(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" placeholder="e.g. 20% OFF, New Arrival" />
+          <datalist id="tagSuggestions">
+            {availableTags.map(t => <option key={t} value={t} />)}
+          </datalist>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

@@ -44,6 +44,7 @@ export default function AdminProductEditPage() {
   // Master options
   const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
   const [brands, setBrands] = useState<{_id: string, name: string}[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
 
   // Image Upload state
   const [file, setFile] = useState<File | null>(null);
@@ -57,11 +58,14 @@ export default function AdminProductEditPage() {
         const token = getAuthToken();
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        const [prodRes, catsRes, brsRes] = await Promise.all([
+        const [prodRes, catsRes, brsRes, tagsRes] = await Promise.all([
           apiGet<any>(`/products/${id}`),
           fetchWithAuth(`${apiBase}/master/categories`, { headers }).then(r => r.json()),
-          fetchWithAuth(`${apiBase}/master/brands`, { headers }).then(r => r.json())
+          fetchWithAuth(`${apiBase}/master/brands`, { headers }).then(r => r.json()),
+          apiGet<string[]>('/products/tags')
         ]);
+
+        setAvailableTags(tagsRes);
 
         if (prodRes) {
           setTitle(prodRes.title);
@@ -324,7 +328,10 @@ export default function AdminProductEditPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Tags (comma separated, e.g. "20% OFF, Bestseller")</label>
-            <input type="text" value={tags} onChange={e => setTags(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" placeholder="e.g. 20% OFF, New Arrival" />
+            <input type="text" list="tagSuggestions" value={tags} onChange={e => setTags(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" placeholder="e.g. 20% OFF, New Arrival" />
+            <datalist id="tagSuggestions">
+              {availableTags.map(t => <option key={t} value={t} />)}
+            </datalist>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-2">

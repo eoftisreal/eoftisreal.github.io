@@ -207,6 +207,15 @@ router.post('/orders/:id/approve', async (req, res, next) => {
     order.timeline.push({ status: 'payment_verified', note: 'Payment successfully verified' });
     await order.save();
 
+    // Increment sales count for each product in the order
+    if (order.items && order.items.length > 0) {
+      for (const item of order.items) {
+        if (item.productId) {
+          await Product.findByIdAndUpdate(item.productId, { $inc: { salesCount: item.quantity } });
+        }
+      }
+    }
+
     await OrderStatusHistory.create({
       orderId: order._id,
       oldStatus,
@@ -367,6 +376,17 @@ router.put('/orders/:id/status', async (req, res, next) => {
     }
     order.timeline.push({ status, note });
     await order.save();
+
+    // Increment sales count for each product in the order if payment is just verified
+    if (status === 'payment_verified') {
+      if (order.items && order.items.length > 0) {
+        for (const item of order.items) {
+          if (item.productId) {
+            await Product.findByIdAndUpdate(item.productId, { $inc: { salesCount: item.quantity } });
+          }
+        }
+      }
+    }
 
     await OrderStatusHistory.create({
       orderId: order._id,
