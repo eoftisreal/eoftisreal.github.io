@@ -28,15 +28,37 @@ router.get('/brands', async (req, res, next) => {
   }
 });
 
+router.get('/tags', async (req, res, next) => {
+  try {
+    const tags = await Product.distinct('tags', { isActive: true });
+    res.json(tags.filter(t => t));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/product-types', async (req, res, next) => {
+  try {
+    const types = await Product.distinct('productType', { isActive: true });
+    res.json(types.filter(t => t));
+  } catch (error) {
+    next(error);
+  }
+});
+
 const listSchema = z.object({
   body: z.object({}),
   query: z.object({
     q: z.string().optional(),
     category: z.string().optional(),
     brand: z.string().optional(),
+    productType: z.string().optional(),
+    tag: z.string().optional(),
     minPrice: z.coerce.number().optional(),
     maxPrice: z.coerce.number().optional(),
+    inStock: z.string().optional(),
     isFeatured: z.string().optional(),
+    sort: z.string().optional(),
     page: z.coerce.number().min(1).default(1),
     limit: z.coerce.number().min(1).max(1000).default(12),
   }),
@@ -45,7 +67,7 @@ const listSchema = z.object({
 
 router.get('/', validate(listSchema), async (req, res, next) => {
   try {
-    const { q, category, brand, minPrice, maxPrice, isFeatured, page, limit } = req.validated.query;
+    const { q, category, brand, productType, tag, minPrice, maxPrice, inStock, isFeatured, sort, page, limit } = req.validated.query;
     const query = { isActive: true };
 
     if (q) {
@@ -57,10 +79,21 @@ router.get('/', validate(listSchema), async (req, res, next) => {
     if (brand) {
       query.brand = brand;
     }
+    if (productType) {
+      query.productType = productType;
+    }
+    if (tag) {
+      query.tags = tag;
+    }
     if (minPrice !== undefined || maxPrice !== undefined) {
       query.price = {};
       if (minPrice !== undefined) query.price.$gte = minPrice;
       if (maxPrice !== undefined) query.price.$lte = maxPrice;
+    }
+    if (inStock === 'true') {
+      query.stock = { $gt: 0 };
+    } else if (inStock === 'false') {
+      query.stock = { $lte: 0 };
     }
     if (isFeatured === 'true') {
       query.isFeatured = true;
@@ -68,11 +101,17 @@ router.get('/', validate(listSchema), async (req, res, next) => {
       query.isFeatured = false;
     }
 
+    let sortQuery = { createdAt: -1 };
+    if (sort === 'price_asc') sortQuery = { price: 1 };
+    else if (sort === 'price_desc') sortQuery = { price: -1 };
+    else if (sort === 'newest') sortQuery = { createdAt: -1 };
+    else if (sort === 'best_selling' || sort === 'most_popular') sortQuery = { salesCount: -1, createdAt: -1 };
+
     const [products, total] = await Promise.all([
       Product.find(query)
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort(sortQuery),
       Product.countDocuments(query),
     ]);
 
