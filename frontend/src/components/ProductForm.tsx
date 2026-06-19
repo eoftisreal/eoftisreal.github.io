@@ -15,6 +15,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [artistName, setArtistName] = useState('');
+  const [productType, setProductType] = useState('');
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [price, setPrice] = useState(0);
@@ -107,6 +108,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         title,
         description,
         artistName,
+        productType,
         category,
         brand: brand || undefined,
         price,
@@ -207,6 +209,10 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         <div>
           <label className="block text-sm font-medium text-gray-700">Artist Name</label>
           <input type="text" value={artistName} onChange={e => setArtistName(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium">Product Type</label>
+          <input type="text" value={productType} onChange={e => setProductType(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" placeholder="e.g. Original, Print, Sculpture" />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

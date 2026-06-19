@@ -5,6 +5,16 @@ import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import toast from 'react-hot-toast';
 
+// Helper function to generate a consistent color based on string content
+function stringToColor(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 65%, 45%)`;
+}
+
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
 
@@ -52,8 +62,18 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="space-y-2 p-4 flex flex-col flex-grow bg-secondary-bg/20">
-        <h3 className="line-clamp-2 text-sm font-medium text-foreground/90 tracking-normal capitalize">{product.title}</h3>
-        {product.artistName && <p className="text-xs text-secondary-text flex-grow">{product.artistName}</p>}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="line-clamp-2 text-sm font-medium text-foreground/90 tracking-normal capitalize flex-grow">{product.title}</h3>
+          {product.productType && (
+            <span
+              className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white tracking-wider uppercase shadow-sm"
+              style={{ backgroundColor: stringToColor(product.productType) }}
+            >
+              {product.productType}
+            </span>
+          )}
+        </div>
+        {!product.productType && <div className="flex-grow"></div>}
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
           <div className="flex items-baseline gap-2">
             <span className="text-base font-medium text-foreground">₹{product.price}</span>
