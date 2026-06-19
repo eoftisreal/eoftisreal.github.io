@@ -29,7 +29,7 @@ export default function Home() {
           <p className="text-[10px] sm:text-xs md:text-base text-secondary-text mb-4 md:mb-8 max-w-md mx-auto px-4">
             {heroBannerUrl ? <span className="text-white/90 drop-shadow-md">Explore our latest collection of curated pieces designed for the modern aesthetic.</span> : "Explore our latest collection of curated pieces designed for the modern aesthetic."}
           </p>
-          <Link to="/products" className="inline-block border border-foreground bg-btn-bg text-btn-text px-4 py-1.5 md:px-10 md:py-3 text-[9px] md:text-sm tracking-widest uppercase transition-colors hover:bg-transparent hover:text-foreground">
+          <Link to="/products" className="inline-block border border-foreground bg-btn-bg text-btn-text px-4 py-1.5 md:px-10 md:py-3 text-[9px] md:text-sm tracking-widest uppercase transition-colors hover:bg-transparent hover:text-foreground transform scale-90 md:scale-100 -translate-y-2 md:translate-y-0">
             Shop Collection
           </Link>
         </div>
