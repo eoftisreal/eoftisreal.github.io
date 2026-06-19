@@ -1,42 +1,14 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { apiGet, Product } from '@/lib/api';
+import { useEffect } from 'react';
 import ProductCard from '@/components/ProductCard';
-
-type Category = {
-  _id: string;
-  name: string;
-  description: string;
-  image?: string;
-};
+import { useHomeStore } from '@/store/home';
 
 export default function Home() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [heroBannerUrl, setHeroBannerUrl] = useState<string | null>(null);
+  const { categories, featuredProducts, heroBannerUrl, fetchData } = useHomeStore();
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const [catsRes, prodsRes, settingsRes] = await Promise.all([
-          apiGet<Category[]>('/products/categories'),
-          apiGet<{products: Product[]}>('/products?isFeatured=true&limit=16'),
-          fetch((import.meta.env.VITE_API_URL || '/api') + '/public/settings').then(res => res.ok ? res.json() : {})
-        ]);
-        setCategories(catsRes);
-        if (prodsRes && prodsRes.products) {
-          setFeaturedProducts(prodsRes.products);
-        }
-        const parsedSettings = settingsRes as { heroBannerUrl?: string };
-        if (parsedSettings && parsedSettings.heroBannerUrl) {
-          setHeroBannerUrl(parsedSettings.heroBannerUrl);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   return (
     <div className="space-y-10 md:space-y-16 pb-10 md:pb-16">
