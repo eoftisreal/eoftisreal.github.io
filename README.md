@@ -3,18 +3,21 @@
 Production-ready monorepo with:
 
 - `backend/` Node.js + Express + MongoDB API
-- `frontend/` Next.js marketplace UI
+- `frontend/` Vite, React, TypeScript, React Router UI
 - `docker-compose.yml` local development stack
 
 ## Features
 
-- Passwordless magic-link authentication (SendGrid)
-- Product CRUD, search, filtering, pagination
-- Cart APIs + localStorage cart UX
-- Multi-step checkout with Razorpay order + signature verification
-- Order tracking, timeline events, guest tracking endpoint
-- Admin analytics, product/order management endpoints
-- Security middleware: Helmet, rate limiting, JWT auth, centralized error handling
+- **Frontend:** Built with Vite, React, TypeScript, React Router, Tailwind CSS, and Zustand for state management. Uses Three.js for 3D visual elements, and libraries like `xlsx` and `html2canvas` for exports.
+- **Authentication:** JWT authentication with access & refresh tokens (bcryptjs for passwords).
+- **Payments:** Manual UPI QR Payment system with admin verification of UTRs/screenshots.
+- **Emails:** Handled via Resend.
+- **File Storage:** Image uploads handled via Multer, optimized (resized/WebP) using Sharp, and stored in Cloudflare R2 via AWS SDK.
+- **Product Management:** Product CRUD, search, filtering, pagination. Admin panel uses `react-quill` and Markdown libraries for rich text editing.
+- **Cart & Wishlist:** Cart APIs with Zustand persisted localStorage UX.
+- **Order Tracking:** Timeline events, guest tracking endpoint.
+- **Admin:** Analytics, product/order management endpoints.
+- **Security:** Helmet, rate limiting, centralized error handling.
 
 ## Quick Start
 
@@ -22,22 +25,34 @@ Production-ready monorepo with:
    ```bash
    cp .env.example .env
    ```
-2. Backend:
+   *Note: Ensure `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are set for authentication to work.*
+
+2. Local MongoDB (via Docker):
+   ```bash
+   docker compose up -d mongo
+   ```
+
+3. Backend (Runs on port 5000):
    ```bash
    cd backend
    npm install
    npm run dev
    ```
-3. Frontend:
+
+4. Frontend (Runs on port 3000):
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
 
-## API Health Check
+## Testing
 
-- `GET /api/health`
+Backend uses Jest for testing. You will need the environment variables set.
+```bash
+cd backend
+JWT_ACCESS_SECRET=123 JWT_REFRESH_SECRET=123 npm run test
+```
 
 ## Docker
 
