@@ -20,10 +20,16 @@ export default function AdminOrdersPage() {
 
   const [labelModalOpen, setLabelModalOpen] = useState(false);
   const [currentLabelOrder, setCurrentLabelOrder] = useState<any>(null);
-  const [labelFrom, setLabelFrom] = useState("KK Crafted\nPatna, Bihar\nPhone: 9XXXXXXXXX");
+  const [labelFrom, setLabelFrom] = useState(() => {
+    return localStorage.getItem('admin_label_from_address') || "KK Crafted\nPatna, Bihar\nPhone: 9XXXXXXXXX";
+  });
   const [labelBlackText, setLabelBlackText] = useState("BLACK");
   const [labelToName, setLabelToName] = useState("Customer");
   const labelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem('admin_label_from_address', labelFrom);
+  }, [labelFrom]);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   const token = getAuthToken();
