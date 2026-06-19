@@ -21,6 +21,7 @@ export default function AdminProductEditPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [artistName, setArtistName] = useState('');
+  const [productType, setProductType] = useState('');
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [price, setPrice] = useState(0);
@@ -66,6 +67,7 @@ export default function AdminProductEditPage() {
           setTitle(prodRes.title);
           setDescription(prodRes.description);
           setArtistName(prodRes.artistName);
+          if (prodRes.productType) setProductType(prodRes.productType);
           setCategory(prodRes.category);
           setBrand(prodRes.brand || '');
           setPrice(prodRes.price);
@@ -153,6 +155,7 @@ export default function AdminProductEditPage() {
         title,
         description,
         artistName,
+        productType,
         category,
         brand: brand || undefined,
         price,
@@ -273,6 +276,10 @@ export default function AdminProductEditPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700">Artist Name</label>
               <input type="text" value={artistName} onChange={e => setArtistName(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium">Product Type</label>
+              <input type="text" value={productType} onChange={e => setProductType(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" placeholder="e.g. Original, Print, Sculpture" />
             </div>
           </div>
 

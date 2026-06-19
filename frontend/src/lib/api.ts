@@ -13,6 +13,7 @@ export type Product = {
   title: string;
   description: string;
   artistName: string;
+  productType?: string;
   category: string;
   images: string[];
   price: number;

@@ -101,6 +101,7 @@ const createSchema = z.object({
     title: z.string().min(2),
     description: z.string().min(10),
     artistName: z.string().optional().or(z.literal("")),
+    productType: z.string().optional().or(z.literal("")),
     category: z.string().optional().or(z.literal("")),
     brand: z.string().optional(),
     images: z.array(z.string().url()).default([]),
