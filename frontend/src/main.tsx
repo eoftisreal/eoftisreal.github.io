@@ -5,6 +5,7 @@ import './index.css';
 
 import { lazy, Suspense } from 'react';
 import App from './App';
+import ScrollToTop from './components/ScrollToTop';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const ProductsPage = lazy(() => import('./pages/ProductsPage'));
@@ -37,6 +38,7 @@ const AdminOrdersPage = lazy(() => import('./pages/admin/OrdersPage'));
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-slate-500">Loading...</div>}>
       <Routes>
         <Route path="/" element={<App />}>
