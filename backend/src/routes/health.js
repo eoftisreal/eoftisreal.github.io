@@ -11,6 +11,7 @@ router.get('/public/settings', async (_req, res, next) => {
   try {
     const publicKeys = [
       'heroBannerUrl',
+      'heroBannerUrls',
       'enableEmailDelivery',
       'enableWhatsappDelivery',
       'customFeatureIconUrl',
