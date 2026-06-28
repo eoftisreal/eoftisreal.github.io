@@ -167,31 +167,85 @@ export default function SettingsPage() {
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
       <div className="rounded-lg bg-white p-6 border border-secondary-bg">
-        <h2 className="text-lg font-semibold mb-4">Hero Banner</h2>
+        <h2 className="text-lg font-semibold mb-4">Hero Banners</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Banner Image URL</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={settings?.heroBannerUrl || ''}
-                onChange={(e) => setSettings({ ...settings, heroBannerUrl: e.target.value })}
-                className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
-                placeholder="https://example.com/banner.jpg"
-              />
-              <button
-                onClick={() => handleUpdateSetting('heroBannerUrl', settings?.heroBannerUrl)}
-                className="rounded bg-foreground px-4 py-2 text-sm font-bold text-white hover:bg-foreground/90"
+            <label className="block text-sm font-medium text-slate-700 mb-1">Banner Image URLs</label>
+            {(!settings?.heroBannerUrls || settings.heroBannerUrls.length === 0) && !settings?.heroBannerUrl && (
+              <p className="text-sm text-slate-500 mb-2">No banners added yet.</p>
+            )}
+            {/* Legacy fallback */}
+            {settings?.heroBannerUrl && (!settings?.heroBannerUrls || settings.heroBannerUrls.length === 0) && (
+              <div className="flex gap-2 mb-2 items-center">
+                <input
+                  type="text"
+                  value={settings.heroBannerUrl}
+                  disabled
+                  className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm bg-slate-50 text-slate-500"
+                />
+                <button
+                  onClick={() => {
+                    const newUrls = [settings.heroBannerUrl];
+                    setSettings({ ...settings, heroBannerUrls: newUrls, heroBannerUrl: '' });
+                    handleUpdateSetting('heroBannerUrls', newUrls);
+                    handleUpdateSetting('heroBannerUrl', '');
+                  }}
+                  className="rounded bg-foreground px-4 py-2 text-sm font-bold text-white hover:bg-foreground/90"
+                >
+                  Migrate
+                </button>
+              </div>
+            )}
+
+            {(settings?.heroBannerUrls || []).map((url: string, index: number) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => {
+                    const newUrls = [...(settings.heroBannerUrls || [])];
+                    newUrls[index] = e.target.value;
+                    setSettings({ ...settings, heroBannerUrls: newUrls });
+                  }}
+                  className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  placeholder="https://example.com/banner.jpg"
+                />
+                <button
+                  onClick={() => {
+                    const newUrls = (settings.heroBannerUrls || []).filter((_: any, i: number) => i !== index);
+                    setSettings({ ...settings, heroBannerUrls: newUrls });
+                    handleUpdateSetting('heroBannerUrls', newUrls);
+                  }}
+                  className="rounded bg-red-600 px-3 py-2 text-sm font-bold text-white hover:bg-red-700"
+                >
+                  X
+                </button>
+              </div>
+            ))}
+            <div className="flex gap-2 mt-4">
+               <button
+                onClick={() => {
+                  const newUrls = [...(settings?.heroBannerUrls || []), ''];
+                  setSettings({ ...settings, heroBannerUrls: newUrls });
+                }}
+                className="rounded border border-foreground bg-transparent px-4 py-2 text-sm font-bold text-foreground hover:bg-slate-50"
               >
-                Save Banner
+                + Add Banner
+              </button>
+              <button
+                onClick={() => handleUpdateSetting('heroBannerUrls', settings?.heroBannerUrls || [])}
+                className="rounded bg-foreground px-4 py-2 text-sm font-bold text-white hover:bg-foreground/90 ml-auto"
+              >
+                Save All Banners
               </button>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Provide an image URL for the homepage hero banner (e.g. 9:16 or 5:4 aspect ratio).</p>
+            <p className="mt-2 text-xs text-slate-500">Add multiple image URLs to create a sliding hero banner (5-second intervals).</p>
           </div>
-          {settings?.heroBannerUrl && (
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-700 mb-2">Preview:</p>
-              <img src={settings.heroBannerUrl} alt="Hero Banner Preview" className="max-w-md max-h-64 object-cover rounded border border-secondary-bg" />
+          {(settings?.heroBannerUrls || []).length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {(settings?.heroBannerUrls || []).map((url: string, idx: number) => (
+                url && <img key={idx} src={url} alt={`Banner Preview ${idx}`} className="w-full h-24 object-cover rounded border border-secondary-bg" />
+              ))}
             </div>
           )}
         </div>

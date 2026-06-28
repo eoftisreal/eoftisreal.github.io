@@ -11,7 +11,7 @@ type Category = {
 type HomeState = {
   categories: Category[];
   featuredProducts: Product[];
-  heroBannerUrl: string | null;
+  heroBannerUrls: string[];
   lastFetched: number | null;
   isFetching: boolean;
   fetchData: () => Promise<void>;
@@ -22,7 +22,7 @@ const CACHE_DURATION_MS = 1000 * 60 * 5; // 5 minutes cache
 export const useHomeStore = create<HomeState>((set, get) => ({
   categories: [],
   featuredProducts: [],
-  heroBannerUrl: null,
+  heroBannerUrls: [],
   lastFetched: null,
   isFetching: false,
 
@@ -44,12 +44,19 @@ export const useHomeStore = create<HomeState>((set, get) => ({
         fetch((import.meta.env.VITE_API_URL || '/api') + '/public/settings').then(res => res.ok ? res.json() : {})
       ]);
 
-      const parsedSettings = settingsRes as { heroBannerUrl?: string };
+      const parsedSettings = settingsRes as { heroBannerUrl?: string, heroBannerUrls?: string[] };
+
+      let resolvedBannerUrls: string[] = [];
+      if (parsedSettings?.heroBannerUrls && parsedSettings.heroBannerUrls.length > 0) {
+        resolvedBannerUrls = parsedSettings.heroBannerUrls.filter(Boolean);
+      } else if (parsedSettings?.heroBannerUrl) {
+        resolvedBannerUrls = [parsedSettings.heroBannerUrl];
+      }
 
       set({
         categories: catsRes || [],
         featuredProducts: prodsRes?.products || [],
-        heroBannerUrl: parsedSettings?.heroBannerUrl || null,
+        heroBannerUrls: resolvedBannerUrls,
         lastFetched: Date.now(),
         isFetching: false,
       });
