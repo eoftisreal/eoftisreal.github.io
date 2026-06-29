@@ -33,18 +33,23 @@ export default function AccountPage() {
           } catch (e) { console.error('Failed to fetch user'); }
 
           try {
-             const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders/my-orders`, {
+             const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders`, {
                 headers: { Authorization: `Bearer ${token}` }
              });
              if (ordersRes.ok) {
-                 const ordersData = await ordersRes.json();
-                 let recentOrders = ordersData.filter((o: any) => o.status !== 'delivered');
-                 if (recentOrders.length === 0 && ordersData.length > 0) {
-                   recentOrders = [ordersData[0]];
+                 const contentType = ordersRes.headers.get('content-type');
+                 if (contentType && contentType.indexOf('application/json') !== -1) {
+                     const ordersData = await ordersRes.json();
+                     let recentOrders = ordersData.filter((o: any) => o.status !== 'delivered');
+                     if (recentOrders.length === 0 && ordersData.length > 0) {
+                       recentOrders = [ordersData[0]];
+                     }
+                     if (isMounted) setOrders(recentOrders.slice(0, 3));
+                 } else {
+                     console.error('Expected JSON, got', contentType);
                  }
-                 if (isMounted) setOrders(recentOrders.slice(0, 3));
              }
-          } catch(e) { console.error('Failed to fetch orders'); }
+          } catch(e) { console.error('Failed to fetch orders', e); }
         }
 
         if (wishlistItems.length > 0 && isMounted) {
@@ -116,9 +121,9 @@ export default function AccountPage() {
                  <div className="space-y-4">
                    {orders.map(order => (
                      <div key={order._id} className="text-sm border-b border-border/50 pb-3 last:border-0 last:pb-0">
-                       <p className="font-medium text-foreground">Order #{order.orderNumber || order._id.slice(-6).toUpperCase()}</p>
-                       <p className="text-xs text-secondary-text mt-1">{new Date(order.createdAt).toLocaleDateString('en-GB')} • ₹{order.totalAmount}</p>
-                       <p className="text-xs mt-1">Status: <span className="font-medium uppercase tracking-wider">{order.status}</span></p>
+                       <p className="font-medium text-foreground">Order #{order.orderNumber || (order._id && order._id.slice(-6).toUpperCase())}</p>
+                       <p className="text-xs text-secondary-text mt-1">{new Date(order.createdAt).toLocaleDateString('en-GB')} • ₹{order.total || 0}</p>
+                       <p className="text-xs mt-1">Status: <span className="font-medium uppercase tracking-wider">{order.status ? order.status.replace('_', ' ') : 'Unknown'}</span></p>
                      </div>
                    ))}
                  </div>
