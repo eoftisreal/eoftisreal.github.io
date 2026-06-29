@@ -15,6 +15,10 @@ export default function Home() {
     fetchData();
   }, [fetchData]);
 
+  // If we have banners, duplicate the first one at the end to create a seamless infinite loop visual
+  const hasBanners = heroBannerUrls && heroBannerUrls.length > 0;
+  const loopBanners = hasBanners ? [...heroBannerUrls, heroBannerUrls[0]] : [];
+
   // Handle auto-slide
   useEffect(() => {
     if (!heroBannerUrls || heroBannerUrls.length <= 1) return;
@@ -23,7 +27,7 @@ export default function Home() {
       if (isInteracting.current) return;
 
       setCurrentSlide((prev) => {
-        const next = (prev + 1) % heroBannerUrls.length;
+        const next = prev + 1;
         if (scrollContainerRef.current) {
           const container = scrollContainerRef.current;
           container.scrollTo({
@@ -38,9 +42,9 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, [heroBannerUrls]);
 
-  // Handle scroll snap updates
+  // Handle scroll snap updates and infinite loop logic
   const handleScroll = () => {
-    if (!scrollContainerRef.current) return;
+    if (!scrollContainerRef.current || !hasBanners) return;
 
     const container = scrollContainerRef.current;
     const scrollPosition = container.scrollLeft;
@@ -51,10 +55,22 @@ export default function Home() {
 
     if (newSlideIndex !== currentSlide) {
       setCurrentSlide(newSlideIndex);
+
+      // If we've reached the duplicated first slide at the very end
+      if (newSlideIndex === loopBanners.length - 1) {
+        // Wait a tiny bit for the smooth scroll snap to finish visually
+        setTimeout(() => {
+          if (!scrollContainerRef.current) return;
+          // Jump back to the real first slide instantly without animation
+          scrollContainerRef.current.scrollTo({
+            left: 0,
+            behavior: 'instant' as ScrollBehavior // 'instant' is sometimes not in TS types, but works in modern browsers. 'auto' also works instantly.
+          });
+          setCurrentSlide(0);
+        }, 300); // 300ms allows standard snap animation to finish
+      }
     }
   };
-
-  const hasBanners = heroBannerUrls && heroBannerUrls.length > 0;
 
   return (
     <div className="space-y-10 md:space-y-16 pb-10 md:pb-16">
@@ -76,10 +92,9 @@ export default function Home() {
             className="absolute inset-0 z-0 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {heroBannerUrls.map((url, idx) => (
+            {loopBanners.map((url, idx) => (
               <div key={idx} className="w-full h-full flex-shrink-0 snap-center relative">
                 <img src={url} alt={`Hero Banner ${idx + 1}`} className="w-full h-full object-cover object-center" loading={idx === 0 ? "eager" : "lazy"} fetchPriority={idx === 0 ? "high" : "auto"} />
-                <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
               </div>
             ))}
           </div>
