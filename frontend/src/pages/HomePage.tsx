@@ -105,10 +105,10 @@ export default function Home() {
         {/* Fixed Overlay */}
         <div className="relative z-10 text-center max-w-2xl px-2 sm:px-4 flex flex-col items-center pointer-events-none">
           <h1 className="text-2xl sm:text-3xl md:text-6xl font-heading text-foreground mb-2 md:mb-6 leading-tight">
-            {hasBanners ? <span className="text-white drop-shadow-md">Discover the Art of Style</span> : "Discover the Art of Style"}
+            {hasBanners ? <span className="text-white drop-shadow-md"></span> : "Discover the Art of Style"}
           </h1>
           <p className="text-[10px] sm:text-xs md:text-base text-secondary-text mb-4 md:mb-8 max-w-md mx-auto px-4">
-            {hasBanners ? <span className="text-white/90 drop-shadow-md">Explore our latest collection of curated pieces designed for the modern aesthetic.</span> : "Explore our latest collection of curated pieces designed for the modern aesthetic."}
+            {hasBanners ? <span className="text-white/90 drop-shadow-md"></span> : "Explore our latest collection of curated pieces designed for the modern aesthetic."}
           </p>
           <div className="pointer-events-auto">
             <Link to="/products" className="inline-block border border-foreground bg-btn-bg text-btn-text px-4 py-1.5 md:px-10 md:py-3 text-[9px] md:text-sm tracking-widest uppercase transition-colors hover:bg-transparent hover:text-foreground transform scale-90 md:scale-100 -translate-y-2 md:translate-y-0">
