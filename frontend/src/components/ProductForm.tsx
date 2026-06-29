@@ -203,7 +203,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
           ))}
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-6 mt-4 p-4 bg-slate-50 rounded">
+        <div className="flex flex-col gap-4 mt-4 p-4 bg-slate-50 rounded">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Add Image URL (Cloudflare R2, etc)</label>
             <div className="flex gap-2">
