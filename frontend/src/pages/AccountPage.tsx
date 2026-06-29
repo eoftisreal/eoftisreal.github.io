@@ -18,7 +18,8 @@ export default function AccountPage() {
 
   useEffect(() => {
     let isMounted = true;
-    async function loadData() {
+
+    async function loadAccountData() {
       try {
         const token = getAuthToken();
         if (token) {
@@ -33,7 +34,7 @@ export default function AccountPage() {
           } catch (e) { console.error('Failed to fetch user'); }
 
           try {
-             const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders/my-orders`, {
+             const ordersRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/orders`, {
                 headers: { Authorization: `Bearer ${token}` }
              });
              if (ordersRes.ok) {
@@ -44,18 +45,7 @@ export default function AccountPage() {
                  }
                  if (isMounted) setOrders(recentOrders.slice(0, 3));
              }
-          } catch(e) { console.error('Failed to fetch orders'); }
-        }
-
-        if (wishlistItems.length > 0 && isMounted) {
-          // Fetch products for wishlist items
-          const promises = wishlistItems.map(id =>
-             fetch(`${import.meta.env.VITE_API_URL || '/api'}/products/${id}`).then(res => res.ok ? res.json() : null)
-          );
-          const results = await Promise.all(promises);
-          if (isMounted) setProducts(results.filter(p => p !== null));
-        } else {
-          if (isMounted) setProducts([]);
+          } catch(e) { console.error('Failed to fetch orders', e); }
         }
       } catch (error) {
         console.error('Error fetching account data', error);
@@ -63,14 +53,39 @@ export default function AccountPage() {
         if (isMounted) setLoading(false);
       }
     }
-    loadData();
 
-    const onFocus = () => loadData();
+    loadAccountData();
+
+    const onFocus = () => loadAccountData();
     window.addEventListener('focus', onFocus);
 
     return () => {
       isMounted = false;
       window.removeEventListener('focus', onFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadWishlistProducts() {
+      if (wishlistItems.length > 0) {
+        try {
+          const promises = wishlistItems.map(id =>
+             fetch(`${import.meta.env.VITE_API_URL || '/api'}/products/${id}`).then(res => res.ok ? res.json() : null)
+          );
+          const results = await Promise.all(promises);
+          if (isMounted) setProducts(results.filter(p => p !== null));
+        } catch (error) {
+          console.error('Error fetching wishlist products', error);
+        }
+      } else {
+        if (isMounted) setProducts([]);
+      }
+    }
+    loadWishlistProducts();
+
+    return () => {
+      isMounted = false;
     };
   }, [wishlistItems]);
 
@@ -117,7 +132,7 @@ export default function AccountPage() {
                    {orders.map(order => (
                      <div key={order._id} className="text-sm border-b border-border/50 pb-3 last:border-0 last:pb-0">
                        <p className="font-medium text-foreground">Order #{order.orderNumber || order._id.slice(-6).toUpperCase()}</p>
-                       <p className="text-xs text-secondary-text mt-1">{new Date(order.createdAt).toLocaleDateString('en-GB')} • ₹{order.totalAmount}</p>
+                       <p className="text-xs text-secondary-text mt-1">{new Date(order.createdAt).toLocaleDateString('en-GB')} • ₹{order.total}</p>
                        <p className="text-xs mt-1">Status: <span className="font-medium uppercase tracking-wider">{order.status}</span></p>
                      </div>
                    ))}

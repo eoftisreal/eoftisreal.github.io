@@ -19,6 +19,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [price, setPrice] = useState(0);
+  const [compareAtPrice, setCompareAtPrice] = useState(0);
 
   const [isFeatured, setIsFeatured] = useState(false);
   const [isCustomizable, setIsCustomizable] = useState(false);
@@ -61,8 +62,9 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
   const [file, setFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState('');
-  const [r2Key, setR2Key] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [r2ImageKeys, setR2ImageKeys] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   async function handleImageUpload(e: FormEvent) {
     e.preventDefault();
@@ -86,19 +88,30 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
       const body = await res.json();
       if (res.ok) {
-        setUploadedUrl(body.url);
-        setR2Key(body.key);
+        setImages(prev => [...prev, body.url]);
+        setR2ImageKeys(prev => [...prev, body.key]);
         setFile(null);
-        setMessage(''); // Clear any previous error messages on success
+        setMessage('');
       } else {
         setMessage(body.message || 'Image upload failed');
-        // Do NOT setFile(null) so they can try again or see why it failed
       }
     } catch (e: any) {
       setMessage(e.message || 'Image upload failed due to network error');
     } finally {
       setUploadingImage(false);
     }
+  }
+
+  function handleAddImageUrl() {
+    if (!newImageUrl) return;
+    setImages(prev => [...prev, newImageUrl]);
+    setR2ImageKeys(prev => [...prev, '']);
+    setNewImageUrl('');
+  }
+
+  function handleRemoveImage(index: number) {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setR2ImageKeys(prev => prev.filter((_, i) => i !== index));
   }
 
   async function submitProduct(event: FormEvent) {
@@ -116,9 +129,10 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         category,
         brand: brand || undefined,
         price,
+        compareAtPrice: compareAtPrice || undefined,
         stock,
-        images: uploadedUrl ? [uploadedUrl] : [],
-        r2ImageKeys: r2Key ? [r2Key] : [],
+        images,
+        r2ImageKeys,
         tags: tags ? tags.split(',').map(s => s.trim()).filter(Boolean) : [],
         isFeatured,
         isCustomizable,
@@ -148,10 +162,11 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         setCategory('');
         setBrand('');
         setPrice(0);
+        setCompareAtPrice(0);
         setStock(0);
         setIsFeatured(false);
-        setUploadedUrl('');
-        setR2Key('');
+        setImages([]);
+        setR2ImageKeys([]);
         if (onSuccess) onSuccess();
       } else {
         setMessage(body.message || 'Failed to create product');
@@ -167,32 +182,59 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     <div className="rounded-md bg-white p-6 space-y-6">
       <h2 className="font-bold text-xl border-b pb-2">Add New Product</h2>
 
-      {/* Image Upload Section */}
-      <div className="space-y-2 border-b pb-4">
-        <h3 className="font-semibold">1. Upload Product Image (Optional)</h3>
-        <div className="flex gap-2 items-center">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(event) => setFile(event.target.files?.[0] || null)}
-            className="text-sm text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-foreground/10 file:text-foreground hover:file:bg-foreground/20"
-          />
-          <button
-            type="button"
-            onClick={handleImageUpload}
-            disabled={!file || uploadingImage}
-            className="rounded bg-foreground hover:bg-black px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {uploadingImage ? 'Uploading...' : 'Upload Image'}
-          </button>
+      {/* Images Section */}
+      <div className="space-y-4 border-b pb-6">
+        <h3 className="font-semibold">1. Product Images</h3>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {images.map((img, idx) => (
+            <div key={idx} className="relative group rounded border aspect-square overflow-hidden bg-slate-50">
+              <img src={img} alt={`Product ${idx}`} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => handleRemoveImage(idx)}
+                className="absolute top-1 right-1 bg-foreground text-white rounded p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
         </div>
-        {uploadedUrl && (
-          <div className="mt-2">
-            <p className="text-xs text-foreground mb-1">Image uploaded successfully!</p>
-            {}
-            <img src={uploadedUrl} alt="Uploaded preview" className="max-h-32 rounded object-cover border" />
+
+        <div className="grid sm:grid-cols-2 gap-6 mt-4 p-4 bg-slate-50 rounded">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Add Image URL (Cloudflare R2, etc)</label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={newImageUrl}
+                onChange={e => setNewImageUrl(e.target.value)}
+                className="flex-1 rounded border px-3 py-1.5 text-sm"
+                placeholder="https://..."
+              />
+              <button type="button" onClick={handleAddImageUrl} className="rounded bg-slate-800 text-white px-3 py-1.5 text-sm">Add</button>
+            </div>
           </div>
-        )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Or Upload File</label>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => setFile(event.target.files?.[0] || null)}
+                className="text-sm text-slate-500 w-full file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-foreground/10 file:text-foreground"
+              />
+              <button
+                type="button"
+                onClick={handleImageUpload}
+                disabled={!file || uploadingImage}
+                className="rounded bg-foreground hover:bg-black px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {uploadingImage ? '...' : 'Upload'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Product Form Section */}
@@ -245,10 +287,14 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
           </datalist>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Price</label>
+            <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
             <input type="number" required min="0" value={price} onChange={e => setPrice(Number(e.target.value))} className="mt-1 w-full rounded border px-3 py-2" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Compare At Price (₹)</label>
+            <input type="number" min="0" value={compareAtPrice} onChange={e => setCompareAtPrice(Number(e.target.value))} className="mt-1 w-full rounded border px-3 py-2" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Stock</label>
