@@ -125,7 +125,7 @@ export default function Header() {
             <Link to="/cart" className={`${linkClass} flex items-center relative`} title="Cart">
               <img src="/icons/cart.png" alt="Cart" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" fetchPriority="high" />
               {cartItemCount > 0 && (
-                <span className="absolute top-0.5 right-1.5 bg-foreground text-white text-[10px] font-bold h-4 min-w-[16px] flex items-center justify-center rounded-full px-1">
+                <span className="absolute top-0.5 right-0.5 bg-foreground text-white text-[10px] font-bold h-4 min-w-[16px] flex items-center justify-center rounded-full px-1">
                   {cartItemCount}
                 </span>
               )}
