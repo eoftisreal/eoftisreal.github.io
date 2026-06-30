@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getAuthToken, setAuthToken } from '@/lib/storage';

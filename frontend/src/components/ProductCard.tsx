@@ -43,7 +43,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="absolute top-2 right-2 z-20">
           <WishlistButton productId={product._id} />
         </div>
-        <img
+        <img loading="lazy"
           src={product.images?.[0] || 'https://placehold.co/600x600?text=No+Image'}
           alt={product.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

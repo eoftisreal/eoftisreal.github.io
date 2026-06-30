@@ -11,6 +11,14 @@
   --accent: #DDD5CC;
   --btn-bg: #111111;
   --btn-text: #FFFFFF;
+
+  /* Animation timings */
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --transition-slow: 300ms;
+  --easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @theme inline {
@@ -27,13 +35,29 @@
   --font-body: "Inter", sans-serif;
 
   --animate-marquee: marquee 25s linear infinite;
+  --animate-fade-in: fadeIn 0.4s ease-out;
+  --animate-slide-in: slideIn 0.4s ease-out;
+  --animate-scale-in: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
+  --animate-shimmer: shimmer 2s ease-in-out infinite;
 }
 
-@keyframes marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
+/* ============================================================
+   SMOOTH TRANSITIONS & ANIMATIONS
+   ============================================================ */
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
 }
 
+/* Default smooth transitions for all elements */
+* {
+  @apply transition-all;
+}
+
+/* Prevent layout shift during transitions */
 body {
   background: var(--background);
   color: var(--foreground);
@@ -43,4 +67,396 @@ body {
 h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: var(--font-heading);
 }
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(17, 17, 17, 0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expandHeight {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   UTILITY ANIMATION CLASSES
+   ============================================================ */
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-fade-in-fast {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-fade-in-slow {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  background-size: 1000px 100%;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-expand-height {
+  animation: expandHeight 0.3s ease-out;
+}
+
+/* ============================================================
+   SMOOTH INTERACTION STATES
+   ============================================================ */
+
+/* Button smooth interactions */
+button, a[role="button"] {
+  @apply transition-all duration-200 ease-out;
+}
+
+button:hover {
+  @apply translate-y-0.5;
+}
+
+button:active {
+  @apply translate-y-1;
+}
+
+/* Form input smooth focus */
+input, textarea, select {
+  @apply transition-all duration-200 ease-out;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  @apply outline-none ring-2 ring-offset-0;
+}
+
+input:focus {
+  @apply ring-foreground/20 border-foreground;
+}
+
+/* Link smooth transitions */
+a {
+  @apply transition-all duration-200;
+}
+
+a:hover {
+  @apply text-foreground/80;
+}
+
+/* ============================================================
+   SMOOTH LOADING STATES
+   ============================================================ */
+
+.skeleton {
+  @apply animate-pulse bg-secondary-bg rounded;
+}
+
+.skeleton-text {
+  @apply h-4 bg-secondary-bg rounded w-full mb-2;
+}
+
+.skeleton-avatar {
+  @apply h-12 w-12 bg-secondary-bg rounded-full;
+}
+
+.skeleton-image {
+  @apply aspect-square bg-secondary-bg rounded-lg;
+}
+
+/* Loading spinner smooth rotation */
+.spinner {
+  @apply animate-spin;
+  animation: spin 1s linear infinite;
+}
+
+/* Pulsing dot indicator */
+.pulse-dot {
+  @apply w-2 h-2 bg-foreground rounded-full;
+  animation: bounce 1.4s ease-in-out infinite;
+}
+
+.pulse-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.pulse-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ============================================================
+   SMOOTH MODAL & OVERLAY
+   ============================================================ */
+
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300;
+}
+
+.modal-backdrop.exiting {
+  @apply opacity-0;
+}
+
+.modal-content {
+  @apply transition-all duration-300 ease-out;
+}
+
+.modal-content.entering {
+  @apply scale-100 opacity-100;
+}
+
+.modal-content.exiting {
+  @apply scale-95 opacity-0;
+}
+
+/* ============================================================
+   SMOOTH TRANSITIONS FOR COMMON ELEMENTS
+   ============================================================ */
+
+/* Product card smooth hover */
+.product-card {
+  @apply transition-all duration-300 ease-out;
+}
+
+.product-card:hover {
+  @apply shadow-lg -translate-y-1;
+}
+
+.product-image {
+  @apply transition-transform duration-700 ease-out will-change-transform;
+}
+
+.product-card:hover .product-image {
+  @apply scale-110;
+}
+
+/* Smooth color transitions */
+.bg-transition {
+  @apply transition-colors duration-300 ease-out;
+}
+
+.text-transition {
+  @apply transition-colors duration-300 ease-out;
+}
+
+.border-transition {
+  @apply transition-colors duration-300 ease-out;
+}
+
+/* ============================================================
+   ACCESSIBILITY - RESPECT PREFERS REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ============================================================
+   SMOOTH SCROLLBAR
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  transition: background 0.2s ease-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-text);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-color: var(--border) var(--background);
+  scrollbar-width: thin;
+}
+
+/* ============================================================
+   SMOOTH SELECTION
+   ============================================================ */
+
+::selection {
+  @apply bg-foreground/20;
+  color: inherit;
+}
+
+/* ============================================================
+   PLUGIN IMPORTS
+   ============================================================ */
+
 @plugin "@tailwindcss/typography";
+
+/* ============================================================
+   TYPOGRAPHY IMPROVEMENTS
+   ============================================================ */
+
+.prose {
+  @apply transition-all duration-200;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  @apply font-heading;
+}
