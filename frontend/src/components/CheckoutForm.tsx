@@ -1,3 +1,5 @@
+import { INDIAN_STATES, COUNTRIES } from '@/lib/constants';
+import { FloatingInput, FloatingSelect } from '@/components/FloatingInput';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +15,7 @@ const steps = ['Address', 'Delivery', 'Payment'];
 type CheckoutData = {
   name: string;
   phone: string;
+  countryCode: string;
   line1: string;
   line2: string;
   city: string;
@@ -32,12 +35,13 @@ export default function CheckoutForm() {
   const [formData, setFormData] = useState<CheckoutData>({
     name: '',
     phone: '',
+    countryCode: '+91',
     line1: '',
     line2: '',
     city: '',
     state: '',
     postalCode: '',
-    country: '',
+    country: 'India',
     deliveryMethod: 'email'
   });
 
@@ -90,10 +94,20 @@ export default function CheckoutForm() {
       .then(r => r.json())
       .then(data => {
         if (data.user) {
+          let loadedPhone = data.user.phone || '';
+          let loadedCode = '+91';
+          if (loadedPhone.includes(' ')) {
+            const parts = loadedPhone.split(' ');
+            if (parts[0].startsWith('+')) {
+              loadedCode = parts[0];
+              loadedPhone = parts.slice(1).join(' ');
+            }
+          }
           setFormData(prev => ({
             ...prev,
             name: data.user.name || '',
-            phone: data.user.phone || '',
+            phone: loadedPhone,
+            countryCode: loadedCode,
             line1: data.user.address?.line1 || '',
             line2: data.user.address?.line2 || '',
             city: data.user.address?.city || '',
@@ -155,6 +169,18 @@ export default function CheckoutForm() {
   }
 
   async function handleNext() {
+    setMessage('');
+
+    if (step === 0) {
+      const requiredFields = ['name', 'phone', 'line1', 'city', 'state', 'postalCode', 'country'] as const;
+      const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim() === '');
+
+      if (missingFields.length > 0) {
+        setMessage('Please fill out all required fields.');
+        return;
+      }
+    }
+
     if (step === 0 && isLoggedIn) {
       // Save profile updates before moving to step 1
       try {
@@ -166,7 +192,7 @@ export default function CheckoutForm() {
           },
           body: JSON.stringify({
             name: formData.name,
-            phone: formData.phone,
+            phone: `${formData.countryCode} ${formData.phone}`,
             address: {
               line1: formData.line1,
               line2: formData.line2,
@@ -203,7 +229,7 @@ export default function CheckoutForm() {
           body: JSON.stringify({
             shippingAddress: {
               name: formData.name,
-              phone: formData.phone,
+              phone: `${formData.countryCode} ${formData.phone}`,
               line1: formData.line1,
               line2: formData.line2,
               city: formData.city,
@@ -236,7 +262,7 @@ export default function CheckoutForm() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-9">
       <h1 className="text-3xl font-black">Checkout</h1>
 
       {!isLoggedIn && (
@@ -252,33 +278,34 @@ export default function CheckoutForm() {
           </div>
         ))}
       </div>
-      <section className="rounded-md bg-white p-6 border border-secondary-bg">
+      <section className="rounded-xl bg-white p-8 border border-border/40 shadow-sm">
         {step === 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-9">
             <div>
-              <h2 className="text-lg font-semibold mb-3">Personal Details</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input value={formData.name} onChange={e => handleChange('name', e.target.value)} placeholder="Full Name" className="rounded border px-3 py-2" />
-                <input value={formData.phone} onChange={e => handleChange('phone', e.target.value)} placeholder="Phone Number" className="rounded border px-3 py-2" />
+              <h2 className="text-lg font-semibold font-sans mb-3">Personal Details</h2>
+              <div className="grid gap-y-5 gap-x-4 sm:grid-cols-2">
+                <FloatingInput label="Full Name" value={formData.name} onChange={e => handleChange('name', e.target.value)} className="sm:col-span-2" />
+                <FloatingSelect label="Code" options={['+91', '+1', '+44', '+61', '+81', '+971']} value={formData.countryCode} onChange={e => handleChange('countryCode', e.target.value)} className="sm:col-span-1" />
+                <FloatingInput label="Phone Number" value={formData.phone} onChange={e => handleChange('phone', e.target.value)} className="sm:col-span-1" />
               </div>
             </div>
-            <div className="border-t pt-4">
-              <h2 className="text-lg font-semibold mb-3">Shipping Address</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input value={formData.line1} onChange={e => handleChange('line1', e.target.value)} placeholder="Address line 1" className="rounded border px-3 py-2 sm:col-span-2" />
-                <input value={formData.line2} onChange={e => handleChange('line2', e.target.value)} placeholder="Address line 2 (Optional)" className="rounded border px-3 py-2 sm:col-span-2" />
-                <input value={formData.city} onChange={e => handleChange('city', e.target.value)} placeholder="City" className="rounded border px-3 py-2" />
-                <input value={formData.state} onChange={e => handleChange('state', e.target.value)} placeholder="State" className="rounded border px-3 py-2" />
-                <input value={formData.postalCode} onChange={e => handleChange('postalCode', e.target.value)} placeholder="Postal Code" className="rounded border px-3 py-2" />
-                <input value={formData.country} onChange={e => handleChange('country', e.target.value)} placeholder="Country" className="rounded border px-3 py-2" />
+            <div className="border-t border-border/50 pt-4">
+              <h2 className="text-lg font-semibold font-sans mb-3">Shipping Address</h2>
+              <div className="grid gap-y-5 gap-x-4 sm:grid-cols-2">
+                <FloatingInput label="Address line 1" value={formData.line1} onChange={e => handleChange('line1', e.target.value)} className="sm:col-span-2" />
+                <FloatingInput label="Address line 2 (Optional)" value={formData.line2} onChange={e => handleChange('line2', e.target.value)} className="sm:col-span-2" />
+                <FloatingInput label="City" value={formData.city} onChange={e => handleChange('city', e.target.value)} />
+                <FloatingSelect label="State" options={INDIAN_STATES} value={formData.state} onChange={e => handleChange('state', e.target.value)} />
+                <FloatingInput label="Postal Code" value={formData.postalCode} onChange={e => handleChange('postalCode', e.target.value)} />
+                <FloatingSelect label="Country" options={COUNTRIES} value={formData.country} onChange={e => handleChange('country', e.target.value)} />
               </div>
             </div>
           </div>
         ) : null}
         {step === 1 ? (
-          <div className="space-y-8">
+          <div className="space-y-9">
             <div className="bg-slate-50 p-4 rounded-md border border-slate-200">
-              <h2 className="text-lg font-semibold text-foreground mb-3">Order Summary</h2>
+              <h2 className="text-lg font-semibold text-foreground font-sans mb-3">Order Summary</h2>
               <div className="space-y-3 mb-6">
                 {items.map((item) => (
                   <div key={`${item.productId}-${item.size || ''}-${item.color || ''}`} className="flex items-center gap-3">
@@ -346,7 +373,7 @@ export default function CheckoutForm() {
               </div>
               <div className="text-sm text-slate-600 space-y-1">
                 <p><span className="font-medium text-slate-800">Name:</span> {formData.name || 'Not provided'}</p>
-                <p><span className="font-medium text-slate-800">Phone:</span> {formData.phone || 'Not provided'}</p>
+                <p><span className="font-medium text-slate-800">Phone:</span> {formData.phone ? `${formData.countryCode} ${formData.phone}` : 'Not provided'}</p>
                 <p><span className="font-medium text-slate-800">Address:</span> {formData.line1} {formData.line2 ? `, ${formData.line2}` : ''}</p>
                 <p>{formData.city}, {formData.state} {formData.postalCode}</p>
                 <p>{formData.country}</p>
@@ -412,7 +439,7 @@ export default function CheckoutForm() {
         ) : null}
         {step === 2 ? (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Payment Method</h2>
+            <h2 className="text-lg font-semibold text-foreground font-sans mb-4">Payment Method</h2>
             <div className="p-4 border border-border rounded-md bg-secondary-bg">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="radio" checked readOnly className="w-4 h-4 text-foreground focus:ring-foreground" />
@@ -429,7 +456,7 @@ export default function CheckoutForm() {
         <button disabled={step === 0} onClick={() => setStep((current) => current - 1)} className="rounded border px-5 py-2 disabled:opacity-50">Back</button>
         <button disabled={!isLoggedIn && step === 0} onClick={handleNext} className="rounded bg-foreground hover:bg-black px-5 py-2 font-semibold text-white disabled:opacity-50">{step === steps.length - 1 ? 'Place Order' : 'Next'}</button>
       </div>
-      {message ? <p className="rounded-md bg-white p-3 text-sm border border-secondary-bg">{message}</p> : null}
+      {message ? <p className="rounded-md bg-red-50 text-red-600 p-3 text-sm border border-red-200">{message}</p> : null}
     </div>
   );
 }
