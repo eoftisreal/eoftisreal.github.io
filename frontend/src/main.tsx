@@ -2,6 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
+import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals';
+
+onCLS(console.log);
+onINP(console.log);
+onFCP(console.log);
+onLCP(console.log);
+onTTFB(console.log);
+
 
 import { lazy, Suspense } from 'react';
 import App from './App';

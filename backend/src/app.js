@@ -16,6 +16,14 @@ const wishlistRoutes = require('./routes/wishlist');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const path = require('path');
 
+const compressionMiddleware = require('./middleware/compression');
+const cacheMiddleware = require('./middleware/cache');
+const queryOptimizationMiddleware = require('./middleware/queryOptimization');
+
+const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
+
+
+
 const app = express();
 
 // Trust the proxy since the app is deployed behind DigitalOcean's load balancer.
@@ -29,6 +37,18 @@ app.use(cors({
   origin: env.nodeEnv === 'production' ? env.appUrl : '*',
   credentials: true
 }));
+
+app.use(compressionMiddleware());
+app.use(cacheMiddleware);
+app.use(queryOptimizationMiddleware);
+
+// API rate limiting
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/signup', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+
+
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(
