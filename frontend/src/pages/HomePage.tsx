@@ -76,7 +76,7 @@ export default function Home() {
     <div className="space-y-10 md:space-y-16 pb-10 md:pb-16">
       {/* Hero Section */}
       <section
-        className="relative overflow-hidden aspect-[2/1] w-full flex items-center justify-center bg-secondary-bg"
+        className="relative overflow-hidden aspect-[2/1] w-full flex items-end justify-center pb-8 sm:pb-12 md:pb-20 bg-secondary-bg"
         onMouseEnter={() => isInteracting.current = true}
         onMouseLeave={() => isInteracting.current = false}
         onTouchStart={() => isInteracting.current = true}
@@ -103,13 +103,17 @@ export default function Home() {
         )}
 
         {/* Fixed Overlay */}
-        <div className="relative z-10 text-center max-w-2xl px-2 sm:px-4 flex flex-col items-center pointer-events-none">
-          <h1 className="text-2xl sm:text-3xl md:text-6xl font-heading text-foreground mb-2 md:mb-6 leading-tight">
-            {hasBanners ? <span className="text-white drop-shadow-md">   </span> : "Discover the Art of Style"}
-          </h1>
-          <p className="text-[10px] sm:text-xs md:text-base text-secondary-text mb-4 md:mb-8 max-w-md mx-auto px-4">
-            {hasBanners ? <span className="text-white/90 drop-shadow-md">   </span> : "Explore our latest collection of curated pieces designed for the modern aesthetic."}
-          </p>
+        <div className="relative z-10 text-center max-w-2xl px-2 sm:px-4 flex flex-col items-center pointer-events-none w-full">
+          {!hasBanners && (
+            <>
+              <h1 className="text-2xl sm:text-3xl md:text-6xl font-heading text-foreground mb-2 md:mb-6 leading-tight">
+                Discover the Art of Style
+              </h1>
+              <p className="text-[10px] sm:text-xs md:text-base text-secondary-text mb-4 md:mb-8 max-w-md mx-auto px-4">
+                Explore our latest collection of curated pieces designed for the modern aesthetic.
+              </p>
+            </>
+          )}
           <div className="pointer-events-auto">
             <Link to="/products" className="inline-block border border-foreground bg-btn-bg text-btn-text px-4 py-1.5 md:px-10 md:py-3 text-[9px] md:text-sm tracking-widest uppercase transition-colors hover:bg-transparent hover:text-foreground transform scale-90 md:scale-100 -translate-y-2 md:translate-y-0">
               Shop Collection
