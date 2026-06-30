@@ -146,7 +146,7 @@ export default function AccountPage() {
           <h1 className="text-3xl font-black uppercase tracking-wider">Your Account</h1>
           {user && (
             <p className="text-secondary-text mt-2 text-sm">
-              Welcome back, {user.name || user.email}!
+              Welcome back, {user.username}!
             </p>
           )}
         </div>
