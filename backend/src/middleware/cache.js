@@ -22,7 +22,7 @@ const cacheMiddleware = (req, res, next) => {
   // API endpoints - shorter cache
   if (req.path.startsWith('/api')) {
     if (req.method === 'GET') {
-      res.set('Cache-Control', 'private, max-age=300'); // 5 minutes
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); // Disable cache for API endpoints by default to prevent auth state issues
     }
   }
 
