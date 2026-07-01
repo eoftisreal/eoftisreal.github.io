@@ -4,7 +4,11 @@ const env = require('../config/env');
 const resend = env.resendApiKey ? new Resend(env.resendApiKey) : null;
 
 async function sendEmail({ from, to, subject, html }) {
-  const sender = from || env.emailFrom;
+  let sender = from || env.emailFrom;
+
+  if (!sender.includes('<')) {
+    sender = `KapdaKraft <${sender}>`;
+  }
 
   if (!resend) {
     console.log(`[Resend Skipped] From: ${sender} | To: ${to} | Subject: ${subject}`);
@@ -118,9 +122,11 @@ async function sendOrderConfirmationEmail(order, userEmail) {
     if (item.color) variations.push(`Color: ${item.color}`);
     const variationsStr = variations.length > 0 ? `<br><span style="color: #666; font-size: 12px;">${variations.join(' | ')}</span>` : '';
 
+    const imageUrl = item.customImage || item.image;
+
     return `
     <tr>
-      ${item.customImage ? `<td style="padding: 10px; border-bottom: 1px solid #eee;"><img src="${item.customImage}" alt="${item.title}" style="max-width: 100px; max-height: 100px; border-radius: 4px;" /></td>` : '<td style="padding: 10px; border-bottom: 1px solid #eee;"></td>'}
+      ${imageUrl ? `<td style="padding: 10px; border-bottom: 1px solid #eee;"><img src="${imageUrl}" alt="${item.title}" style="max-width: 100px; max-height: 100px; border-radius: 4px;" /></td>` : '<td style="padding: 10px; border-bottom: 1px solid #eee;"></td>'}
       <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${item.title}</strong>${variationsStr}<br>Qty: ${item.quantity}</td>
       <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${(item.quantity * item.unitPrice).toFixed(2)}</td>
     </tr>
