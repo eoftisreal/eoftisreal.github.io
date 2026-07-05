@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { apiGet, Product } from '@/lib/api';
 import ProductGrid from '@/components/ProductGrid';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 
 type ProductResponse = {
   products: Product[];
@@ -13,6 +13,9 @@ type ProductResponse = {
 
 function ProductListingContent() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const q = searchParams.get('q');
   const category = searchParams.get('category');
   const brand = searchParams.get('brand');
@@ -32,9 +35,29 @@ function ProductListingContent() {
   const [productTypes, setProductTypes] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
 
-  // Local state for the price range sliders
+  // Local state for the form
+  const [localQ, setLocalQ] = useState(q || '');
+  const [localSort, setLocalSort] = useState(sortParam || '');
+  const [localCategory, setLocalCategory] = useState(category || '');
+  const [localBrand, setLocalBrand] = useState(brand || '');
+  const [localProductType, setLocalProductType] = useState(productTypeParam || '');
+  const [localTag, setLocalTag] = useState(tagParam || '');
+  const [localInStock, setLocalInStock] = useState(inStockParam || '');
   const [minPrice, setMinPrice] = useState(minPriceParam || '');
   const [maxPrice, setMaxPrice] = useState(maxPriceParam || '');
+
+  // Sync local state when URL params change (e.g. clicking header link)
+  useEffect(() => {
+    setLocalQ(q || '');
+    setLocalSort(sortParam || '');
+    setLocalCategory(category || '');
+    setLocalBrand(brand || '');
+    setLocalProductType(productTypeParam || '');
+    setLocalTag(tagParam || '');
+    setLocalInStock(inStockParam || '');
+    setMinPrice(minPriceParam || '');
+    setMaxPrice(maxPriceParam || '');
+  }, [q, category, brand, sortParam, inStockParam, productTypeParam, tagParam, minPriceParam, maxPriceParam]);
 
   useEffect(() => {
     async function fetchFilters() {
@@ -90,13 +113,27 @@ function ProductListingContent() {
     };
   }, [q, category, brand, sortParam, inStockParam, productTypeParam, tagParam, minPriceParam, maxPriceParam, pageParam]);
 
+  const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const params = new URLSearchParams();
+
+    for (const [key, value] of formData.entries()) {
+      if (value && typeof value === 'string' && value.trim() !== '') {
+        params.append(key, value.trim());
+      }
+    }
+
+    navigate(`${location.pathname}?${params.toString()}`);
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-black">Explore Products</h1>
-      <form className="grid gap-3 rounded-md bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <input name="q" defaultValue={q || ''} placeholder="Search artwork" className="rounded-lg border px-3 py-2" />
+      <form onSubmit={handleFilterSubmit} className="grid gap-3 rounded-md bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <input name="q" value={localQ} onChange={e => setLocalQ(e.target.value)} placeholder="Search artwork" className="rounded-lg border px-3 py-2" />
 
-        <select name="sort" defaultValue={sortParam || ''} className="rounded-lg border px-3 py-2">
+        <select name="sort" value={localSort} onChange={e => setLocalSort(e.target.value)} className="rounded-lg border px-3 py-2">
           <option value="">Sort By</option>
           <option value="price_asc">Price: Low to High</option>
           <option value="price_desc">Price: High to Low</option>
@@ -105,27 +142,27 @@ function ProductListingContent() {
           <option value="most_popular">Most Popular</option>
         </select>
 
-        <select name="category" defaultValue={category || ''} className="rounded-lg border px-3 py-2">
+        <select name="category" value={localCategory} onChange={e => setLocalCategory(e.target.value)} className="rounded-lg border px-3 py-2">
           <option value="">All Categories</option>
           {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
         </select>
 
-        <select name="brand" defaultValue={brand || ''} className="rounded-lg border px-3 py-2">
+        <select name="brand" value={localBrand} onChange={e => setLocalBrand(e.target.value)} className="rounded-lg border px-3 py-2">
           <option value="">All Brands</option>
           {brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}
         </select>
 
-        <select name="productType" defaultValue={productTypeParam || ''} className="rounded-lg border px-3 py-2">
+        <select name="productType" value={localProductType} onChange={e => setLocalProductType(e.target.value)} className="rounded-lg border px-3 py-2">
           <option value="">All Product Types</option>
           {productTypes.map(pt => <option key={pt} value={pt}>{pt}</option>)}
         </select>
 
-        <select name="tag" defaultValue={tagParam || ''} className="rounded-lg border px-3 py-2">
+        <select name="tag" value={localTag} onChange={e => setLocalTag(e.target.value)} className="rounded-lg border px-3 py-2">
           <option value="">All Collections / Tags</option>
           {tags.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
 
-        <select name="inStock" defaultValue={inStockParam || ''} className="rounded-lg border px-3 py-2">
+        <select name="inStock" value={localInStock} onChange={e => setLocalInStock(e.target.value)} className="rounded-lg border px-3 py-2">
           <option value="">Availability</option>
           <option value="true">In Stock</option>
           <option value="false">Out of Stock</option>
@@ -137,7 +174,7 @@ function ProductListingContent() {
           <input name="maxPrice" type="number" placeholder="Max ₹" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="w-full rounded-lg border px-3 py-2" />
         </div>
 
-        <button className="rounded-lg bg-foreground hover:bg-black px-4 py-2 font-semibold text-white lg:col-span-4">Apply Filters</button>
+        <button type="submit" className="rounded-lg bg-foreground hover:bg-black px-4 py-2 font-semibold text-white lg:col-span-4">Apply Filters</button>
       </form>
 
       {loading ? (
