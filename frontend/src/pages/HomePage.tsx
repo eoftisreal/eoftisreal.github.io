@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import ProductCard from '@/components/ProductCard';
 import { useHomeStore } from '@/store/home';
+import SEO from '@/components/SEO';
 
 export default function Home() {
   const { categories, featuredProducts, heroBannerUrls, fetchData } = useHomeStore();
@@ -74,6 +75,7 @@ export default function Home() {
 
   return (
     <div className="space-y-10 md:space-y-16 pb-10 md:pb-16">
+      <SEO title="Kapda Kraft - Premium Clothing" />
       {/* Hero Section */}
       <section
         className="relative overflow-hidden aspect-[2/1] w-full flex items-end justify-center pb-8 sm:pb-12 md:pb-20 bg-secondary-bg"
