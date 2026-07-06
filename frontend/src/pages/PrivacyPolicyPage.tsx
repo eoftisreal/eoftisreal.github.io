@@ -1,6 +1,9 @@
+import SEO from '@/components/SEO';
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="mx-auto max-w-4xl py-12 px-4 sm:px-6 lg:px-8">
+      <SEO title="Policies & Information" description="Read Kapda Kraft's privacy policy, terms of service, and shipping information." />
       <h1 className="text-4xl font-black mb-8 text-foreground">Policies & Information</h1>
       <div className="prose prose-slate max-w-none space-y-8 text-secondary-text leading-relaxed">
 

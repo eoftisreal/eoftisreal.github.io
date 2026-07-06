@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import './index.css';
 import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals';
 
@@ -47,6 +48,7 @@ const AdminOrdersPage = lazy(() => import('./pages/admin/OrdersPage'));
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
+    <HelmetProvider>
     <BrowserRouter>
       <ScrollToTop />
       <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-slate-500">Loading...</div>}>
@@ -92,5 +94,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       </Routes>
       </Suspense>
     </BrowserRouter>
+    </HelmetProvider>
   </React.StrictMode>
 );

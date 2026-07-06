@@ -1,6 +1,9 @@
+import SEO from '@/components/SEO';
+
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-4xl py-12 px-4 sm:px-6 lg:px-8">
+      <SEO title="About Us" description="Learn more about Kapda Kraft, our mission, and our commitment to quality, sustainability, and timeless fashion." />
       <h1 className="text-4xl font-black mb-8 text-foreground">About Us</h1>
       <div className="prose prose-slate max-w-none space-y-6 text-secondary-text leading-relaxed">
         <p className="text-lg">

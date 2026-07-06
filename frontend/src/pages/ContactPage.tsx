@@ -1,6 +1,9 @@
+import SEO from '@/components/SEO';
+
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-4xl py-12 px-4 sm:px-6 lg:px-8">
+      <SEO title="Contact Us" description="Get in touch with Kapda Kraft for support, order inquiries, or general questions." />
       <h1 className="text-4xl font-black mb-8 text-foreground">Contact Us</h1>
       <div className="prose prose-slate max-w-none space-y-6 text-secondary-text leading-relaxed">
         <p className="text-lg">

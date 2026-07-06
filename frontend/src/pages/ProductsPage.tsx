@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { apiGet, Product } from '@/lib/api';
 import ProductGrid from '@/components/ProductGrid';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import SEO from '@/components/SEO';
 
 type ProductResponse = {
   products: Product[];
@@ -129,6 +130,10 @@ function ProductListingContent() {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title={category ? `${category} Products` : "Shop All Products"}
+        description="Explore our full collection of premium clothing and accessories. Filter by category, brand, and more."
+      />
       <h1 className="text-3xl font-black">Explore Products</h1>
       <form onSubmit={handleFilterSubmit} className="grid gap-3 rounded-md bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
         <input name="q" value={localQ} onChange={e => setLocalQ(e.target.value)} placeholder="Search artwork" className="rounded-lg border px-3 py-2" />
