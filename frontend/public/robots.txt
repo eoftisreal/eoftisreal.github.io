@@ -1,4 +1,49 @@
+# robots.txt for Kapda Kraft
+# Allow Google, Bing, and other major search engines
+
+# Default user agent settings
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+Disallow: /*.json$
+Disallow: /node_modules/
 
+# Specific crawler optimization
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+Crawl-delay: 0
+
+User-agent: Slurp
+Allow: /
+Disallow: /admin/
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: DotBot
+User-agent: MJ12bot
+Disallow: /
+
+# Sitemap location
 Sitemap: https://kapdakraft.live/sitemap.xml
+Sitemap: https://kapdakraft.live/api/sitemap/products
+
+# Crawl delay for other bots (in seconds)
+Crawl-delay: 1
+Request-rate: 1/10

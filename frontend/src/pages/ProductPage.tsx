@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiGet, Product } from '@/lib/api';
 import AddToCartButton from '@/components/AddToCartButton';
 import WishlistButton from '@/components/WishlistButton';
+import SEO from '@/components/SEO';
 import { X, Check } from 'lucide-react';
 import { getAuthToken } from '@/lib/storage';
 import ReactMarkdown from 'react-markdown';
@@ -63,12 +64,60 @@ export default function ProductDetailPage() {
   }, [id]);
 
   if (loading) {
-    return <p className="rounded-md bg-white p-6 border border-secondary-bg">Loading product...</p>;
+    return (
+      <>
+        <SEO
+          title="Loading Product..."
+          description="Please wait while we load this product"
+          noindex={true}
+        />
+        <p className="rounded-md bg-white p-6 border border-secondary-bg">Loading product...</p>
+      </>
+    );
   }
 
   if (!product) {
-    return <p className="rounded-md bg-white p-6 border border-secondary-bg">Product not found.</p>;
+    return (
+      <>
+        <SEO
+          title="Product Not Found"
+          description="The product you are looking for doesn't exist"
+          noindex={true}
+        />
+        <p className="rounded-md bg-white p-6 border border-secondary-bg">Product not found.</p>
+      </>
+    );
   }
+
+  // Prepare SEO data for product
+  const seoTitle = `${product.title}${product.artistName ? ` - ${product.artistName}` : ''} | Kapda Kraft`;
+  const seoDescription = product.description
+    ? product.description.substring(0, 160)
+    : `Buy ${product.title} at Kapda Kraft. Premium quality clothing and accessories.`;
+
+  const productImageUrl = activeImage || (product.images && product.images[0]) || '/logo.png';
+
+  const productImages = product.images || ['/logo.png'];
+
+  // Prepare breadcrumbs
+  const breadcrumbs = [
+    { name: 'Home', url: 'https://kapdakraft.live/' },
+    { name: 'Products', url: 'https://kapdakraft.live/products' },
+    { name: product.category || 'Category', url: `https://kapdakraft.live/products?category=${encodeURIComponent(product.category)}` },
+    { name: product.title, url: `https://kapdakraft.live/products/${id}` },
+  ];
+
+  // Prepare product schema
+  const productSchema = {
+    name: product.title,
+    description: seoDescription,
+    image: productImages,
+    price: product.price,
+    currency: 'INR',
+    availability: product.stock > 0 ? 'InStock' : 'OutOfStock',
+    sku: product._id,
+    brand: product.artistName || 'Kapda Kraft',
+  };
 
   const handleCustomImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -117,8 +166,26 @@ export default function ProductDetailPage() {
   const currentImage = activeImage || gallery[0] || 'https://placehold.co/700x700?text=Art';
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      <div className="space-y-4 overflow-hidden">
+    <>
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        image={productImageUrl}
+        url={`https://kapdakraft.live/products/${id}`}
+        type="product"
+        keywords={[
+          product.title,
+          product.artistName || 'clothing',
+          product.category || 'fashion',
+          'shopping',
+          'online store',
+        ]}
+        breadcrumbs={breadcrumbs}
+        product={productSchema}
+        canonical={`https://kapdakraft.live/products/${id}`}
+      />
+      <div className="grid gap-8 md:grid-cols-2">
+        <div className="space-y-4 overflow-hidden">
         <img src={currentImage} alt={product.title} className="aspect-square w-full rounded-md object-cover" />
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
           {gallery.map((image, index) => (
@@ -261,5 +328,6 @@ export default function ProductDetailPage() {
 
       </div>
     </div>
+    </>
   );
 }

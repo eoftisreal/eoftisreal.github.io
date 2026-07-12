@@ -75,7 +75,12 @@ export default function Home() {
 
   return (
     <div className="space-y-10 md:space-y-16 pb-10 md:pb-16">
-      <SEO title="Kapda Kraft - Premium Clothing" />
+      <SEO
+        title="Kapda Kraft - Premium Clothing & Accessories"
+        description="Discover premium quality clothing and accessories at Kapda Kraft. Curated collections designed for the modern aesthetic. Shop the latest trends today."
+        keywords={["clothing", "fashion", "accessories", "online shopping", "premium wear"]}
+        image="https://kapdakraft.live/logo.png"
+      />
       {/* Hero Section */}
       <section
         className="relative overflow-hidden aspect-[2/1] w-full flex items-end justify-center pb-8 sm:pb-12 md:pb-20 bg-secondary-bg"
