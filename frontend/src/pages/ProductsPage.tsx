@@ -128,11 +128,21 @@ function ProductListingContent() {
     navigate(`${location.pathname}?${params.toString()}`);
   };
 
+  // Determine title based on filters
+  const getPageTitle = () => {
+    if (q) return `Search: ${q} - Kapda Kraft`;
+    if (category) return `${category} Products - Kapda Kraft`;
+    if (brand) return `${brand} Products - Kapda Kraft`;
+    return 'Products - Kapda Kraft';
+  };
+
   return (
     <div className="space-y-6">
       <SEO
-        title={category ? `${category} Products` : "Shop All Products"}
-        description="Explore our full collection of premium clothing and accessories. Filter by category, brand, and more."
+        title={getPageTitle()}
+        description={`Browse our collection of premium clothing and accessories. Find the perfect style for you at Kapda Kraft.`}
+        url={`https://kapdakraft.live/products${location.search}`}
+        canonical={`https://kapdakraft.live/products${location.search ? '?' + new URLSearchParams(Object.fromEntries(new URLSearchParams(location.search).entries())).toString() : ''}`}
       />
       <h1 className="text-3xl font-black">Explore Products</h1>
       <form onSubmit={handleFilterSubmit} className="grid gap-3 rounded-md bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
