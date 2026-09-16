@@ -114,18 +114,25 @@ app.use('/api', sitemapRoutes);
 if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
   const frontendPath = path.join(__dirname, '../../frontend/dist');
 
-  // Serve static files with caching
-  app.use(express.static(frontendPath, {
-    maxAge: '1d',
-    etag: false,
-    // Only cache assets, not HTML
-    setHeaders: (res, path) => {
-      if (path.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-      } else if (path.match(/\.(js|css|woff2?)$/)) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  // Appwrite Function specific fix: when we rewrite routes via appwrite-entry.js,
+  // the path gets mapped strangely for static files if we aren't careful, but since
+  // express.static mounts at root, it should find it.
+  // One big catch: since frontend builds using Vite and pre-compresses to .br and .gz,
+  // we can use express-static-gzip to cleanly serve these if needed, or simply let
+  // normal express.static handle the raw files.
+  // We'll use basic express static.
+
+  const expressStaticGzip = require('express-static-gzip');
+  app.use('/', expressStaticGzip(frontendPath, {
+      enableBrotli: true,
+      orderPreference: ['br', 'gz'],
+      setHeaders: function (res, path) {
+         if (path.endsWith('.html')) {
+           res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+         } else if (path.match(/\.(js|css|woff2?)$/)) {
+           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+         }
       }
-    }
   }));
 
   // SPA fallback: For all non-API routes that don't match files, serve index.html
@@ -135,9 +142,11 @@ if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'tru
       return next();
     }
 
-    // Skip requests for files that don't exist (images, etc.)
-    const filePath = path.join(frontendPath, req.path);
-    if (path.extname(filePath) && filePath.includes('.')) {
+    // Skip requests for files that don't exist (images, js, css, etc.)
+    // If the browser requested a JS or CSS file and it wasn't found by express.static,
+    // we should let it 404 instead of serving index.html which causes SyntaxError in the browser.
+    const ext = path.extname(req.path);
+    if (ext && req.path.includes('.')) {
       return next();
     }
 
@@ -145,6 +154,10 @@ if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'tru
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
       if (err) {
+        // If index.html itself is missing, pass to error handler
+        if (err.code === 'ENOENT') {
+          err.statusCode = 404;
+        }
         next(err);
       }
     });
