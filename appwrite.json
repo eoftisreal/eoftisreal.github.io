@@ -4,7 +4,7 @@
     {
       "functionId": "backend-api",
       "name": "Backend API & Frontend Server",
-      "runtime": "node-18.0",
+      "runtime": "node-20.0",
       "path": ".",
       "entrypoint": "backend/src/appwrite-entry.js",
       "trigger": "http",
