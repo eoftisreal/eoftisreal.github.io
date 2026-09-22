@@ -7,6 +7,7 @@ import compression from 'vite-plugin-compression';
 
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
+  const enablePwa = process.env.VITE_ENABLE_PWA === 'true';
 
   return {
   plugins: [
@@ -15,46 +16,48 @@ export default defineConfig(({ mode }) => {
       fastRefresh: !isProduction,
     }),
     tailwindcss(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+    ...(enablePwa
+      ? [VitePWA({
+          registerType: 'autoUpdate',
+          workbox: {
+            cleanupOutdatedCaches: true,
+            skipWaiting: true,
+            clientsClaim: true,
 
-      },
-      devOptions: {
-        enabled: !isProduction,
-      },
-      manifest: {
-        name: 'Kapda Kraft',
-        short_name: 'Kapda Kraft',
-        description: 'Discover the Art of Style',
-        theme_color: '#111111',
-        background_color: '#F4F2F0',
-        display: 'standalone',
-        icons: [
-          {
-            src: '/favicon.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any',
           },
-          {
-            src: '/favicon.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any',
+          devOptions: {
+            enabled: !isProduction,
           },
-          {
-            src: '/favicon.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable',
+          manifest: {
+            name: 'Kapda Kraft',
+            short_name: 'Kapda Kraft',
+            description: 'Discover the Art of Style',
+            theme_color: '#111111',
+            background_color: '#F4F2F0',
+            display: 'standalone',
+            icons: [
+              {
+                src: '/favicon.png',
+                sizes: '192x192',
+                type: 'image/png',
+                purpose: 'any',
+              },
+              {
+                src: '/favicon.png',
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'any',
+              },
+              {
+                src: '/favicon.png',
+                sizes: '192x192',
+                type: 'image/png',
+                purpose: 'maskable',
+              },
+            ],
           },
-        ],
-      },
-    }),
+        })]
+      : []),
     // Add compression plugin
     compression({
       algorithm: 'brotliCompress',

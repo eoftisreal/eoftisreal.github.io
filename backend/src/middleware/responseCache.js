@@ -3,6 +3,9 @@ const CACHE_TTL = 60 * 1000; // 1 minute
 
 module.exports = function responseCacheMiddleware(req, res, next) {
   if (req.method !== 'GET') {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      responseCache.clear();
+    }
     return next();
   }
 
@@ -11,7 +14,8 @@ module.exports = function responseCacheMiddleware(req, res, next) {
     req.path.startsWith('/orders') ||
     req.path.startsWith('/cart') ||
     req.path.startsWith('/auth') ||
-    req.path.startsWith('/admin')
+    req.path.startsWith('/admin') ||
+    req.path === '/public/settings'
   ) {
     return next();
   }

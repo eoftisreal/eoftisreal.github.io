@@ -17,7 +17,7 @@ type HomeState = {
   fetchData: () => Promise<void>;
 };
 
-const CACHE_DURATION_MS = 1000 * 60 * 5; // 5 minutes cache
+const CACHE_DURATION_MS = 1000 * 30; // 30 seconds cache
 
 export const useHomeStore = create<HomeState>((set, get) => ({
   categories: [],
@@ -41,7 +41,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
       const [catsRes, prodsRes, settingsRes] = await Promise.all([
         apiGet<Category[]>('/products/categories'),
         apiGet<{products: Product[]}>('/products?isFeatured=true&limit=24'),
-        fetch((import.meta.env.VITE_API_URL || '/api') + '/public/settings').then(res => res.ok ? res.json() : {})
+        fetch((import.meta.env.VITE_API_URL || '/api') + '/public/settings', { cache: 'no-store' }).then(res => res.ok ? res.json() : {})
       ]);
 
       const parsedSettings = settingsRes as { heroBannerUrl?: string, heroBannerUrls?: string[] };
