@@ -3,6 +3,7 @@ import { fetchWithAuth } from "@/lib/apiClient";
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { Plus, Trash2 } from 'lucide-react';
+import { useHomeStore } from '@/store/home';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -26,6 +27,8 @@ export default function CategoriesPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState('');
   const [r2Key, setR2Key] = useState('');
+
+  const { invalidateCache } = useHomeStore();
 
   useEffect(() => {
     fetchCategories();
@@ -99,6 +102,7 @@ export default function CategoriesPage() {
       });
       if (res.ok) {
         resetForm();
+        invalidateCache();
         fetchCategories();
       }
     } catch (e) {
@@ -133,7 +137,10 @@ export default function CategoriesPage() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       });
-      if (res.ok) fetchCategories();
+      if (res.ok) {
+        invalidateCache();
+        fetchCategories();
+      }
     } catch (e) {
       console.error(e);
     }
