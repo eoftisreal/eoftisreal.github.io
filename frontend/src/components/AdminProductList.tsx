@@ -1,10 +1,9 @@
-import { fetchWithAuth } from "@/lib/apiClient";
-
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { Trash2, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { apiGet, Product } from '@/lib/api';
+import { Product } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/apiClient';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -23,9 +22,12 @@ export default function AdminProductList({ refreshKey = 0 }: AdminProductListPro
   async function fetchProducts() {
     try {
       setLoading(true);
-      const res = await apiGet<{products: Product[]}>('/products?limit=100');
-      if (res && res.products) {
-        setProducts(res.products);
+      const res = await fetchWithAuth(`${apiBase}/products?limit=100&t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.products) {
+          setProducts(data.products);
+        }
       }
     } catch (e) {
       console.error(e);

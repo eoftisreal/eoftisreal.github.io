@@ -124,7 +124,11 @@ router.get('/', validate(listSchema), async (req, res, next) => {
       Product.countDocuments(query),
     ]);
 
-    res.set('Cache-Control', SHORT_CACHE);
+    if (req.headers.authorization) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else {
+      res.set('Cache-Control', SHORT_CACHE);
+    }
     res.json({ products, page, limit, total, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     next(error);
@@ -139,7 +143,12 @@ router.get('/:id', async (req, res, next) => {
       err.statusCode = 404;
       throw err;
     }
-    res.set('Cache-Control', MEDIUM_CACHE);
+
+    if (req.headers.authorization) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else {
+      res.set('Cache-Control', MEDIUM_CACHE);
+    }
     res.json(product);
   } catch (error) {
     next(error);

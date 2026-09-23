@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState, useEffect } from 'react';
-import { getAuthToken } from '@/lib/storage';
+import { fetchWithAuth } from '@/lib/apiClient';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -38,10 +38,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   useEffect(() => {
     async function fetchOptions() {
       try {
-        const token = getAuthToken();
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        const res = await fetch(`${apiBase}/master-data`, { headers });
+        const res = await fetchWithAuth(`${apiBase}/master-data`);
         if (res.ok) {
           const { categories, brands, tags } = await res.json();
           setCategories(categories);
@@ -69,18 +66,14 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     if (!file) return;
 
     setUploadingImage(true);
-    const token = getAuthToken();
 
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', 'admin/product-images');
 
-      const res = await fetch(`${apiBase}/admin/upload`, {
+      const res = await fetchWithAuth(`${apiBase}/admin/upload`, {
         method: 'POST',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
         body: formData,
       });
 
@@ -120,7 +113,6 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     setMessage('');
 
     try {
-      const token = getAuthToken();
       const payload = {
         title,
         description,
@@ -144,11 +136,10 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         maxDeliveryDays: maxDeliveryDays ? Number(maxDeliveryDays) : undefined,
       };
 
-      const response = await fetch(`${apiBase}/products`, {
+      const response = await fetchWithAuth(`${apiBase}/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify(payload),
       });
