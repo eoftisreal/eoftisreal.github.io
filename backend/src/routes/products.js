@@ -16,7 +16,7 @@ const MEDIUM_CACHE = 'public, max-age=300, stale-while-revalidate=600';
 router.get('/categories', async (req, res, next) => {
   try {
     const categories = await Category.find({ isActive: true }).sort({ name: 1 }).lean();
-    res.set('Cache-Control', SHORT_CACHE);
+    res.set('Cache-Control', 'no-cache');
     res.json(categories);
   } catch (error) {
     next(error);
@@ -26,7 +26,7 @@ router.get('/categories', async (req, res, next) => {
 router.get('/brands', async (req, res, next) => {
   try {
     const brands = await Brand.find({ isActive: true }).sort({ name: 1 }).lean();
-    res.set('Cache-Control', SHORT_CACHE);
+    res.set('Cache-Control', 'no-cache');
     res.json(brands);
   } catch (error) {
     next(error);
@@ -36,7 +36,7 @@ router.get('/brands', async (req, res, next) => {
 router.get('/tags', async (req, res, next) => {
   try {
     const tags = await Product.distinct('tags', { isActive: true });
-    res.set('Cache-Control', SHORT_CACHE);
+    res.set('Cache-Control', 'no-cache');
     res.json(tags.filter(t => t));
   } catch (error) {
     next(error);
@@ -46,7 +46,7 @@ router.get('/tags', async (req, res, next) => {
 router.get('/product-types', async (req, res, next) => {
   try {
     const types = await Product.distinct('productType', { isActive: true });
-    res.set('Cache-Control', SHORT_CACHE);
+    res.set('Cache-Control', 'no-cache');
     res.json(types.filter(t => t));
   } catch (error) {
     next(error);
