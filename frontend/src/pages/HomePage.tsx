@@ -1,20 +1,47 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import ProductCard from '@/components/ProductCard';
-import { useHomeStore } from '@/store/home';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet, Product } from '@/lib/api';
 import SEO from '@/components/SEO';
 
+type Category = {
+  _id: string;
+  name: string;
+  description: string;
+  image?: string;
+};
+
 export default function Home() {
-  const { categories, featuredProducts, heroBannerUrls, fetchData } = useHomeStore();
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: () => apiGet('/products/categories')
+  });
+
+  const { data: featuredProductsRes } = useQuery<{ products: Product[] }>({
+    queryKey: ['featuredProducts'],
+    queryFn: () => apiGet('/products?isFeatured=true&limit=24')
+  });
+  const featuredProducts = featuredProductsRes?.products || [];
+
+  const { data: settingsRes } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => fetch((import.meta.env.VITE_API_URL || '/api') + '/public/settings').then(res => res.json())
+  });
+
+  const parsedSettings = settingsRes as { heroBannerUrl?: string, heroBannerUrls?: string[] } | undefined;
+  let heroBannerUrls: string[] = [];
+  if (parsedSettings?.heroBannerUrls && parsedSettings.heroBannerUrls.length > 0) {
+    heroBannerUrls = parsedSettings.heroBannerUrls.filter(Boolean);
+  } else if (parsedSettings?.heroBannerUrl) {
+    heroBannerUrls = [parsedSettings.heroBannerUrl];
+  }
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Track if user is interacting to pause auto-slide
   const isInteracting = useRef(false);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   // If we have banners, duplicate the first one at the end to create a seamless infinite loop visual
   const hasBanners = heroBannerUrls && heroBannerUrls.length > 0;

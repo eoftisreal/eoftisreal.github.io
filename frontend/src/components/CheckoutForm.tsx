@@ -7,6 +7,7 @@ import { getAuthToken } from '@/lib/storage';
 import { fetchWithAuth } from '@/lib/apiClient';
 import { useCartStore } from '@/store/cart';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -60,6 +61,27 @@ export default function CheckoutForm() {
   });
 
   const { items, fetchCart } = useCartStore();
+  const queryClient = useQueryClient();
+
+  const checkoutMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await fetchWithAuth(`${apiBase}/checkout/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Checkout failed');
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    }
+  });
   const navigate = useNavigate();
 
   const isLoggedIn = !!getAuthToken();
@@ -237,30 +259,24 @@ export default function CheckoutForm() {
 
       try {
         setMessage('Processing order...');
-        const res = await fetchWithAuth(`${apiBase}/checkout/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        const payload = {
+          shippingAddress: {
+            name: formData.name,
+            phone: `${formData.countryCode} ${formData.phone}`,
+            line1: formData.line1,
+            line2: formData.line2,
+            city: formData.city,
+            state: formData.state,
+            postalCode: formData.postalCode,
+            country: formData.country
           },
-          body: JSON.stringify({
-            shippingAddress: {
-              name: formData.name,
-              phone: `${formData.countryCode} ${formData.phone}`,
-              line1: formData.line1,
-              line2: formData.line2,
-              city: formData.city,
-              state: formData.state,
-              postalCode: formData.postalCode,
-              country: formData.country
-            },
-            deliveryMethod: formData.deliveryMethod,
-            promoCode: promoCode || undefined
-          })
-        });
+          deliveryMethod: formData.deliveryMethod,
+          promoCode: promoCode || undefined
+        };
 
-        const data = await res.json();
+        const data = await checkoutMutation.mutateAsync(payload);
 
-        if (res.ok) {
+        if (data) {
           setMessage('Order placed successfully!');
           // Call clear local cart
           useCartStore.getState().clearLocalCart();

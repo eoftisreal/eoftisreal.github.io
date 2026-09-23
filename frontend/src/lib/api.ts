@@ -1,11 +1,13 @@
-import { getApiBaseUrl } from './apiClient';
+import { getApiBaseUrl, fetchWithAuth } from './apiClient';
 
 const apiBase = getApiBaseUrl();
 
-import { cachedFetch } from './cachedFetch';
-
 export async function apiGet<T>(path: string): Promise<T> {
-  return cachedFetch<T>(`${apiBase}${path}`);
+  const res = await fetchWithAuth(`${apiBase}${path}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch ${path}`);
+  }
+  return res.json() as Promise<T>;
 }
 
 export type Product = {

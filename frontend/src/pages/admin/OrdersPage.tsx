@@ -1,5 +1,6 @@
 import { useEffect, useState, Fragment, useRef } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, ChevronDown, ChevronUp, RefreshCw, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
@@ -12,7 +13,7 @@ function parseJwt(token: string) {
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -36,21 +37,43 @@ export default function AdminOrdersPage() {
   const payload = token ? parseJwt(token) : null;
   const isMasterAdmin = payload?.role === 'master_admin';
 
-
-  async function fetchOrders() {
-    try {
+  const { data: orders = [], refetch: fetchOrders } = useQuery<any[]>({
+    queryKey: ['adminOrders'],
+    queryFn: async () => {
       const res = await fetchWithAuth(`${apiBase}/orders`);
-      if (res.ok) {
-        setOrders(await res.json());
-      }
-    } catch (e) {
-      console.error('Failed to fetch orders', e);
+      if (!res.ok) throw new Error('Failed to fetch orders');
+      return res.json();
     }
-  }
+  });
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ id, status, endpoint = 'status' }: { id: string, status?: string, endpoint?: string }) => {
+      const url = `${apiBase}/admin/orders/${id}/${endpoint}`;
+      const res = await fetchWithAuth(url, {
+        method: endpoint === 'status' ? 'PUT' : 'POST',
+        headers: endpoint === 'status' ? { 'Content-Type': 'application/json' } : undefined,
+        body: endpoint === 'status' ? JSON.stringify({ status }) : undefined
+      });
+      if (!res.ok) throw new Error(`Failed to update order ${endpoint}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+    }
+  });
+
+  const updateOrderRemarkMutation = useMutation({
+    mutationFn: async ({ id, remark }: { id: string, remark: string }) => {
+      const res = await fetchWithAuth(`${apiBase}/admin/orders/${id}/remark`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remark })
+      });
+      if (!res.ok) throw new Error('Failed to update remark');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+    }
+  });
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -88,7 +111,7 @@ export default function AdminOrdersPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-black">Manage Orders</h1>
         <button
-          onClick={fetchOrders}
+          onClick={() => fetchOrders()}
           className="flex items-center gap-2 rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
         >
           <RefreshCw className="w-4 h-4" />
@@ -185,35 +208,13 @@ export default function AdminOrdersPage() {
                       {order.status === 'awaiting_verification' && (
                         <div className="flex gap-2 justify-end">
                           <button
-                            onClick={async () => {
-                              try {
-                                const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/approve`, {
-                                  method: 'POST'
-                                });
-                                if (res.ok) {
-                                  setOrders(orders.map(o => o._id === order._id ? { ...o, status: 'payment_verified' } : o));
-                                }
-                              } catch (e) {
-                                console.error(e);
-                              }
-                            }}
+                            onClick={() => updateOrderStatusMutation.mutate({ id: order._id, endpoint: 'approve' })}
                             className="rounded bg-green-600 px-3 py-1 text-xs font-bold text-white hover:bg-green-700"
                           >
                             Approve
                           </button>
                           <button
-                            onClick={async () => {
-                              try {
-                                const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/reject`, {
-                                  method: 'POST'
-                                });
-                                if (res.ok) {
-                                  setOrders(orders.map(o => o._id === order._id ? { ...o, status: 'rejected' } : o));
-                                }
-                              } catch (e) {
-                                console.error(e);
-                              }
-                            }}
+                            onClick={() => updateOrderStatusMutation.mutate({ id: order._id, endpoint: 'reject' })}
                             className="rounded bg-red-600 px-3 py-1 text-xs font-bold text-white hover:bg-red-700"
                           >
                             Reject
@@ -266,21 +267,10 @@ export default function AdminOrdersPage() {
                               rows={2}
                               placeholder="Add an admin remark..."
                               defaultValue={order.adminRemark || ''}
-                              onBlur={async (e) => {
+                              onBlur={(e) => {
                                 const newRemark = e.target.value;
                                 if (newRemark === order.adminRemark) return;
-                                try {
-                                  const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/remark`, {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ remark: newRemark })
-                                  });
-                                  if (res.ok) {
-                                    setOrders(orders.map(o => o._id === order._id ? { ...o, adminRemark: newRemark } : o));
-                                  }
-                                } catch (err) {
-                                  console.error('Failed to update remark', err);
-                                }
+                                updateOrderRemarkMutation.mutate({ id: order._id, remark: newRemark });
                               }}
                             />
                           </div>
@@ -292,21 +282,10 @@ export default function AdminOrdersPage() {
                             <select
                               disabled={!['payment_verified', 'processing', 'shipped', 'delivered', 'cancelled'].includes(order.status)}
                               value={['processing', 'shipped', 'delivered', 'cancelled'].includes(order.status) ? order.status : ''}
-                              onChange={async (e) => {
+                              onChange={(e) => {
                                 const newStatus = e.target.value;
                                 if (!newStatus) return;
-                                try {
-                                  const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/status`, {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ status: newStatus })
-                                  });
-                                  if (res.ok) {
-                                    setOrders(orders.map(o => o._id === order._id ? { ...o, status: newStatus } : o));
-                                  }
-                                } catch (err) {
-                                  console.error('Failed to update status', err);
-                                }
+                                updateOrderStatusMutation.mutate({ id: order._id, status: newStatus, endpoint: 'status' });
                               }}
                               className="border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-foreground bg-white"
                             >
@@ -323,21 +302,10 @@ export default function AdminOrdersPage() {
                               <span className="text-xs font-semibold text-slate-500">Payment Status:</span>
                               <select
                                 value={['pending_payment', 'awaiting_verification', 'payment_verified', 'rejected'].includes(order.status) ? order.status : ''}
-                                onChange={async (e) => {
+                                onChange={(e) => {
                                   const newStatus = e.target.value;
                                   if (!newStatus) return;
-                                  try {
-                                    const res = await fetchWithAuth(`${apiBase}/admin/orders/${order._id}/status`, {
-                                      method: 'PUT',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ status: newStatus })
-                                    });
-                                    if (res.ok) {
-                                      setOrders(orders.map(o => o._id === order._id ? { ...o, status: newStatus } : o));
-                                    }
-                                  } catch (err) {
-                                    console.error('Failed to update status', err);
-                                  }
+                                  updateOrderStatusMutation.mutate({ id: order._id, status: newStatus, endpoint: 'status' });
                                 }}
                                 className="border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-foreground bg-white"
                               >

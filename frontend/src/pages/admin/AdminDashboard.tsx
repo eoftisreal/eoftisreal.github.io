@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "@/lib/apiClient";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ShoppingBag, DollarSign, Package } from "lucide-react";
 import { getAuthToken } from "@/lib/storage";
 import { Link } from "react-router-dom";
@@ -17,31 +17,24 @@ type RecentOrder = {
 };
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
+  const { data: stats = {
     totalProducts: 0,
     totalOrders: 0,
     totalRevenue: 0,
     recentOrders: [] as RecentOrder[],
     revenueTimeline: [] as { date: string; revenue: number }[],
-  });
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetchWithAuth(`${apiBase}/admin/analytics`, {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
-        });
-        if (res.ok) {
-          setStats(await res.json());
-        }
-      } catch (e) {
-        console.error("Failed to fetch stats", e);
-      }
+  } } = useQuery({
+    queryKey: ['adminAnalytics'],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`${apiBase}/admin/analytics`, {
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to fetch stats');
+      return res.json();
     }
-    fetchStats();
-  }, []);
+  });
 
   return (
     <div className="space-y-6">
@@ -101,9 +94,9 @@ export default function AdminDashboard() {
           <h2 className="text-lg font-bold mb-4">Revenue Overview</h2>
           {stats.revenueTimeline && stats.revenueTimeline.length > 0 ? (
             <div className="flex-1 flex items-end gap-2 pt-4">
-              {stats.revenueTimeline.map((item, idx) => {
+              {stats.revenueTimeline.map((item: any, idx: number) => {
                 const maxRev = Math.max(
-                  ...stats.revenueTimeline.map((i) => i.revenue),
+                  ...stats.revenueTimeline.map((i: any) => i.revenue),
                 );
                 const heightPercent =
                   maxRev > 0 ? (item.revenue / maxRev) * 100 : 0;
@@ -149,7 +142,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex-1 overflow-y-auto space-y-4 pr-2">
             {stats.recentOrders && stats.recentOrders.length > 0 ? (
-              stats.recentOrders.map((order) => (
+              stats.recentOrders.map((order: any) => (
                 <div
                   key={order._id}
                   className="border-b border-secondary-bg pb-3 last:border-0"

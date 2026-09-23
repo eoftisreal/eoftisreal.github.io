@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiGet, Product } from '@/lib/api';
 import AddToCartButton from '@/components/AddToCartButton';
 import WishlistButton from '@/components/WishlistButton';
@@ -17,10 +18,15 @@ import { useParams } from 'react-router-dom';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+
+  const { data: product, isLoading: loading } = useQuery<Product>({
+    queryKey: ['product', id],
+    queryFn: () => apiGet<Product>(`/products/${id}`),
+    enabled: !!id
+  });
+
   if (!id) return <p>Invalid product</p>;
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>('');
 
   const [customImageFile, setCustomImageFile] = useState<File | null>(null);
@@ -32,36 +38,18 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string>('');
 
   useEffect(() => {
-    let active = true;
-
-    async function fetchProduct() {
-      try {
-        const data = await apiGet<Product>(`/products/${id}`);
-        if (active) {
-          setProduct(data);
-          if (data.images && data.images.length > 0) {
-            setActiveImage(data.images[0]);
-          }
-          if (data.enableSizes && data.sizes && data.sizes.length > 0) {
-            setSelectedSize(data.sizes[0]);
-          }
-          if (data.enableColors && data.colors && data.colors.length > 0) {
-            setSelectedColor(data.colors[0]);
-          }
-        }
-      } catch {
-        if (active) setProduct(null);
-      } finally {
-        if (active) setLoading(false);
+    if (product) {
+      if (product.images && product.images.length > 0 && !activeImage) {
+        setActiveImage(product.images[0]);
+      }
+      if (product.enableSizes && product.sizes && product.sizes.length > 0 && !selectedSize) {
+        setSelectedSize(product.sizes[0]);
+      }
+      if (product.enableColors && product.colors && product.colors.length > 0 && !selectedColor) {
+        setSelectedColor(product.colors[0]);
       }
     }
-
-    fetchProduct();
-
-    return () => {
-      active = false;
-    };
-  }, [id]);
+  }, [product, activeImage, selectedSize, selectedColor]);
 
   if (loading) {
     return (

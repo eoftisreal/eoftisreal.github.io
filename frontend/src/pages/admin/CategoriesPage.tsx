@@ -3,7 +3,7 @@ import { fetchWithAuth } from "@/lib/apiClient";
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { Plus, Trash2 } from 'lucide-react';
-import { useHomeStore } from '@/store/home';
+import { useQueryClient } from '@tanstack/react-query';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -28,7 +28,7 @@ export default function CategoriesPage() {
   const [uploadedUrl, setUploadedUrl] = useState('');
   const [r2Key, setR2Key] = useState('');
 
-  const { invalidateCache } = useHomeStore();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchCategories();
@@ -102,7 +102,7 @@ export default function CategoriesPage() {
       });
       if (res.ok) {
         resetForm();
-        invalidateCache();
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
         fetchCategories();
       }
     } catch (e) {
@@ -138,7 +138,7 @@ export default function CategoriesPage() {
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       });
       if (res.ok) {
-        invalidateCache();
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
         fetchCategories();
       }
     } catch (e) {

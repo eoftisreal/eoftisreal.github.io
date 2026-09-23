@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import './index.css';
 if (import.meta.env.DEV) {
   import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
@@ -49,9 +51,20 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const AdminOrdersPage = lazy(() => import('./pages/admin/OrdersPage'));
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <ScrollToTop />
       <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-slate-500">Loading...</div>}>
@@ -98,6 +111,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       </Routes>
       </Suspense>
     </BrowserRouter>
+    <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
     </HelmetProvider>
   </React.StrictMode>
 );
