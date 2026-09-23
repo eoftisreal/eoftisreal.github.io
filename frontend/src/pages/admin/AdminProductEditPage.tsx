@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, FormEvent } from 'react';
 import { apiGet } from '@/lib/api';
 import { getAuthToken } from '@/lib/storage';
-import { useHomeStore } from '@/store/home';
+import { useQueryClient } from '@tanstack/react-query';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -18,7 +18,7 @@ export default function AdminProductEditPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
-  const { invalidateCache } = useHomeStore();
+  const queryClient = useQueryClient();
 
   // Form State
   const [title, setTitle] = useState('');
@@ -193,7 +193,11 @@ export default function AdminProductEditPage() {
       const body = await response.json();
       if (response.ok) {
         setMessage('Product updated successfully!');
-        invalidateCache();
+        queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
+        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        queryClient.invalidateQueries({ queryKey: ['product', id] });
       } else {
         setMessage(body.message || 'Failed to update product');
       }

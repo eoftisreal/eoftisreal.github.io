@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { Trash2, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/lib/api';
 import { fetchWithAuth } from '@/lib/apiClient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -12,68 +12,63 @@ interface AdminProductListProps {
 }
 
 export default function AdminProductList({ refreshKey = 0 }: AdminProductListProps) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchProducts();
-  }, [refreshKey]);
-
-  async function fetchProducts() {
-    try {
-      setLoading(true);
-      const res = await fetchWithAuth(`${apiBase}/products?limit=100&t=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.products) {
-          setProducts(data.products);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+  const { data: products = [], isLoading: loading, refetch: fetchProducts } = useQuery<Product[]>({
+    queryKey: ['adminProducts', refreshKey],
+    queryFn: async () => {
+      const res = await fetchWithAuth(`${apiBase}/products?limit=100`);
+      if (!res.ok) throw new Error('Failed to fetch products');
+      const data = await res.json();
+      return data.products || [];
     }
-  }
+  });
 
-  async function toggleFeatured(id: string, currentStatus: boolean) {
-    try {
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ id, isFeatured }: { id: string, isFeatured: boolean }) => {
       const res = await fetchWithAuth(`${apiBase}/products/${id}/featured`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getAuthToken()}`
         },
-        body: JSON.stringify({ isFeatured: !currentStatus })
+        body: JSON.stringify({ isFeatured })
       });
-      if (res.ok) {
-        fetchProducts();
-      } else {
-        alert('Failed to update product featured status.');
-      }
-    } catch (e) {
-      console.error(e);
+      if (!res.ok) throw new Error('Failed to toggle featured');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
+    },
+    onError: () => {
       alert('Failed to update product featured status.');
     }
-  }
+  });
 
-  async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-
-    try {
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => {
       const res = await fetchWithAuth(`${apiBase}/products/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       });
-      if (res.ok) {
-        fetchProducts(); // Refresh the list
-      } else {
-        alert('Failed to delete product.');
-      }
-    } catch (e) {
-      console.error(e);
+      if (!res.ok) throw new Error('Failed to delete product');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
+    },
+    onError: () => {
       alert('Failed to delete product.');
     }
+  });
+
+  function toggleFeatured(id: string, currentStatus: boolean) {
+    toggleFeaturedMutation.mutate({ id, isFeatured: !currentStatus });
+  }
+
+  function handleDelete(id: string) {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    deleteProductMutation.mutate(id);
   }
 
   if (loading) {
@@ -84,7 +79,7 @@ export default function AdminProductList({ refreshKey = 0 }: AdminProductListPro
     <div className="rounded-md bg-white p-6 space-y-6">
       <div className="flex items-center justify-between border-b pb-2">
         <h2 className="font-bold text-xl">Existing Products</h2>
-        <button onClick={fetchProducts} className="text-sm text-foreground hover:underline">Refresh</button>
+        <button onClick={() => fetchProducts()} className="text-sm text-foreground hover:underline">Refresh</button>
       </div>
 
       <div className="overflow-x-auto">

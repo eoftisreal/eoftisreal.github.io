@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiGet, Product } from '@/lib/api';
 import ProductGrid from '@/components/ProductGrid';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
@@ -28,13 +29,44 @@ function ProductListingContent() {
   const maxPriceParam = searchParams.get('maxPrice');
   const pageParam = searchParams.get('page');
 
-  const [data, setData] = useState<ProductResponse>({ products: [], page: 1, totalPages: 1 });
-  const [loading, setLoading] = useState(true);
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => apiGet<{_id: string, name: string}[]>('/products/categories')
+  });
 
-  const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
-  const [brands, setBrands] = useState<{_id: string, name: string}[]>([]);
-  const [productTypes, setProductTypes] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
+  const { data: brands = [] } = useQuery({
+    queryKey: ['brands'],
+    queryFn: () => apiGet<{_id: string, name: string}[]>('/products/brands')
+  });
+
+  const { data: productTypes = [] } = useQuery({
+    queryKey: ['productTypes'],
+    queryFn: () => apiGet<string[]>('/products/product-types')
+  });
+
+  const { data: tags = [] } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => apiGet<string[]>('/products/tags')
+  });
+
+  const queryParams = new URLSearchParams();
+  if (q) queryParams.set('q', q);
+  if (category) queryParams.set('category', category);
+  if (brand) queryParams.set('brand', brand);
+  if (sortParam) queryParams.set('sort', sortParam);
+  if (inStockParam) queryParams.set('inStock', inStockParam);
+  if (productTypeParam) queryParams.set('productType', productTypeParam);
+  if (tagParam) queryParams.set('tag', tagParam);
+  if (minPriceParam) queryParams.set('minPrice', minPriceParam);
+  if (maxPriceParam) queryParams.set('maxPrice', maxPriceParam);
+  if (pageParam) queryParams.set('page', pageParam);
+
+  const { data: productsData, isLoading: loading } = useQuery<ProductResponse>({
+    queryKey: ['products', queryParams.toString()],
+    queryFn: () => apiGet<ProductResponse>(`/products?${queryParams.toString()}`)
+  });
+
+  const data = productsData || { products: [], page: 1, totalPages: 1 };
 
   // Local state for the form
   const [localQ, setLocalQ] = useState(q || '');
@@ -59,60 +91,6 @@ function ProductListingContent() {
     setMinPrice(minPriceParam || '');
     setMaxPrice(maxPriceParam || '');
   }, [q, category, brand, sortParam, inStockParam, productTypeParam, tagParam, minPriceParam, maxPriceParam]);
-
-  useEffect(() => {
-    async function fetchFilters() {
-      try {
-        const [cats, brs, pTypes, tgs] = await Promise.all([
-          apiGet<{_id: string, name: string}[]>('/products/categories'),
-          apiGet<{_id: string, name: string}[]>('/products/brands'),
-          apiGet<string[]>('/products/product-types'),
-          apiGet<string[]>('/products/tags')
-        ]);
-        setCategories(cats);
-        setBrands(brs);
-        setProductTypes(pTypes);
-        setTags(tgs);
-      } catch (e) {
-        console.error('Failed to load filters', e);
-      }
-    }
-    fetchFilters();
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    async function fetchProducts() {
-      setLoading(true);
-      const query = new URLSearchParams();
-      if (q) query.set('q', q);
-      if (category) query.set('category', category);
-      if (brand) query.set('brand', brand);
-      if (sortParam) query.set('sort', sortParam);
-      if (inStockParam) query.set('inStock', inStockParam);
-      if (productTypeParam) query.set('productType', productTypeParam);
-      if (tagParam) query.set('tag', tagParam);
-      if (minPriceParam) query.set('minPrice', minPriceParam);
-      if (maxPriceParam) query.set('maxPrice', maxPriceParam);
-      if (pageParam) query.set('page', pageParam);
-
-      try {
-        const res = await apiGet<ProductResponse>(`/products?${query.toString()}`);
-        if (active) setData(res);
-      } catch {
-        if (active) setData({ products: [], page: 1, totalPages: 1 });
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    fetchProducts();
-
-    return () => {
-      active = false;
-    };
-  }, [q, category, brand, sortParam, inStockParam, productTypeParam, tagParam, minPriceParam, maxPriceParam, pageParam]);
 
   const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

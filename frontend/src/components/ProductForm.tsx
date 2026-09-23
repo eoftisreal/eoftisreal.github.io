@@ -2,7 +2,7 @@
 
 import { FormEvent, useState, useEffect } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
-import { useHomeStore } from '@/store/home';
+import { useQueryClient } from '@tanstack/react-query';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -13,6 +13,7 @@ interface ProductFormProps {
 }
 
 export default function ProductForm({ onSuccess }: ProductFormProps) {
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [artistName, setArtistName] = useState('');
@@ -35,8 +36,6 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   const [brands, setBrands] = useState<{_id: string, name: string}[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [tags, setTags] = useState('');
-
-  const { invalidateCache } = useHomeStore();
 
   useEffect(() => {
     async function fetchOptions() {
@@ -162,8 +161,11 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         setImages([]);
         setR2ImageKeys([]);
 
-        invalidateCache();
-        console.log('Product created - invalidating home store cache');
+        queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
+        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        console.log('Product created - invalidating cache');
 
         if (onSuccess) onSuccess();
       } else {
