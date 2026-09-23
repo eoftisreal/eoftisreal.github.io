@@ -2,6 +2,7 @@
 
 import { FormEvent, useState, useEffect } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
+import { useHomeStore } from '@/store/home';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -34,6 +35,8 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   const [brands, setBrands] = useState<{_id: string, name: string}[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [tags, setTags] = useState('');
+
+  const { invalidateCache } = useHomeStore();
 
   useEffect(() => {
     async function fetchOptions() {
@@ -158,6 +161,10 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         setIsFeatured(false);
         setImages([]);
         setR2ImageKeys([]);
+
+        invalidateCache();
+        console.log('Product created - invalidating home store cache');
+
         if (onSuccess) onSuccess();
       } else {
         setMessage(body.message || 'Failed to create product');

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, FormEvent } from 'react';
 import { apiGet } from '@/lib/api';
 import { getAuthToken } from '@/lib/storage';
+import { useHomeStore } from '@/store/home';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -16,6 +17,8 @@ export default function AdminProductEditPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+
+  const { invalidateCache } = useHomeStore();
 
   // Form State
   const [title, setTitle] = useState('');
@@ -190,6 +193,7 @@ export default function AdminProductEditPage() {
       const body = await response.json();
       if (response.ok) {
         setMessage('Product updated successfully!');
+        invalidateCache();
       } else {
         setMessage(body.message || 'Failed to update product');
       }

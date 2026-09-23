@@ -15,6 +15,7 @@ type HomeState = {
   lastFetched: number | null;
   isFetching: boolean;
   fetchData: () => Promise<void>;
+  invalidateCache: () => void;
 };
 
 const CACHE_DURATION_MS = 1000 * 30; // 30 seconds cache
@@ -25,6 +26,11 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   heroBannerUrls: [],
   lastFetched: null,
   isFetching: false,
+
+  invalidateCache: () => {
+    console.log('[HomeStore] Cache invalidated - fetching fresh data');
+    set({ lastFetched: null });
+  },
 
   fetchData: async () => {
     const now = Date.now();

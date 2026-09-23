@@ -3,6 +3,7 @@ import { fetchWithAuth } from "@/lib/apiClient";
 import { useEffect, useState } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { parseJwt } from '@/lib/jwt';
+import { useHomeStore } from '@/store/home';
 import * as XLSX from 'xlsx';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
@@ -15,6 +16,7 @@ export default function SettingsPage() {
   const [exportEndDate, setExportEndDate] = useState('');
   const [exporting, setExporting] = useState(false);
 
+  const { invalidateCache } = useHomeStore();
   const token = getAuthToken();
   const payload = token ? parseJwt(token) : null;
   const isMasterAdmin = payload?.role === 'master_admin';
@@ -56,6 +58,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error('Failed to update setting');
       const data = await res.json();
       setSettings((prev: any) => ({ ...prev, ...data }));
+      invalidateCache();
       alert('Setting updated successfully!');
     } catch (err: any) {
       alert(err.message);
