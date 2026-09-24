@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 import compression from 'vite-plugin-compression';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
@@ -67,6 +68,12 @@ export default defineConfig(({ mode }) => {
       algorithm: 'gzip',
       ext: '.gz',
     }),
+    ...(process.env.ANALYZE ? [visualizer({
+      open: true,
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    })] : [])
   ],
   resolve: {
     alias: {
@@ -97,7 +104,7 @@ export default defineConfig(({ mode }) => {
         comments: false,
       },
     },
-    sourcemap: false,
+    sourcemap: true,
     reportCompressedSize: isProduction,
     rollupOptions: {
       output: {
