@@ -87,14 +87,20 @@ router.get('/settings', masterAdminOnly, async (_req, res, next) => {
 router.put('/settings', masterAdminOnly, async (req, res, next) => {
   try {
     const updates = req.body;
-    // For each key in body, create or update a Setting document
-    for (const [key, value] of Object.entries(updates)) {
-      await Setting.findOneAndUpdate(
-        { key },
-        { key, value },
-        { upsert: true, new: true }
-      );
+
+    // Create bulk operations for all settings updates
+    const updateKeys = Object.keys(updates);
+    if (updateKeys.length > 0) {
+      const bulkOps = updateKeys.map(key => ({
+        updateOne: {
+          filter: { key },
+          update: { $set: { key, value: updates[key] } },
+          upsert: true
+        }
+      }));
+      await Setting.bulkWrite(bulkOps);
     }
+
     const settingsDocs = await Setting.find({});
     const dynamicSettings = {};
     settingsDocs.forEach(s => {
