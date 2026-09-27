@@ -1,0 +1,3 @@
+## 2024-03-21 - N+1 Query Anti-Pattern in Array Processing
+**Learning:** Found an N+1 query problem in the cart synchronization endpoint where `Product.findById` was being called inside a loop over cart items. This is a common performance bottleneck in Node.js applications interacting with MongoDB, as each `findById` initiates a separate database round-trip.
+**Action:** When iterating over an array of items that require related database records, always extract the unique identifiers first, perform a single batch query (using `$in`), create an ID-to-record lookup map, and then use the map within the loop. This reduces DB queries from O(N) to O(1).
