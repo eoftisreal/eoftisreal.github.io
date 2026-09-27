@@ -85,6 +85,14 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
     const { items } = req.validated.body;
     const cart = await getCart(req.user.id);
 
+    // ⚡ Bolt: Batch query products to fix N+1 problem
+    const uniqueProductIds = [...new Set(items.map(item => item.productId))];
+    const products = await Product.find({ _id: { $in: uniqueProductIds } });
+    const productMap = products.reduce((acc, product) => {
+      acc[product._id.toString()] = product;
+      return acc;
+    }, {});
+
     for (const item of items) {
       const existing = cart.items.find((i) =>
         i.productId.toString() === item.productId &&
@@ -95,7 +103,7 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
         existing.quantity += item.quantity;
         if (item.customImage) existing.customImage = item.customImage;
       } else {
-        const product = await Product.findById(item.productId);
+        const product = productMap[item.productId];
         if (product && product.isActive) {
           cart.items.push({
             productId: item.productId,
