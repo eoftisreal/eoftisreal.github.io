@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import ProductCard from '@/components/ProductCard';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet, Product } from '@/lib/api';
@@ -37,7 +37,7 @@ export default function Home() {
     heroBannerUrls = [parsedSettings.heroBannerUrl];
   }
 
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const currentSlideRef = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Track if user is interacting to pause auto-slide
@@ -54,17 +54,17 @@ export default function Home() {
     const intervalId = setInterval(() => {
       if (isInteracting.current) return;
 
-      setCurrentSlide((prev) => {
-        const next = prev + 1;
-        if (scrollContainerRef.current) {
-          const container = scrollContainerRef.current;
-          container.scrollTo({
-            left: next * container.clientWidth,
-            behavior: 'smooth'
-          });
-        }
-        return next;
-      });
+      const prev = currentSlideRef.current;
+      const next = prev + 1;
+      currentSlideRef.current = next;
+
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        container.scrollTo({
+          left: next * container.clientWidth,
+          behavior: 'smooth'
+        });
+      }
     }, 5000);
 
     return () => clearInterval(intervalId);
@@ -81,8 +81,8 @@ export default function Home() {
     // Calculate which slide is currently most visible
     const newSlideIndex = Math.round(scrollPosition / slideWidth);
 
-    if (newSlideIndex !== currentSlide) {
-      setCurrentSlide(newSlideIndex);
+    if (newSlideIndex !== currentSlideRef.current) {
+      currentSlideRef.current = newSlideIndex;
 
       // If we've reached the duplicated first slide at the very end
       if (newSlideIndex === loopBanners.length - 1) {
@@ -94,7 +94,7 @@ export default function Home() {
             left: 0,
             behavior: 'instant' as ScrollBehavior // 'instant' is sometimes not in TS types, but works in modern browsers. 'auto' also works instantly.
           });
-          setCurrentSlide(0);
+          currentSlideRef.current = 0;
         }, 300); // 300ms allows standard snap animation to finish
       }
     }
