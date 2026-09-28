@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Product } from '@/lib/api';
 import WishlistButton from './WishlistButton';
@@ -15,7 +16,7 @@ function stringToColor(str: string) {
   return `hsl(${hue}, 65%, 45%)`;
 }
 
-export default function ProductCard({ product }: { product: Product }) {
+const ProductCard = React.memo(function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -92,4 +93,6 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
     </Link>
   );
-}
+});
+
+export default ProductCard;
