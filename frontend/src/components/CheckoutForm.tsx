@@ -74,7 +74,7 @@ export default function CheckoutForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || 'Checkout failed');
+        throw new Error(data.error?.message || data.message || 'Checkout failed');
       }
       return data;
     },
@@ -259,7 +259,10 @@ export default function CheckoutForm() {
 
       try {
         setMessage('Processing order...');
+        const checkoutAttemptId = crypto.randomUUID();
+
         const payload = {
+          checkoutAttemptId,
           shippingAddress: {
             name: formData.name,
             phone: `${formData.countryCode} ${formData.phone}`,
@@ -276,7 +279,7 @@ export default function CheckoutForm() {
 
         const data = await checkoutMutation.mutateAsync(payload);
 
-        if (data) {
+        if (data && data.order) {
           setMessage('Order placed successfully!');
           // Call clear local cart
           useCartStore.getState().clearLocalCart();

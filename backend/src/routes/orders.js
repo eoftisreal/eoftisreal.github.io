@@ -5,6 +5,7 @@ const adminOnly = require('../middleware/admin');
 const validate = require('../middleware/validate');
 const Order = require('../models/Order');
 const Setting = require('../models/Setting');
+const { getSettings } = require('../utils/settingsCache');
 const OrderStatusHistory = require('../models/OrderStatusHistory');
 
 const router = express.Router();
@@ -132,8 +133,7 @@ router.post('/:id/generate-qr', auth, async (req, res, next) => {
       throw err;
     }
 
-    const settingsDocs = await Setting.find({ key: { $in: ['upiId', 'payeeName', 'qrExpiryMinutes', 'enableUtrSubmission', 'enableScreenshotUpload'] } });
-    const settings = settingsDocs.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {});
+    const settings = await getSettings();
 
     const upiId = settings.upiId || 'test@upi';
     const payeeName = settings.payeeName || 'Store Name';

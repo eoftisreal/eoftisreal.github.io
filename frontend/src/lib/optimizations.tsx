@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import axios, { AxiosInstance } from 'axios';
 
 /* ============================================================
    IMAGE OPTIMIZATION UTILITIES
@@ -372,49 +371,6 @@ export const useLocalStorage = <T,>(key: string, initialValue: T) => {
   );
 
   return [storedValue, setValue] as const;
-};
-
-/* ============================================================
-   REQUEST OPTIMIZATION
-   ============================================================ */
-
-/**
- * Create an optimized axios instance with caching and timeouts
- */
-export const createOptimizedApiClient = (baseURL: string): AxiosInstance => {
-  const instance = axios.create({
-    baseURL,
-    timeout: 10000, // 10 second timeout
-  });
-
-  // Request interceptor
-  instance.interceptors.request.use(
-    config => {
-      // Check cache for GET requests
-      if (config.method === 'get') {
-        const cached = apiCache.get(config.url || '');
-        if (cached) {
-          return Promise.reject(new axios.Cancel(`Cached response for ${config.url}`));
-        }
-      }
-      return config;
-    },
-    error => Promise.reject(error)
-  );
-
-  // Response interceptor
-  instance.interceptors.response.use(
-    response => {
-      // Cache GET responses
-      if (response.config.method === 'get') {
-        apiCache.set(response.config.url || '', response.data);
-      }
-      return response;
-    },
-    error => Promise.reject(error)
-  );
-
-  return instance;
 };
 
 /* ============================================================

@@ -3,8 +3,10 @@
 import { FormEvent, useState, useEffect } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
 import { useQueryClient } from '@tanstack/react-query';
-import ReactQuill from 'react-quill';
+import { lazy, Suspense } from 'react';
 import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = lazy(() => import('react-quill'));
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -249,7 +251,9 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <div className="bg-white rounded overflow-hidden prose-sm">
-            <ReactQuill theme="snow" value={description} onChange={setDescription} />
+            <Suspense fallback={<div className="h-40 bg-gray-100 flex items-center justify-center">Loading editor...</div>}>
+              <ReactQuill theme="snow" value={description} onChange={setDescription} />
+            </Suspense>
           </div>
         </div>
 

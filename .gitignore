@@ -11,3 +11,9 @@ backend.pid
 frontend.log
 frontend.pid
 test_output.log
+.log
+.pid
+.tmp
+coverage/
+frontend/dist/
+!.env.example

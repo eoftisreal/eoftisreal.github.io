@@ -18,6 +18,7 @@ export type Product = {
   productType?: string;
   category: string;
   images: string[];
+  imageVariants?: { thumbnail?: string; card?: string; product?: string }[];
   price: number;
   compareAtPrice?: number;
   stock: number;

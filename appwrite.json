@@ -10,7 +10,7 @@
       "trigger": "http",
       "events": [],
       "schedule": "",
-      "timeout": 900,
+      "timeout": 120,
       "env": [
         {
           "key": "NODE_ENV",

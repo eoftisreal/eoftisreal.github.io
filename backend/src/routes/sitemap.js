@@ -200,4 +200,28 @@ router.post('/sitemap/generate', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/robots.txt
+ * Returns robots.txt content
+ */
+router.get('/robots.txt', (req, res) => {
+  const baseUrl = process.env.FRONTEND_URL || 'https://kapdakraft.live';
+
+  const robotsTxt = `User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /account/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /orders/
+Disallow: /api/
+
+Sitemap: ${baseUrl}/api/sitemap/index
+`;
+
+  res.header('Content-Type', 'text/plain');
+  res.header('Cache-Control', 'public, max-age=86400');
+  res.send(robotsTxt);
+});
+
 module.exports = router;

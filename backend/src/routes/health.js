@@ -1,5 +1,6 @@
 const express = require('express');
 const Setting = require('../models/Setting');
+const { getSettings } = require('../utils/settingsCache');
 
 const router = express.Router();
 

@@ -8,6 +8,7 @@ const Coupon = require('../models/Coupon');
 const OrderStatusHistory = require('../models/OrderStatusHistory');
 const Setting = require('../models/Setting');
 const User = require('../models/User');
+const { getSettings } = require('../utils/settingsCache');
 const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
@@ -15,14 +16,17 @@ const router = express.Router();
 async function generateUniquePaymentAmount(baseTotal) {
   let isUnique = false;
   let uniqueAmount = baseTotal;
+  let attempts = 0;
+  const maxAttempts = 100;
 
-  while (!isUnique) {
+  while (!isUnique && attempts < maxAttempts) {
+    attempts++;
     const fraction = Math.floor(Math.random() * 99) + 1; // 1 to 99
     uniqueAmount = Number((baseTotal + fraction / 100).toFixed(2));
 
     const existingOrder = await Order.findOne({
       uniquePaymentAmount: uniqueAmount,
-      status: { $in: ['pending_payment', 'awaiting_verification'] }
+      'payment.status': { $in: ['pending', 'awaiting_verification'] }
     });
 
     if (!existingOrder) {
@@ -30,11 +34,16 @@ async function generateUniquePaymentAmount(baseTotal) {
     }
   }
 
+  if (!isUnique) {
+    throw new Error('Could not generate a unique payment amount. Please try again later.');
+  }
+
   return uniqueAmount;
 }
 
 const checkoutSchema = z.object({
   body: z.object({
+    checkoutAttemptId: z.string().optional(),
     shippingAddress: z.object({
       name: z.string().optional(),
       phone: z.string().optional(),
@@ -54,6 +63,13 @@ const checkoutSchema = z.object({
 
 router.post('/create', auth, validate(checkoutSchema), async (req, res, next) => {
   try {
+    if (req.validated.body.checkoutAttemptId) {
+      const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
+      if (existingOrder) {
+        return res.json({ message: 'Order created', order: existingOrder });
+      }
+    }
+
     const cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
     if (!cart || cart.items.length === 0) {
       const err = new Error('Cart is empty');
@@ -94,8 +110,7 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
 
     const discountedSubtotal = Math.max(0, subtotal - discount);
 
-    const settingsDocs = await Setting.find({ key: { $in: ['enableTax', 'taxPercentage', 'enableDeliveryCharge', 'deliveryCharge'] } });
-    const settings = settingsDocs.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {});
+    const settings = await getSettings();
 
     let tax = 0;
     if (settings.enableTax !== false) {
@@ -124,6 +139,7 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
     }));
 
     const order = await Order.create({
+      checkoutAttemptId: req.validated.body.checkoutAttemptId,
       discount,
       userId: req.user.id,
       items,

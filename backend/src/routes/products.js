@@ -232,9 +232,12 @@ const uploadCustomImage = require('multer')({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 const { uploadToR2, getObjectUrl, isR2Configured } = require('../utils/r2');
-const { optimizeImage } = require('../utils/imageOptimizer');
+const { validateImage, optimizeImage } = require('../utils/imageOptimizer');
+const { nanoid } = require('nanoid');
 
-router.post('/upload-custom', uploadCustomImage.single('file'), async (req, res, next) => {
+// Adding 'auth' rate limiting to this route natively could be considered for Phase 12,
+// but adding 'auth' ensures only registered users can upload images, which prevents basic abuse.
+router.post('/upload-custom', auth, uploadCustomImage.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -244,26 +247,16 @@ router.post('/upload-custom', uploadCustomImage.single('file'), async (req, res,
       return res.status(500).json({ message: 'Storage is not configured on the server. Image upload is disabled.' });
     }
 
-    let bufferToUpload = req.file.buffer;
-    let mimeType = req.file.mimetype;
-    let originalName = req.file.originalname;
+    // Explicitly validate the file bytes to ensure it is actually an image and not a malicious payload
+    await validateImage(req.file.buffer);
 
-    if (mimeType.startsWith('image/')) {
-      try {
-        const optimized = await optimizeImage(req.file.buffer);
-        bufferToUpload = optimized.buffer;
-        mimeType = optimized.mimeType;
-        // Replace extension in original name with .webp for R2 key generation
-        originalName = originalName.replace(/\.[^/.]+$/, "") + ".webp";
-      } catch (err) {
-        console.warn('Image optimization failed, falling back to original image:', err);
-      }
-    }
+    const optimized = await optimizeImage(req.file.buffer);
 
-    const folder = req.body.folder || 'uploads';
-    const fileNamePrefix = req.body.fileNamePrefix || '';
+    const folder = 'custom-uploads';
+    const assetId = nanoid();
+    const key = `${folder}/${assetId}.webp`;
 
-    const key = await uploadToR2(bufferToUpload, mimeType, originalName, folder, fileNamePrefix);
+    await uploadToR2(optimized.buffer, optimized.mimeType, `${assetId}.webp`, folder, '', key);
     const url = getObjectUrl(key);
 
     res.json({ key, url });

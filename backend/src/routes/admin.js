@@ -8,6 +8,7 @@ const User = require('../models/User');
 const Setting = require('../models/Setting');
 const OrderStatusHistory = require('../models/OrderStatusHistory');
 const { getAdminSettings } = require('../utils/admin');
+const { invalidateCache, getSettings } = require('../utils/settingsCache');
 const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
@@ -72,11 +73,7 @@ router.get('/analytics', async (_req, res, next) => {
 router.get('/settings', masterAdminOnly, async (_req, res, next) => {
   try {
     const staticSettings = getAdminSettings();
-    const settingsDocs = await Setting.find({});
-    const dynamicSettings = {};
-    settingsDocs.forEach(s => {
-      dynamicSettings[s.key] = s.value;
-    });
+    const dynamicSettings = await getSettings();
 
     res.json({ ...staticSettings, ...dynamicSettings });
   } catch (error) {
@@ -99,13 +96,10 @@ router.put('/settings', masterAdminOnly, async (req, res, next) => {
         }
       }));
       await Setting.bulkWrite(bulkOps);
+      invalidateCache();
     }
 
-    const settingsDocs = await Setting.find({});
-    const dynamicSettings = {};
-    settingsDocs.forEach(s => {
-      dynamicSettings[s.key] = s.value;
-    });
+    const dynamicSettings = await getSettings(true);
 
     res.json(dynamicSettings);
   } catch (error) {
@@ -151,8 +145,9 @@ router.put('/users/:id/role', masterAdminOnly, async (req, res, next) => {
   }
 });
 
-const { uploadToR2, getObjectUrl, isR2Configured } = require('../utils/r2');
-const { optimizeImage } = require('../utils/imageOptimizer');
+const { uploadToR2, deleteFromR2, getObjectUrl, isR2Configured } = require('../utils/r2');
+const { validateImage, optimizeImage, generateProductVariants } = require('../utils/imageOptimizer');
+const { nanoid } = require('nanoid');
 
 router.post('/upload', upload.single('file'), async (req, res, next) => {
   try {
@@ -164,29 +159,62 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
       return res.status(500).json({ message: 'Storage is not configured on the server. Image upload is disabled.' });
     }
 
-    let bufferToUpload = req.file.buffer;
-    let mimeType = req.file.mimetype;
-    let originalName = req.file.originalname;
+    await validateImage(req.file.buffer);
+    const isProduct = req.body.folder === 'products';
+    const assetId = nanoid();
+    const folder = req.body.folder || 'uploads';
 
-    if (mimeType.startsWith('image/')) {
-      try {
-        const optimized = await optimizeImage(req.file.buffer);
-        bufferToUpload = optimized.buffer;
-        mimeType = optimized.mimeType;
-        // Replace extension in original name with .webp for R2 key generation
-        originalName = originalName.replace(/\.[^/.]+$/, "") + ".webp";
-      } catch (err) {
-        console.warn('Image optimization failed, falling back to original image:', err);
-      }
+    if (isProduct) {
+      const variants = await generateProductVariants(req.file.buffer);
+
+      const uploadVariant = async (variantName, variantData) => {
+        const key = `${folder}/${assetId}/${variantName}.webp`;
+        await uploadToR2(variantData.buffer, variantData.mimeType, `${variantName}.webp`, folder, '', key);
+        return { key, url: getObjectUrl(key) };
+      };
+
+      const [thumbnail, card, product] = await Promise.all([
+        uploadVariant('thumbnail', variants.thumbnail),
+        uploadVariant('card', variants.card),
+        uploadVariant('product', variants.product)
+      ]);
+
+      return res.json({
+        assetId,
+        thumbnail,
+        card,
+        product,
+        key: product.key,
+        url: product.url
+      });
+    } else {
+      const optimized = await optimizeImage(req.file.buffer);
+      const key = `${folder}/${assetId}.webp`;
+      await uploadToR2(optimized.buffer, optimized.mimeType, `${assetId}.webp`, folder, '', key);
+      return res.json({ key, url: getObjectUrl(key) });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/delete-image', async (req, res, next) => {
+  try {
+    if (!req.body.assetId && !req.body.key) {
+      return res.status(400).json({ message: 'assetId or key is required' });
     }
 
-    const folder = req.body.folder || 'uploads';
-    const fileNamePrefix = req.body.fileNamePrefix || '';
+    if (req.body.assetId) {
+      await Promise.all([
+        deleteFromR2(`products/${req.body.assetId}/thumbnail.webp`),
+        deleteFromR2(`products/${req.body.assetId}/card.webp`),
+        deleteFromR2(`products/${req.body.assetId}/product.webp`)
+      ]);
+    } else if (req.body.key) {
+      await deleteFromR2(req.body.key);
+    }
 
-    const key = await uploadToR2(bufferToUpload, mimeType, originalName, folder, fileNamePrefix);
-    const url = getObjectUrl(key);
-
-    res.json({ key, url });
+    res.json({ message: 'Image deleted' });
   } catch (error) {
     next(error);
   }

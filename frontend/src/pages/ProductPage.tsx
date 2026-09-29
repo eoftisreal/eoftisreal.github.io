@@ -151,7 +151,10 @@ export default function ProductDetailPage() {
   };
 
   const gallery = product.images.length > 0 ? product.images : ['https://placehold.co/300x300?text=Preview'];
-  const currentImage = activeImage || gallery[0] || 'https://placehold.co/700x700?text=Art';
+  const galleryThumbnails = product.imageVariants && product.imageVariants.length > 0 ? product.imageVariants.map((v: any, i: number) => v.thumbnail || product.images[i]) : gallery;
+  const galleryProducts = product.imageVariants && product.imageVariants.length > 0 ? product.imageVariants.map((v: any, i: number) => v.product || product.images[i]) : gallery;
+
+  const currentImage = activeImage ? (galleryProducts[gallery.indexOf(activeImage)] || activeImage) : (galleryProducts[0] || gallery[0] || 'https://placehold.co/700x700?text=Art');
 
   return (
     <>
@@ -174,12 +177,12 @@ export default function ProductDetailPage() {
       />
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-4 overflow-hidden">
-        <img src={currentImage} alt={product.title} className="aspect-square w-full rounded-md object-cover" />
+        <img src={currentImage} loading="lazy" decoding="async" alt={product.title} className="aspect-square w-full rounded-md object-cover" />
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
           {gallery.map((image, index) => (
             <img
               key={`${image}-${index}`}
-              src={image || 'https://placehold.co/300x300?text=Preview'}
+              src={galleryThumbnails[index] || image || 'https://placehold.co/300x300?text=Preview'}
               alt={`${product.title} preview ${index + 1}`}
               onClick={() => setActiveImage(image)}
               className={`aspect-square w-24 shrink-0 cursor-pointer rounded-lg object-cover border-2 transition-all ${activeImage === image ? 'border-foreground' : 'border-transparent hover:border-slate-300'}`}

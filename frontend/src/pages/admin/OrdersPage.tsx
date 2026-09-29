@@ -2,7 +2,6 @@ import { useEffect, useState, Fragment, useRef } from 'react';
 import { fetchWithAuth } from '@/lib/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, ChevronDown, ChevronUp, RefreshCw, X } from 'lucide-react';
-import html2canvas from 'html2canvas';
 
 import { getAuthToken } from '@/lib/storage';
 function parseJwt(token: string) {
@@ -86,6 +85,7 @@ export default function AdminOrdersPage() {
   const generateLabelImage = async () => {
     if (!labelRef.current || !currentLabelOrder) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(labelRef.current, { scale: 2 });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');

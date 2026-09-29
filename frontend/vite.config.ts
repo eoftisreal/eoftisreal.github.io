@@ -106,7 +106,6 @@ export default defineConfig(({ mode }) => {
           'vendor-react': ['react', 'react-dom'],
           'vendor-router': ['react-router-dom'],
           'vendor-state': ['zustand'],
-          'vendor-api': ['axios'],
 
           // UI components
           'ui-icons': ['lucide-react'],
@@ -144,7 +143,6 @@ export default defineConfig(({ mode }) => {
       'react-dom',
       'react-router-dom',
       'zustand',
-      'axios',
       'lucide-react',
     ],
   },

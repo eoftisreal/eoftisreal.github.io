@@ -105,12 +105,13 @@ export default function SEO({
           '@type': 'Brand',
           name: product.brand || DEFAULT_SITE_NAME,
         },
-        price: {
-          '@type': 'PriceSpecification',
+        offers: {
+          '@type': 'Offer',
           priceCurrency: product.currency || 'INR',
           price: product.price,
+          availability: `https://schema.org/${product.availability || 'InStock'}`,
+          url: canonicalUrl,
         },
-        availability: product.availability || 'InStock',
         ...(product.rating && product.reviewCount && {
           aggregateRating: {
             '@type': 'AggregateRating',
