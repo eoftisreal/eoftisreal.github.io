@@ -13,24 +13,20 @@ const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 const router = express.Router();
 
 async function generateUniquePaymentAmount(baseTotal) {
-  let isUnique = false;
-  let uniqueAmount = baseTotal;
-
-  while (!isUnique) {
-    const fraction = Math.floor(Math.random() * 99) + 1; // 1 to 99
-    uniqueAmount = Number((baseTotal + fraction / 100).toFixed(2));
-
-    const existingOrder = await Order.findOne({
-      uniquePaymentAmount: uniqueAmount,
-      status: { $in: ['pending_payment', 'awaiting_verification'] }
-    });
-
-    if (!existingOrder) {
-      isUnique = true;
-    }
+  const basePaise = Math.round(baseTotal * 100);
+  const pending = await Order.find({
+    uniquePaymentAmount: { $gte: (basePaise + 1) / 100, $lte: (basePaise + 99) / 100 },
+    status: { $in: ['pending_payment', 'awaiting_verification'] }
+  }).select('uniquePaymentAmount').lean();
+  const used = new Set(pending.map(order => Math.round(order.uniquePaymentAmount * 100)));
+  const start = Math.floor(Math.random() * 99);
+  for (let offset = 0; offset < 99; offset += 1) {
+    const paise = basePaise + 1 + ((start + offset) % 99);
+    if (!used.has(paise)) return paise / 100;
   }
-
-  return uniqueAmount;
+  const err = new Error('Payment slots are temporarily busy. Please try again shortly.');
+  err.statusCode = 503;
+  throw err;
 }
 
 const checkoutSchema = z.object({
@@ -59,6 +55,10 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
       const err = new Error('Cart is empty');
       err.statusCode = 400;
       throw err;
+    }
+
+    if (cart.items.some(item => !item.productId || !item.productId.isActive || !Number.isInteger(item.quantity) || item.quantity < 1)) {
+      return res.status(409).json({ message: 'Your cart contains an unavailable product. Please review it before checkout.' });
     }
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);

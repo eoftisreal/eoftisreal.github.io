@@ -7,6 +7,12 @@ function notFound(_req, _res, next) {
 function errorHandler(err, _req, res, _next) {
   const statusCode = err.statusCode || 500;
 
+  if (err.name === 'MulterError') {
+    return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({
+      message: err.code === 'LIMIT_FILE_SIZE' ? 'Image must be 5 MB or smaller.' : 'Invalid image upload.',
+    });
+  }
+
   if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map(e => e.message);
     return res.status(400).json({

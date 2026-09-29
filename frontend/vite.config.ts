@@ -101,25 +101,8 @@ export default defineConfig(({ mode }) => {
     reportCompressedSize: isProduction,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunks
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-router': ['react-router-dom'],
-          'vendor-state': ['zustand'],
-          'vendor-api': ['axios'],
-
-          // UI components
-          'ui-icons': ['lucide-react'],
-          'ui-toast': ['react-hot-toast'],
-          'ui-markdown': ['react-markdown', 'remark-gfm', 'rehype-raw'],
-
-          // Heavy libraries
-          'lib-three': ['three'],
-          'lib-excel': ['xlsx'],
-          'lib-canvas': ['html2canvas'],
-          'lib-editor': ['react-quill'],
-          'lib-qr': ['qrcode.react'],
-        },
+        // Let Rollup share dependencies across lazy routes. Manual library buckets
+        // previously pulled the markdown dependency graph into the initial page.
         // Optimize chunk sizes
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',

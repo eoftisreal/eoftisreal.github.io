@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiGet, Product } from '@/lib/api';
+import { publicApiGet as apiGet, Product } from '@/lib/api';
 import AddToCartButton from '@/components/AddToCartButton';
 import WishlistButton from '@/components/WishlistButton';
 import SEO from '@/components/SEO';

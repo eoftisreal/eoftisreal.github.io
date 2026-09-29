@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiGet, Product } from '@/lib/api';
+import { publicApiGet as apiGet, Product } from '@/lib/api';
 import ProductGrid from '@/components/ProductGrid';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import SEO from '@/components/SEO';

@@ -2,7 +2,7 @@ import { INDIAN_STATES, COUNTRIES } from '@/lib/constants';
 import { FloatingInput, FloatingSelect } from '@/components/FloatingInput';
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { fetchWithAuth } from '@/lib/apiClient';
 import { useCartStore } from '@/store/cart';
@@ -33,6 +33,7 @@ export default function CheckoutForm() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [promoMessage, setPromoMessage] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const placingOrderRef = useRef(false);
   // Set only if the new tab was blocked by the browser, so we can offer a
   // manual, directly-clicked link (which popup blockers always allow).
   const [blockedOrderId, setBlockedOrderId] = useState<string | null>(null);
@@ -246,7 +247,8 @@ export default function CheckoutForm() {
 
     if (step === steps.length - 1) {
       // Guard against double-clicks opening multiple tabs
-      if (isPlacingOrder) return;
+      if (placingOrderRef.current || blockedOrderId) return;
+      placingOrderRef.current = true;
       setIsPlacingOrder(true);
       setBlockedOrderId(null);
 
@@ -276,14 +278,16 @@ export default function CheckoutForm() {
 
         const data = await checkoutMutation.mutateAsync(payload);
 
-        if (data) {
+        if (data?.order?._id) {
           setMessage('Order placed successfully!');
           // Call clear local cart
           useCartStore.getState().clearLocalCart();
 
-          if (paymentWindow) {
+          if (paymentWindow && !paymentWindow.closed) {
             // Move the already-open tab from the loading screen to the order
             paymentWindow.location.href = `/orders/${data.order._id}`;
+            // Return home only when the payment tab remains available.
+            navigate('/');
           } else {
             // Tab was blocked (rare, once it's opened synchronously) — the
             // order still succeeded, so give the user a real link they can
@@ -291,10 +295,9 @@ export default function CheckoutForm() {
             setBlockedOrderId(data.order._id);
           }
 
-          // Redirect the current tab to the home page
-          navigate(`/`);
+          // If blocked, remain here so the manual payment link stays visible.
         } else {
-          const errMsg = data.message || 'Failed to place order';
+          const errMsg = data?.message || 'Failed to place order';
           if (paymentWindow) {
             // Show the error as real content in the tab instead of closing
             // it abruptly, which some browsers treat as suspicious pop-under
@@ -311,6 +314,7 @@ export default function CheckoutForm() {
         }
         setMessage(errMsg);
       } finally {
+        placingOrderRef.current = false;
         setIsPlacingOrder(false);
       }
       return;
@@ -511,7 +515,7 @@ export default function CheckoutForm() {
       </section>
       <div className="flex gap-3">
         <button disabled={step === 0} onClick={() => setStep((current) => current - 1)} className="rounded border px-5 py-2 disabled:opacity-50">Back</button>
-        <button disabled={(!isLoggedIn && step === 0) || isPlacingOrder} onClick={handleNext} className="rounded bg-foreground hover:bg-black px-5 py-2 font-semibold text-white disabled:opacity-50">{step === steps.length - 1 ? (isPlacingOrder ? 'Placing Order...' : 'Place Order') : 'Next'}</button>
+        <button disabled={(!isLoggedIn && step === 0) || isPlacingOrder || !!blockedOrderId} onClick={handleNext} className="rounded bg-foreground hover:bg-black px-5 py-2 font-semibold text-white disabled:opacity-50">{step === steps.length - 1 ? (isPlacingOrder ? 'Placing Order...' : 'Place Order') : 'Next'}</button>
       </div>
       {message ? <p className="rounded-md bg-red-50 text-red-600 p-3 text-sm border border-red-200">{message}</p> : null}
       {blockedOrderId ? (

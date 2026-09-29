@@ -10,7 +10,12 @@ const sharp = require('sharp');
  */
 async function optimizeImage(fileBuffer) {
   try {
-    const optimizedBuffer = await sharp(fileBuffer)
+    const input = sharp(fileBuffer, { limitInputPixels: 40 * 1000 * 1000, failOn: 'error' });
+    const metadata = await input.metadata();
+    if (!['jpeg', 'png', 'webp', 'avif', 'heif'].includes(metadata.format)) {
+      throw new Error('Unsupported image format');
+    }
+    const optimizedBuffer = await input.rotate()
       .resize({
         width: 1920,
         height: 1920,

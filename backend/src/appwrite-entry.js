@@ -12,7 +12,7 @@
 //   1. Starts the existing Express app on an internal loopback port once
 //      per container (cached at module scope, reused across warm/"hot"
 //      invocations - the same container is reused for many requests).
-//   2. Opens the MongoDB connection once, the same way.
+//   2. Opens MongoDB lazily for API requests, reusing warm connections.
 //   3. On each invocation, forwards the incoming Appwrite request to the
 //      internal server and relays the response back through res.binary().
 //
@@ -22,6 +22,7 @@
 // "entrypoint" at it (instead of backend/src/server.js).
 
 const http = require('http');
+const { isIP } = require('net');
 const app = require('./app');
 const connectDb = require('./config/db');
 
@@ -36,7 +37,7 @@ function getServer() {
   if (!serverPromise) {
     serverPromise = new Promise((resolve, reject) => {
       const server = http.createServer(app);
-      server.once('error', reject);
+      server.once('error', (err) => { serverPromise = null; reject(err); });
       server.listen(0, '127.0.0.1', () => resolve(server));
     });
   }
@@ -58,12 +59,17 @@ module.exports = async ({ req, res, log, error }) => {
     const server = await getServer();
     const port = server.address().port;
 
-    try {
-      await getDb();
-    } catch (dbErr) {
-      // Mirrors server.js: keep serving even if the initial connect fails.
-      // Routes that actually need the DB will surface their own errors.
-      error(`MongoDB connection failed: ${dbErr.message}`);
+    // Static files, SPA routes and liveness must work during database outages.
+    if ((req.path === '/api' || req.path.startsWith('/api/')) &&
+        req.path !== '/api/health' && req.method !== 'OPTIONS') {
+      try {
+        await getDb();
+      } catch (dbErr) {
+        error(`MongoDB connection failed: ${dbErr.message}`);
+        return res.json({ message: 'Service temporarily unavailable. Please retry.' }, 503, {
+          'cache-control': 'no-store', 'retry-after': '5',
+        });
+      }
     }
 
     const bodyBuffer =
@@ -72,8 +78,22 @@ module.exports = async ({ req, res, log, error }) => {
     const forwardedHeaders = { ...req.headers };
     delete forwardedHeaders['content-length'];
     delete forwardedHeaders['host'];
+    // Forward only the platform-provided client IP, never a caller's proxy chain.
+    delete forwardedHeaders['x-forwarded-for'];
+    delete forwardedHeaders['x-appwrite-key'];
+    const clientIp = req.headers['x-appwrite-client-ip'];
+    if (typeof clientIp === 'string' && isIP(clientIp)) {
+      forwardedHeaders['x-forwarded-for'] = clientIp;
+    }
 
     const proxied = await new Promise((resolve, reject) => {
+      // A deadline includes both response headers and body transfer.
+      const deadlineMs = Math.max(1000, Math.min(Number(process.env.PROXY_TIMEOUT_MS) || 25000, 120000));
+      let deadline;
+      const finish = (err, value) => {
+        clearTimeout(deadline);
+        if (err) reject(err); else resolve(value);
+      };
       const proxyReq = http.request(
         {
           agent: proxyAgent,
@@ -85,9 +105,20 @@ module.exports = async ({ req, res, log, error }) => {
         },
         (proxyRes) => {
           const chunks = [];
-          proxyRes.on('data', (chunk) => chunks.push(chunk));
+          let size = 0;
+          const maxBytes = Math.max(1024, Number(process.env.PROXY_MAX_RESPONSE_BYTES) || 10 * 1024 * 1024);
+          proxyRes.on('error', (err) => finish(err));
+          proxyRes.on('aborted', () => finish(new Error('Upstream response aborted')));
+          proxyRes.on('data', (chunk) => {
+            size += chunk.length;
+            if (size > maxBytes) {
+              proxyRes.destroy(new Error('Upstream response exceeds configured size limit'));
+              return;
+            }
+            chunks.push(chunk);
+          });
           proxyRes.on('end', () => {
-            resolve({
+            finish(null, {
               statusCode: proxyRes.statusCode || 200,
               headers: proxyRes.headers,
               body: Buffer.concat(chunks),
@@ -96,7 +127,13 @@ module.exports = async ({ req, res, log, error }) => {
         }
       );
 
-      proxyReq.on('error', reject);
+      proxyReq.on('error', (err) => finish(err));
+      deadline = setTimeout(() => {
+        const err = new Error('Upstream request timed out');
+        err.statusCode = 504;
+        proxyReq.destroy(err);
+        finish(err);
+      }, deadlineMs);
 
       if (bodyBuffer) {
         proxyReq.write(bodyBuffer);
@@ -122,6 +159,6 @@ module.exports = async ({ req, res, log, error }) => {
     return res.binary(proxied.body, proxied.statusCode, responseHeaders);
   } catch (err) {
     error(err.stack || err.message);
-    return res.text('Internal Server Error', 500);
+    return res.text(err.statusCode === 504 ? 'Gateway Timeout' : 'Internal Server Error', err.statusCode === 504 ? 504 : 500, { 'cache-control': 'no-store' });
   }
 };

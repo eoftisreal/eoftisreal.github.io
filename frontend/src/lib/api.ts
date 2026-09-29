@@ -10,10 +10,16 @@ export async function apiGet<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function publicApiGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${apiBase}${path}`, { credentials: 'omit' });
+  if (!res.ok) throw new Error(`Failed to fetch ${path}`);
+  return res.json() as Promise<T>;
+}
+
 export type Product = {
   _id: string;
   title: string;
-  description: string;
+  description?: string;
   artistName: string;
   productType?: string;
   category: string;

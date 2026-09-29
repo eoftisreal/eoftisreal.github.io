@@ -70,3 +70,9 @@ docker compose up --build
   - **Output Directory:** `dist`
   - Set `VITE_API_URL` in Appwrite build environment variables.
 - For low-memory plans, keep `ENABLE_HTTP_LOGS=false` and tune `MONGO_MAX_POOL_SIZE` (default `5`).
+
+## Appwrite performance deployment
+
+See [the combined Function deployment and verification guide](docs/APPWRITE_DEPLOYMENT.md)
+for the build settings, preserved new-tab payment flow, validation results, and
+remaining database scaling work.

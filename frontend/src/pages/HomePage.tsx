@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import ProductCard from '@/components/ProductCard';
 import { useQuery } from '@tanstack/react-query';
-import { apiGet, Product } from '@/lib/api';
+import { publicApiGet as apiGet, Product } from '@/lib/api';
 import SEO from '@/components/SEO';
 
 type Category = {
@@ -20,7 +20,7 @@ export default function Home() {
 
   const { data: featuredProductsRes } = useQuery<{ products: Product[] }>({
     queryKey: ['featuredProducts'],
-    queryFn: () => apiGet('/products?isFeatured=true&limit=24')
+    queryFn: () => apiGet('/products?isFeatured=true&limit=12')
   });
   const featuredProducts = featuredProductsRes?.products || [];
 
@@ -30,12 +30,10 @@ export default function Home() {
   });
 
   const parsedSettings = settingsRes as { heroBannerUrl?: string, heroBannerUrls?: string[] } | undefined;
-  let heroBannerUrls: string[] = [];
-  if (parsedSettings?.heroBannerUrls && parsedSettings.heroBannerUrls.length > 0) {
-    heroBannerUrls = parsedSettings.heroBannerUrls.filter(Boolean);
-  } else if (parsedSettings?.heroBannerUrl) {
-    heroBannerUrls = [parsedSettings.heroBannerUrl];
-  }
+  const heroBannerUrls = useMemo(() => {
+    if (parsedSettings?.heroBannerUrls?.length) return parsedSettings.heroBannerUrls.filter(Boolean);
+    return parsedSettings?.heroBannerUrl ? [parsedSettings.heroBannerUrl] : [];
+  }, [parsedSettings]);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -169,7 +167,7 @@ export default function Home() {
               {category.image ? (
                 <>
                   <div className="absolute inset-0 z-0">
-                    <img src={category.image} alt={category.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img loading="lazy" decoding="async" src={category.image} alt={category.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity group-hover:from-black/80 group-hover:via-black/40"></div>
                   </div>
                   <div className="relative z-10 p-4 md:p-6 drop-shadow-md">

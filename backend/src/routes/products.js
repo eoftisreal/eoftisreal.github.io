@@ -9,14 +9,14 @@ const Category = require('../models/Category');
 const Brand = require('../models/Brand');
 
 const router = express.Router();
-const LIST_FIELDS = 'title description artistName productType category brand images price compareAtPrice stock isFeatured isCustomizable enableSizes sizes enableColors colors minDeliveryDays maxDeliveryDays tags salesCount createdAt';
+const LIST_FIELDS = 'title artistName productType category brand images price compareAtPrice stock isFeatured isCustomizable enableSizes sizes enableColors colors minDeliveryDays maxDeliveryDays tags salesCount createdAt';
 const SHORT_CACHE = 'public, max-age=120, stale-while-revalidate=300';
 const MEDIUM_CACHE = 'public, max-age=300, stale-while-revalidate=600';
 
 router.get('/categories', async (req, res, next) => {
   try {
     const categories = await Category.find({ isActive: true }).sort({ name: 1 }).lean();
-    res.set('Cache-Control', 'no-cache');
+    res.set('Cache-Control', SHORT_CACHE);
     res.json(categories);
   } catch (error) {
     next(error);
@@ -26,7 +26,7 @@ router.get('/categories', async (req, res, next) => {
 router.get('/brands', async (req, res, next) => {
   try {
     const brands = await Brand.find({ isActive: true }).sort({ name: 1 }).lean();
-    res.set('Cache-Control', 'no-cache');
+    res.set('Cache-Control', SHORT_CACHE);
     res.json(brands);
   } catch (error) {
     next(error);
@@ -36,7 +36,7 @@ router.get('/brands', async (req, res, next) => {
 router.get('/tags', async (req, res, next) => {
   try {
     const tags = await Product.distinct('tags', { isActive: true });
-    res.set('Cache-Control', 'no-cache');
+    res.set('Cache-Control', SHORT_CACHE);
     res.json(tags.filter(t => t));
   } catch (error) {
     next(error);
@@ -46,7 +46,7 @@ router.get('/tags', async (req, res, next) => {
 router.get('/product-types', async (req, res, next) => {
   try {
     const types = await Product.distinct('productType', { isActive: true });
-    res.set('Cache-Control', 'no-cache');
+    res.set('Cache-Control', SHORT_CACHE);
     res.json(types.filter(t => t));
   } catch (error) {
     next(error);
@@ -66,8 +66,8 @@ const listSchema = z.object({
     inStock: z.string().optional(),
     isFeatured: z.string().optional(),
     sort: z.string().optional(),
-    page: z.coerce.number().min(1).default(1),
-    limit: z.coerce.number().min(1).max(1000).default(12),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(12),
   }),
   params: z.object({}),
 });
@@ -108,11 +108,11 @@ router.get('/', validate(listSchema), async (req, res, next) => {
       query.isFeatured = false;
     }
 
-    let sortQuery = { createdAt: -1 };
-    if (sort === 'price_asc') sortQuery = { price: 1 };
-    else if (sort === 'price_desc') sortQuery = { price: -1 };
-    else if (sort === 'newest') sortQuery = { createdAt: -1 };
-    else if (sort === 'best_selling' || sort === 'most_popular') sortQuery = { salesCount: -1, createdAt: -1 };
+    let sortQuery = { createdAt: -1, _id: -1 };
+    if (sort === 'price_asc') sortQuery = { price: 1, _id: 1 };
+    else if (sort === 'price_desc') sortQuery = { price: -1, _id: -1 };
+    else if (sort === 'newest') sortQuery = { createdAt: -1, _id: -1 };
+    else if (sort === 'best_selling' || sort === 'most_popular') sortQuery = { salesCount: -1, createdAt: -1, _id: -1 };
 
     const [products, total] = await Promise.all([
       Product.find(query)
@@ -229,12 +229,16 @@ const patchSchema = z.object({
 });
 
 const uploadCustomImage = require('multer')({
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 2 },
+});
+const uploadLimiter = require('express-rate-limit').rateLimit({
+  windowMs: 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false,
+  message: { message: 'Too many uploads. Please try again shortly.' },
 });
 const { uploadToR2, getObjectUrl, isR2Configured } = require('../utils/r2');
 const { optimizeImage } = require('../utils/imageOptimizer');
 
-router.post('/upload-custom', uploadCustomImage.single('file'), async (req, res, next) => {
+router.post('/upload-custom', uploadLimiter, uploadCustomImage.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -244,24 +248,24 @@ router.post('/upload-custom', uploadCustomImage.single('file'), async (req, res,
       return res.status(500).json({ message: 'Storage is not configured on the server. Image upload is disabled.' });
     }
 
-    let bufferToUpload = req.file.buffer;
-    let mimeType = req.file.mimetype;
-    let originalName = req.file.originalname;
-
-    if (mimeType.startsWith('image/')) {
-      try {
-        const optimized = await optimizeImage(req.file.buffer);
-        bufferToUpload = optimized.buffer;
-        mimeType = optimized.mimeType;
-        // Replace extension in original name with .webp for R2 key generation
-        originalName = originalName.replace(/\.[^/.]+$/, "") + ".webp";
-      } catch (err) {
-        console.warn('Image optimization failed, falling back to original image:', err);
-      }
-    }
-
     const folder = req.body.folder || 'uploads';
+    if (!['uploads', 'customers/product-images', 'customers/payment-screenshots'].includes(folder)) {
+      return res.status(400).json({ message: 'Invalid upload folder' });
+    }
     const fileNamePrefix = req.body.fileNamePrefix || '';
+    if (!/^[a-zA-Z0-9_-]{0,80}$/.test(fileNamePrefix)) {
+      return res.status(400).json({ message: 'Invalid image name' });
+    }
+    let optimized;
+    try {
+      // Decode the actual bytes; never publish a failed/unvalidated original file.
+      optimized = await optimizeImage(req.file.buffer);
+    } catch {
+      return res.status(400).json({ message: 'Please upload a valid JPEG, PNG, WebP or AVIF image.' });
+    }
+    const bufferToUpload = optimized.buffer;
+    const mimeType = optimized.mimeType;
+    const originalName = 'image.webp';
 
     const key = await uploadToR2(bufferToUpload, mimeType, originalName, folder, fileNamePrefix);
     const url = getObjectUrl(key);

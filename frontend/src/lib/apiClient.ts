@@ -1,57 +1,58 @@
-import { getAuthToken, getRefreshToken, setAuthToken, clearAuth } from './storage';
+import { getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, clearAuth } from './storage';
 
-export const getApiBaseUrl = (): string => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  if (import.meta.env.PROD) {
-    return '/api';
-  }
-  return 'http://localhost:3000/api';
-};
-
+export const getApiBaseUrl = (): string => import.meta.env.VITE_API_URL || '/api';
 const apiBase = getApiBaseUrl();
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function refreshAccessToken(expiredToken: string | null): Promise<string | null> {
+  const refresh = async () => {
+    // Another request (or tab holding the Web Lock) may already have refreshed.
+    const currentToken = getAuthToken();
+    if (currentToken && currentToken !== expiredToken) return currentToken;
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return null;
+    const response = await fetch(`${apiBase}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        clearAuth();
+        return null;
+      }
+      throw new Error('Session refresh is temporarily unavailable');
+    }
+    const data = await response.json();
+    if (!data.accessToken || !data.refreshToken) throw new Error('Invalid session refresh response');
+    // The server rotates refresh tokens. Persist both before notifying listeners.
+    setRefreshToken(data.refreshToken);
+    setAuthToken(data.accessToken);
+    return data.accessToken as string;
+  };
+  if (typeof navigator !== 'undefined' && navigator.locks) {
+    return navigator.locks.request('kapdakraft-auth-refresh', refresh);
+  }
+  return refresh();
+}
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-  let token = getAuthToken();
-
+  const token = getAuthToken();
   const headers = new Headers(options.headers || {});
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
+  if (token) headers.set('Authorization', `Bearer ${token}`);
   let response = await fetch(url, { ...options, headers });
+  if (response.status !== 401) return response;
 
-  if (response.status === 401) {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      try {
-        const refreshResponse = await fetch(`${apiBase}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        if (refreshResponse.ok) {
-          const data = await refreshResponse.json();
-          setAuthToken(data.accessToken);
-
-          // Retry original request with new token
-          headers.set('Authorization', `Bearer ${data.accessToken}`);
-          response = await fetch(url, { ...options, headers });
-        } else {
-          clearAuth();
-          window.location.href = '/auth/login';
-        }
-      } catch (e) {
-        clearAuth();
-        window.location.href = '/auth/login';
-      }
-    } else {
-      clearAuth();
-      window.location.href = '/auth/login';
-    }
+  if (!refreshInFlight) {
+    refreshInFlight = refreshAccessToken(token).finally(() => { refreshInFlight = null; });
   }
-
+  const accessToken = await refreshInFlight;
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+    response = await fetch(url, { ...options, headers });
+  } else {
+    clearAuth();
+    window.location.href = '/auth/login';
+  }
   return response;
 }

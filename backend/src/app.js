@@ -26,9 +26,9 @@ const { globalLimiter, apiLimiter, authLimiter, readOperationLimiter, writeOpera
 
 const app = express();
 
-// Trust the proxy since the app is deployed behind Appwrite's load balancer or DigitalOcean's
-// Trust all proxies in the chain to accurately resolve the client IP
-app.set('trust proxy', true);
+// Appwrite entrypoint forwards through loopback and replaces the client IP header.
+// Other deployments may configure an explicit trusted proxy subnet.
+app.set('trust proxy', process.env.TRUST_PROXY || 'loopback');
 
 // Security headers
 app.use(helmet({
@@ -105,18 +105,7 @@ if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'tru
   const frontendPath = path.join(__dirname, '../../frontend/dist');
 
   // Serve static files with caching
-  app.use(express.static(frontendPath, {
-    maxAge: '1d',
-    etag: false,
-    // Only cache assets, not HTML
-    setHeaders: (res, path) => {
-      if (path.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-      } else if (path.match(/\.(js|css|woff2?)$/)) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      }
-    }
-  }));
+  app.use(require('./middleware/staticFiles')(frontendPath));
 
   // SPA fallback: For all non-API routes that don't match files, serve index.html
   app.get('*', (req, res, next) => {

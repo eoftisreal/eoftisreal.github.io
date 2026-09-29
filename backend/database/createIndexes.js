@@ -9,7 +9,9 @@ const createIndexes = async () => {
     await mongoose.connect(uri);
 
     // Product indexes
-    await Product.collection.createIndex({ title: 'text', description: 'text' });
+    // Use the schema as the source of truth; never silently drop live indexes.
+    // A legacy text index with a different definition requires a reviewed migration.
+    await Product.createIndexes();
     await Product.collection.createIndex({ category: 1 });
     await Product.collection.createIndex({ brand: 1 });
     await Product.collection.createIndex({ price: 1 });

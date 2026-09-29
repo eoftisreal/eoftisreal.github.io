@@ -31,4 +31,9 @@ const productSchema = new mongoose.Schema(
 
 productSchema.index({ title: 'text', description: 'text', tags: 'text', artistName: 'text' });
 
+// Common public catalogue filter + sort combinations.
+productSchema.index({ isActive: 1, createdAt: -1, _id: -1 });
+productSchema.index({ isActive: 1, category: 1, createdAt: -1, _id: -1 });
+productSchema.index({ isActive: 1, isFeatured: 1, createdAt: -1, _id: -1 });
+
 module.exports = mongoose.model('Product', productSchema);
