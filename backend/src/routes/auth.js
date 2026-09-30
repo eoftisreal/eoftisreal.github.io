@@ -84,7 +84,7 @@ router.post('/signup', validate(signupSchema), async (req, res, next) => {
     const verifyUrl = `${env.appUrl}/auth/verify-email?token=${verificationToken}`;
     await sendVerificationEmail(user.email, verifyUrl);
 
-    res.status(201).json({ message: 'Account created. Please check your email to verify.' });
+    res.status(201).json({ error: { code: 'API_ERROR', message: 'Account created. Please check your email to verify.' } });
   } catch (error) {
     next(error);
   }
@@ -214,7 +214,7 @@ router.post('/magic-link/request', validate(requestMagicSchema), async (req, res
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user || !user.isVerified) {
       // Return 202 to prevent email enumeration attacks
-      return res.status(202).json({ message: 'If the email exists and is verified, a link was sent.' });
+      return res.status(202).json({ error: { code: 'API_ERROR', message: 'If the email exists and is verified, a link was sent.' } });
     }
 
     const magicToken = crypto.randomBytes(36).toString('hex');
@@ -228,7 +228,7 @@ router.post('/magic-link/request', validate(requestMagicSchema), async (req, res
     const magicUrl = `${env.appUrl}/auth/callback?token=${encodeURIComponent(magicToken)}`;
     await sendMagicLinkEmail(user.email, magicUrl);
 
-    res.status(202).json({ message: 'If the email exists and is verified, a link was sent.' });
+    res.status(202).json({ error: { code: 'API_ERROR', message: 'If the email exists and is verified, a link was sent.' } });
   } catch (error) {
     next(error);
   }
@@ -295,7 +295,7 @@ router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res,
     }
 
     // Always return 202 to prevent user enumeration
-    res.status(202).json({ message: 'If an account exists, a password reset link has been sent.' });
+    res.status(202).json({ error: { code: 'API_ERROR', message: 'If an account exists, a password reset link has been sent.' } });
   } catch (error) {
     next(error);
   }
@@ -340,7 +340,7 @@ router.get('/me', auth, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: { code: 'API_ERROR', message: 'User not found' } });
     }
 
     // Sign a fresh token in case role/admin status has changed
@@ -391,7 +391,7 @@ router.put('/profile', auth, validate(profileUpdateSchema), async (req, res, nex
   try {
     const { name, phone, address } = req.validated.body;
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ error: { code: 'API_ERROR', message: 'User not found' } });
 
     if (name !== undefined) user.name = name;
     if (phone !== undefined) user.phone = phone;

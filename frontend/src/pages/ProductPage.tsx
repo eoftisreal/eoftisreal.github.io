@@ -135,7 +135,7 @@ export default function ProductDetailPage() {
       if (res.ok) {
         setCustomImageUrl(data.url);
       } else {
-        alert(data.message || 'Image upload failed');
+        alert((data.error?.message || data.message) || 'Image upload failed');
       }
     } catch (err) {
       alert('Upload failed due to network error');

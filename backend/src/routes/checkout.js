@@ -138,26 +138,38 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
       color: item.productId.enableColors ? item.color : undefined
     }));
 
-    const order = await Order.create({
-      checkoutAttemptId: req.validated.body.checkoutAttemptId,
-      discount,
-      userId: req.user.id,
-      items,
-      subtotal,
-      tax,
-      deliveryCharge,
-      total,
-      uniquePaymentAmount,
-      shippingAddress: req.validated.body.shippingAddress,
-      deliveryMethod: req.validated.body.deliveryMethod || 'email',
-      promoCode: req.validated.body.promoCode || undefined,
-      status: 'pending_payment',
-      payment: {
-        provider: 'manual_upi',
-        status: 'pending',
-      },
-      timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
-    });
+    let order;
+    try {
+      order = await Order.create({
+        checkoutAttemptId: req.validated.body.checkoutAttemptId,
+        discount,
+        userId: req.user.id,
+        items,
+        subtotal,
+        tax,
+        deliveryCharge,
+        total,
+        uniquePaymentAmount,
+        shippingAddress: req.validated.body.shippingAddress,
+        deliveryMethod: req.validated.body.deliveryMethod || 'email',
+        promoCode: req.validated.body.promoCode || undefined,
+        status: 'pending_payment',
+        payment: {
+          provider: 'manual_upi',
+          status: 'pending',
+        },
+        timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
+      });
+    } catch (createErr) {
+      if (createErr.code === 11000 && req.validated.body.checkoutAttemptId) {
+        // Concurrency handling: Another request created this idempotency key while we were processing
+        const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
+        if (existingOrder) {
+          return res.json({ message: 'Order created', order: existingOrder });
+        }
+      }
+      throw createErr;
+    }
 
     await OrderStatusHistory.create({
       orderId: order._id,
@@ -190,11 +202,11 @@ router.post('/validate-coupon', auth, validate(validateCouponSchema), async (req
     const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
 
     if (!coupon) {
-      return res.status(400).json({ message: 'Invalid or expired coupon code' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'Invalid or expired coupon code' } });
     }
 
     if (subtotal < coupon.minOrderValue) {
-      return res.status(400).json({ message: `Minimum order value of ${coupon.minOrderValue} required` });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: `Minimum order value of ${coupon.minOrderValue} required` } });
     }
 
     let discountAmount = 0;

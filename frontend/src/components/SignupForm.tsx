@@ -35,7 +35,7 @@ export default function SignupForm() {
             return;
           }
         }
-        setMessage(body.message || 'Failed to create account');
+        setMessage((body.error?.message || body.message) || 'Failed to create account');
       }
     } catch {
       setMessage('Failed to create account');

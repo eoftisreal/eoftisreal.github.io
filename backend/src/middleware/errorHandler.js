@@ -28,10 +28,17 @@ function errorHandler(err, _req, res, _next) {
     });
   }
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  const message = statusCode === 500 && isProduction ? 'Internal server error' : (err.message || 'Internal server error');
+
+  if (statusCode === 500) {
+    console.error('Unhandled Server Error:', err);
+  }
+
   res.status(statusCode).json({
     error: {
       code: statusCode === 500 ? 'INTERNAL_ERROR' : (err.code || 'API_ERROR'),
-      message: err.message || 'Internal server error',
+      message,
       details: err.details || undefined,
     }
   });

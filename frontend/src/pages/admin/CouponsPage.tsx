@@ -57,7 +57,7 @@ export default function CouponsPage() {
         fetchCoupons();
       } else {
         const body = await res.json();
-        alert(body.message || 'Error creating coupon');
+        alert((body.error?.message || body.message) || 'Error creating coupon');
       }
     } catch (e) {
       console.error(e);

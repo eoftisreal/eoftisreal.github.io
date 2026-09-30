@@ -29,7 +29,7 @@ export default function AuthCallbackPage() {
 
         const body = await response.json();
         if (!response.ok) {
-          setMessage(body.message || 'Verification failed.');
+          setMessage((body.error?.message || body.message) || 'Verification failed.');
           return;
         }
 

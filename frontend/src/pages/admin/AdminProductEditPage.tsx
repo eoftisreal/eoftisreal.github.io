@@ -44,6 +44,7 @@ export default function AdminProductEditPage() {
 
   // Images state (array of urls)
   const [images, setImages] = useState<string[]>([]);
+  const [imageVariants, setImageVariants] = useState<any[]>([]);
   const [r2ImageKeys, setR2ImageKeys] = useState<string[]>([]);
 
   // Master options
@@ -92,6 +93,7 @@ export default function AdminProductEditPage() {
           setMinDeliveryDays(prodRes.minDeliveryDays?.toString() || '');
           setMaxDeliveryDays(prodRes.maxDeliveryDays?.toString() || '');
           setImages(prodRes.images || []);
+          setImageVariants(prodRes.imageVariants || []);
           setR2ImageKeys(prodRes.r2ImageKeys || []);
         }
 
@@ -117,7 +119,7 @@ export default function AdminProductEditPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', 'admin/product-images');
+      formData.append('folder', 'products');
 
       const res = await fetchWithAuth(`${apiBase}/admin/upload`, {
         method: 'POST',
@@ -127,11 +129,20 @@ export default function AdminProductEditPage() {
 
       const body = await res.json();
       if (res.ok) {
-        setImages(prev => [...prev, body.url]);
-        setR2ImageKeys(prev => [...prev, body.key]);
+        setImages(prev => [...prev, body.product ? body.product.url : body.url]);
+        if (body.product && body.thumbnail && body.card) {
+          setImageVariants(prev => [...prev, {
+            thumbnail: body.thumbnail.url,
+            card: body.card.url,
+            product: body.product.url,
+          }]);
+        } else {
+          setImageVariants(prev => [...prev, null]);
+        }
+        setR2ImageKeys(prev => [...prev, body.assetId || body.key || '']);
         setFile(null);
       } else {
-        alert(body.message || 'Image upload failed');
+        alert((body.error?.message || body.message) || 'Image upload failed');
       }
     } catch (e: any) {
       alert('Image upload failed due to network error');
@@ -143,14 +154,31 @@ export default function AdminProductEditPage() {
   function handleAddImageUrl() {
     if (!newImageUrl) return;
     setImages(prev => [...prev, newImageUrl]);
+    setImageVariants(prev => [...prev, null]);
     setNewImageUrl('');
   }
 
-  function handleRemoveImage(index: number) {
+  async function handleRemoveImage(index: number) {
+    const keyToRemove = r2ImageKeys[index];
+
     setImages(prev => prev.filter((_, i) => i !== index));
+    setImageVariants(prev => prev.filter((_, i) => i !== index));
     // We roughly sync r2keys if possible, though r2keys might be fewer if mixed with direct URLs.
     // For simplicity, we just remove the same index from r2keys if it exists.
     setR2ImageKeys(prev => prev.filter((_, i) => i !== index));
+
+    // Optionally delete from R2 if it's a known R2 asset
+    if (keyToRemove && !keyToRemove.startsWith('http')) {
+      try {
+        await fetchWithAuth(`${apiBase}/admin/delete-image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assetId: keyToRemove })
+        });
+      } catch (e) {
+        console.error('Failed to delete image from R2', e);
+      }
+    }
   }
 
   async function submitProduct(event: FormEvent) {
@@ -171,6 +199,7 @@ export default function AdminProductEditPage() {
         compareAtPrice: compareAtPrice || undefined,
         stock,
         images,
+        imageVariants: imageVariants.filter(v => v !== null),
         r2ImageKeys,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         isFeatured,
@@ -201,7 +230,7 @@ export default function AdminProductEditPage() {
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['product', id] });
       } else {
-        setMessage(body.message || 'Failed to update product');
+        setMessage((body.error?.message || body.message) || 'Failed to update product');
       }
     } catch {
       setMessage('Failed to update product');

@@ -65,7 +65,7 @@ router.get('/sitemap/index', async (req, res) => {
     res.send(sitemapIndex);
   } catch (error) {
     console.error('Sitemap index error:', error);
-    res.status(500).json({ error: 'Failed to generate sitemap index' });
+    res.status(500).json({ error: { code: 'API_ERROR', message: 'Failed to generate sitemap index' } });
   }
 });
 
@@ -80,8 +80,8 @@ router.get('/sitemap/products', async (req, res) => {
     const limit = 50000; // Google sitemap limit
     const skip = (page - 1) * limit;
 
-    const products = await Product.find({ status: true })
-      .select('_id slug name updatedAt images')
+    const products = await Product.find({ isActive: true })
+      .select('_id title updatedAt images')
       .sort({ updatedAt: -1 })
       .limit(limit)
       .skip(skip)
@@ -106,7 +106,7 @@ router.get('/sitemap/products', async (req, res) => {
       if (product.images && product.images.length > 0) {
         sitemap += '    <image:image>\n';
         sitemap += `      <image:loc>${escapeXml(product.images[0])}</image:loc>\n`;
-        sitemap += `      <image:title>${escapeXml(product.name)}</image:title>\n`;
+        sitemap += `      <image:title>${escapeXml(product.title)}</image:title>\n`;
         sitemap += '    </image:image>\n';
       }
 
@@ -120,7 +120,7 @@ router.get('/sitemap/products', async (req, res) => {
     res.send(sitemap);
   } catch (error) {
     console.error('Product sitemap error:', error);
-    res.status(500).json({ error: 'Failed to generate product sitemap' });
+    res.status(500).json({ error: { code: 'API_ERROR', message: 'Failed to generate product sitemap' } });
   }
 });
 
@@ -130,8 +130,8 @@ router.get('/sitemap/products', async (req, res) => {
  */
 router.get('/sitemap/categories', async (req, res) => {
   try {
-    const categories = await Category.find({ status: true })
-      .select('_id name slug updatedAt')
+    const categories = await Category.find({ isActive: true })
+      .select('_id name updatedAt')
       .sort({ updatedAt: -1 })
       .lean();
 
@@ -160,7 +160,7 @@ router.get('/sitemap/categories', async (req, res) => {
     res.send(sitemap);
   } catch (error) {
     console.error('Category sitemap error:', error);
-    res.status(500).json({ error: 'Failed to generate category sitemap' });
+    res.status(500).json({ error: { code: 'API_ERROR', message: 'Failed to generate category sitemap' } });
   }
 });
 
@@ -173,11 +173,11 @@ router.post('/sitemap/generate', async (req, res) => {
   try {
     // Optional: Add auth check for admin only
     // if (!req.user || !req.user.isAdmin) {
-    //   return res.status(403).json({ error: 'Unauthorized' });
+    //   return res.status(403).json({ error: { code: 'API_ERROR', message: 'Unauthorized' } });
     // }
 
-    const productCount = await Product.countDocuments({ status: true });
-    const categoryCount = await Category.countDocuments({ status: true });
+    const productCount = await Product.countDocuments({ isActive: true });
+    const categoryCount = await Category.countDocuments({ isActive: true });
 
     res.json({
       success: true,
@@ -196,7 +196,7 @@ router.post('/sitemap/generate', async (req, res) => {
     });
   } catch (error) {
     console.error('Sitemap generation error:', error);
-    res.status(500).json({ error: 'Failed to generate sitemaps' });
+    res.status(500).json({ error: { code: 'API_ERROR', message: 'Failed to generate sitemaps' } });
   }
 });
 

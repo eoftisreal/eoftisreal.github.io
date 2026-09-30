@@ -74,7 +74,7 @@ export default function CheckoutForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error?.message || data.message || 'Checkout failed');
+        throw new Error(data.error?.message || (data.error?.message || data.message) || 'Checkout failed');
       }
       return data;
     },
@@ -186,7 +186,7 @@ export default function CheckoutForm() {
         setPromoMessage(`Discount applied: ₹${body.discountAmount}`);
       } else {
         setDiscountAmount(0);
-        setPromoMessage(body.message || 'Invalid coupon');
+        setPromoMessage((body.error?.message || body.message) || 'Invalid coupon');
       }
     } catch {
       setDiscountAmount(0);
@@ -297,7 +297,7 @@ export default function CheckoutForm() {
           // Redirect the current tab to the home page
           navigate(`/`);
         } else {
-          const errMsg = data.message || 'Failed to place order';
+          const errMsg = (data.error?.message || data.message) || 'Failed to place order';
           if (paymentWindow) {
             // Show the error as real content in the tab instead of closing
             // it abruptly, which some browsers treat as suspicious pop-under

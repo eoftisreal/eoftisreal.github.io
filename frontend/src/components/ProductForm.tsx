@@ -62,6 +62,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [imageVariants, setImageVariants] = useState<any[]>([]);
   const [r2ImageKeys, setR2ImageKeys] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
 
@@ -74,7 +75,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', 'admin/product-images');
+      formData.append('folder', 'products');
 
       const res = await fetchWithAuth(`${apiBase}/admin/upload`, {
         method: 'POST',
@@ -83,12 +84,22 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
       const body = await res.json();
       if (res.ok) {
-        setImages(prev => [...prev, body.url]);
-        setR2ImageKeys(prev => [...prev, body.key || '']);
+        // Fallback to single URL for standard rendering, and explicitly add variant payload
+        setImages(prev => [...prev, body.product ? body.product.url : body.url]);
+        if (body.product && body.thumbnail && body.card) {
+          setImageVariants(prev => [...prev, {
+            thumbnail: body.thumbnail.url,
+            card: body.card.url,
+            product: body.product.url,
+          }]);
+        } else {
+          setImageVariants(prev => [...prev, null]);
+        }
+        setR2ImageKeys(prev => [...prev, body.assetId || body.key || '']);
         setFile(null);
         setMessage(''); // Clear any previous error messages on success
       } else {
-        setMessage(body.message || 'Image upload failed');
+        setMessage((body.error?.message || body.message) || 'Image upload failed');
         // Do NOT setFile(null) so they can try again or see why it failed
       }
     } catch (e: any) {
@@ -101,14 +112,30 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   function handleAddImageUrl() {
     if (newImageUrl.trim()) {
       setImages(prev => [...prev, newImageUrl.trim()]);
+      setImageVariants(prev => [...prev, null]);
       setR2ImageKeys(prev => [...prev, '']);
       setNewImageUrl('');
     }
   }
 
-  function handleRemoveImage(index: number) {
+  async function handleRemoveImage(index: number) {
+    const keyToRemove = r2ImageKeys[index];
     setImages(prev => prev.filter((_, i) => i !== index));
+    setImageVariants(prev => prev.filter((_, i) => i !== index));
     setR2ImageKeys(prev => prev.filter((_, i) => i !== index));
+
+    // Optionally delete from R2 if it's a known R2 asset
+    if (keyToRemove && !keyToRemove.startsWith('http')) {
+      try {
+        await fetchWithAuth(`${apiBase}/admin/delete-image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assetId: keyToRemove })
+        });
+      } catch (e) {
+        console.error('Failed to delete image from R2', e);
+      }
+    }
   }
 
   async function submitProduct(event: FormEvent) {
@@ -128,6 +155,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         compareAtPrice: compareAtPrice || undefined,
         stock,
         images,
+        imageVariants: imageVariants.filter(v => v !== null),
         r2ImageKeys,
         tags: tags ? tags.split(',').map(s => s.trim()).filter(Boolean) : [],
         isFeatured,
@@ -161,6 +189,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         setStock(0);
         setIsFeatured(false);
         setImages([]);
+        setImageVariants([]);
         setR2ImageKeys([]);
 
         queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
@@ -171,7 +200,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
         if (onSuccess) onSuccess();
       } else {
-        setMessage(body.message || 'Failed to create product');
+        setMessage((body.error?.message || body.message) || 'Failed to create product');
       }
     } catch {
       setMessage('Failed to create product');

@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching master data:', err);
-    res.status(500).json({ error: 'Failed to fetch master data' });
+    res.status(500).json({ error: { code: 'API_ERROR', message: 'Failed to fetch master data' } });
   }
 });
 

@@ -9,6 +9,11 @@ const productSchema = new mongoose.Schema(
     category: { type: String, trim: true, index: true },
     brand: { type: String, trim: true, index: true },
     images: [{ type: String }],
+    imageVariants: [{
+      thumbnail: { type: String },
+      card: { type: String },
+      product: { type: String }
+    }],
     r2ImageKeys: [{ type: String }],
     price: { type: Number, required: true, min: 0 },
     compareAtPrice: { type: Number, min: 0 },

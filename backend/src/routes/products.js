@@ -164,6 +164,13 @@ const createSchema = z.object({
     category: z.string().optional().or(z.literal("")),
     brand: z.string().optional(),
     images: z.array(z.string().url()).default([]),
+    imageVariants: z.array(
+      z.object({
+        thumbnail: z.string().url().optional(),
+        card: z.string().url().optional(),
+        product: z.string().url().optional(),
+      })
+    ).default([]),
     r2ImageKeys: z.array(z.string()).default([]),
     price: z.number().nonnegative(),
     compareAtPrice: z.number().nonnegative().optional(),
@@ -213,6 +220,32 @@ router.delete('/:id', auth, adminOnly, async (req, res, next) => {
       err.statusCode = 404;
       throw err;
     }
+
+    // R2 cleanup
+    const keysToDelete = [];
+    if (deleted.r2ImageKeys && deleted.r2ImageKeys.length > 0) {
+      for (const key of deleted.r2ImageKeys) {
+        if (!key || key.startsWith('http')) continue;
+        if (!key.includes('.')) {
+          // It's likely an assetId from the variant generator
+          keysToDelete.push(`products/${key}/thumbnail.webp`);
+          keysToDelete.push(`products/${key}/card.webp`);
+          keysToDelete.push(`products/${key}/product.webp`);
+        } else {
+          // Standard key
+          keysToDelete.push(key);
+        }
+      }
+    }
+
+    // Attempt deletion asynchronously so it doesn't block the response
+    if (keysToDelete.length > 0) {
+      const { deleteFromR2 } = require('../utils/r2');
+      Promise.all(keysToDelete.map(k => deleteFromR2(k))).catch(e => {
+        console.error('Failed to cleanup R2 assets on product deletion:', e);
+      });
+    }
+
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -240,11 +273,11 @@ const { nanoid } = require('nanoid');
 router.post('/upload-custom', auth, uploadCustomImage.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'No file uploaded' } });
     }
 
     if (!isR2Configured()) {
-      return res.status(500).json({ message: 'Storage is not configured on the server. Image upload is disabled.' });
+      return res.status(500).json({ error: { code: 'API_ERROR', message: 'Storage is not configured on the server. Image upload is disabled.' } });
     }
 
     // Explicitly validate the file bytes to ensure it is actually an image and not a malicious payload

@@ -37,7 +37,7 @@ export default function ResetPasswordForm() {
         setMessage('Password reset successfully! You can now log in.');
         setTimeout(() => navigate('/auth/login'), 2000);
       } else {
-        setMessage(body.message || 'Failed to reset password');
+        setMessage((body.error?.message || body.message) || 'Failed to reset password');
       }
     } catch {
       setMessage('Failed to reset password');
