@@ -406,6 +406,8 @@ router.put('/orders/:id/status', async (req, res, next) => {
     }
 
     order.status = status;
+    if (status === 'cancelled') order.payment.status = 'cancelled';
+    else if (status === 'rejected') order.payment.status = 'failed';
 
     let note;
     if (['processing', 'shipped', 'delivered'].includes(status)) {

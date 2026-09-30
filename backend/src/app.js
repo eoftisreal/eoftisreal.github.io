@@ -50,10 +50,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// DB readiness check for API routes
-const dbCheck = require('./middleware/dbCheck');
-app.use('/api', dbCheck);
-
 // Compression and caching middleware
 app.use(compressionMiddleware());
 app.use(cacheMiddleware);
@@ -98,7 +94,13 @@ if (process.env.NODE_ENV === 'production') {
 app.use(globalLimiter);
 
 // API Routes
+// Health route MUST be mounted before dbCheck so it doesn't fail on DB startup
 app.use('/api', healthRoutes);
+
+// DB readiness check for all other API routes
+const dbCheck = require('./middleware/dbCheck');
+app.use('/api', dbCheck);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);

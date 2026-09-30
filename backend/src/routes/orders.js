@@ -54,6 +54,7 @@ router.post('/:id/cancel', auth, async (req, res, next) => {
 
     const oldStatus = order.status;
     order.status = 'cancelled';
+    order.payment.status = 'cancelled';
     order.timeline.push({ status: 'cancelled', note: 'Order cancelled by customer' });
     await order.save();
 
