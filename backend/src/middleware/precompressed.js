@@ -17,40 +17,51 @@ module.exports = function precompressed(basePath) {
       return next();
     }
 
-    const acceptEncoding = req.headers['accept-encoding'] || '';
     const filePath = path.join(basePath, req.path);
 
-    // Helper to check and serve precompressed
-    const tryServe = (encoding, extension) => {
-      if (acceptEncoding.includes(encoding)) {
-        const compressedPath = filePath + extension;
-        if (fs.existsSync(compressedPath)) {
-          // Send appropriate headers
-          res.setHeader('Content-Encoding', encoding);
-          res.setHeader('Vary', 'Accept-Encoding');
+    // Build list of representations actually present on disk
+    const availableEncodings = ['identity']; // the uncompressed file
+    if (fs.existsSync(filePath + '.br')) availableEncodings.push('br');
+    if (fs.existsSync(filePath + '.gz')) availableEncodings.push('gzip');
 
-          // Determine original content type
-          const ext = path.extname(req.path).toLowerCase();
-          if (ext === '.js') {
-            res.setHeader('Content-Type', 'application/javascript');
-          } else if (ext === '.css') {
-            res.setHeader('Content-Type', 'text/css');
-          } else if (ext === '.html') {
-            res.setHeader('Content-Type', 'text/html');
-          }
+    res.vary('Accept-Encoding');
 
-          // Send the compressed file (let express.static handle caching, or set here if needed)
-          req.url = req.url + extension; // modify URL so express.static picks up the compressed file
-          return true;
-        }
-      }
-      return false;
+    const bestEncoding = req.acceptsEncodings(availableEncodings);
+
+    if (!bestEncoding) {
+      // 406 Not Acceptable if no representation matches the client's strict q=0 constraints
+      return res.status(406).send('Not Acceptable');
+    }
+
+    // Determine original content type
+    const ext = path.extname(req.path).toLowerCase();
+    const setContentType = () => {
+      if (ext === '.js') res.setHeader('Content-Type', 'application/javascript');
+      else if (ext === '.css') res.setHeader('Content-Type', 'text/css');
+      else if (ext === '.html') res.setHeader('Content-Type', 'text/html');
     };
 
-    // Try brotli first, then gzip
-    if (!tryServe('br', '.br')) {
-      tryServe('gzip', '.gz');
+    if (bestEncoding === 'br') {
+      res.setHeader('Content-Encoding', 'br');
+      setContentType();
+      // Insert .br before query string (e.g., /app.js?v=1 -> /app.js.br?v=1)
+      const qIndex = req.url.indexOf('?');
+      if (qIndex !== -1) {
+        req.url = req.url.slice(0, qIndex) + '.br' + req.url.slice(qIndex);
+      } else {
+        req.url += '.br';
+      }
+    } else if (bestEncoding === 'gzip') {
+      res.setHeader('Content-Encoding', 'gzip');
+      setContentType();
+      const qIndex = req.url.indexOf('?');
+      if (qIndex !== -1) {
+        req.url = req.url.slice(0, qIndex) + '.gz' + req.url.slice(qIndex);
+      } else {
+        req.url += '.gz';
+      }
     }
+    // For 'identity', we leave req.url untouched, passing it directly to express.static
 
     next();
   };
