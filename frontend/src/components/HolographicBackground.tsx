@@ -14,14 +14,30 @@ export default function HolographicBackground({
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // Respect prefers-reduced-motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      return;
+    }
+
     const container = containerRef.current
     if (!container) return
 
     let W = window.innerWidth
     let H = window.innerHeight
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    // Use lower constraints on mobile
+    const isMobile = W < 768;
+    const pixelRatio = isMobile ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 2);
+
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: true })
+      renderer.setPixelRatio(pixelRatio)
+    } catch (e) {
+      // Fallback if WebGL is unavailable
+      return;
+    }
     renderer.setSize(W, H)
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
@@ -222,9 +238,12 @@ export default function HolographicBackground({
     const mats: THREE.MeshPhysicalMaterial[] = []
     const geos: THREE.BufferGeometry[] = []
 
+    const curveSegmentsOuter = isMobile ? 120 : 320;
+    const curveSegmentsInner = isMobile ? 100 : 280;
+
     const mat1 = makeMetalMat(GOLD)
     mats.push(mat1)
-    const outerGeo = makeOpenBand(1.5, 0.55, 0.36, 0.55, 320)
+    const outerGeo = makeOpenBand(1.5, 0.55, 0.36, 0.55, curveSegmentsOuter)
     geos.push(outerGeo)
     const ring1 = new THREE.Mesh(outerGeo, mat1)
     ring1.rotation.set(0.5, -0.35, 0.2)
@@ -232,7 +251,7 @@ export default function HolographicBackground({
 
     const mat2 = makeMetalMat(SILVER)
     mats.push(mat2)
-    const innerGeo = makeOpenBand(0.95, 0.42, 0.28, 0.5, 280)
+    const innerGeo = makeOpenBand(0.95, 0.42, 0.28, 0.5, curveSegmentsInner)
     geos.push(innerGeo)
     const ring2 = new THREE.Mesh(innerGeo, mat2)
     ring2.rotation.set(0.7, 0.4, -0.25)
@@ -283,11 +302,25 @@ export default function HolographicBackground({
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t
     const ease = (x: number) => x * x * x * (x * (x * 6 - 15) + 10)
 
-    let rafId: number
+    let rafId: number | null = null;
     let last = performance.now()
     let t = 0
+    let isVisible = true;
+
+    const onVisibilityChange = () => {
+      isVisible = document.visibilityState === 'visible';
+      if (isVisible && rafId === null) {
+        last = performance.now();
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     const animate = (now: number) => {
+      if (!isVisible) {
+        rafId = null;
+        return;
+      }
       rafId = requestAnimationFrame(animate)
       const dt = Math.min((now - last) / 1000, 0.05)
       last = now
@@ -333,10 +366,22 @@ export default function HolographicBackground({
 
       renderer.render(scene, camera)
     }
-    rafId = requestAnimationFrame(animate)
+
+    // Defer initialization to when the browser is idle
+    const startAnimation = () => {
+      last = performance.now();
+      rafId = requestAnimationFrame(animate);
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(startAnimation);
+    } else {
+      setTimeout(startAnimation, 100);
+    }
 
     return () => {
-      cancelAnimationFrame(rafId)
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (rafId !== null) cancelAnimationFrame(rafId)
       window.removeEventListener('scroll', onScroll)
       ro.disconnect()
       mats.forEach((m) => m.dispose())

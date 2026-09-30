@@ -10,11 +10,11 @@ const createIndexes = async () => {
 
     // Product indexes
     await Product.collection.createIndex({ title: 'text', description: 'text' });
-    await Product.collection.createIndex({ category: 1 });
+    await Product.collection.createIndex({ isActive: 1, createdAt: -1 });
+    await Product.collection.createIndex({ isActive: 1, category: 1, createdAt: -1 });
+    await Product.collection.createIndex({ isActive: 1, isFeatured: 1, createdAt: -1 });
     await Product.collection.createIndex({ brand: 1 });
     await Product.collection.createIndex({ price: 1 });
-    await Product.collection.createIndex({ createdAt: -1 });
-    await Product.collection.createIndex({ isFeatured: 1 });
 
     // User indexes
     await User.collection.createIndex({ email: 1 }, { unique: true });

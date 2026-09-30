@@ -125,8 +125,6 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
 
     const total = Number((discountedSubtotal + tax + deliveryCharge).toFixed(2));
 
-    const uniquePaymentAmount = await generateUniquePaymentAmount(total);
-
     const items = cart.items.map((item) => ({
       productId: item.productId.id,
       title: item.productId.title,
@@ -139,36 +137,52 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
     }));
 
     let order;
-    try {
-      order = await Order.create({
-        checkoutAttemptId: req.validated.body.checkoutAttemptId,
-        discount,
-        userId: req.user.id,
-        items,
-        subtotal,
-        tax,
-        deliveryCharge,
-        total,
-        uniquePaymentAmount,
-        shippingAddress: req.validated.body.shippingAddress,
-        deliveryMethod: req.validated.body.deliveryMethod || 'email',
-        promoCode: req.validated.body.promoCode || undefined,
-        status: 'pending_payment',
-        payment: {
-          provider: 'manual_upi',
-          status: 'pending',
-        },
-        timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
-      });
-    } catch (createErr) {
-      if (createErr.code === 11000 && req.validated.body.checkoutAttemptId) {
-        // Concurrency handling: Another request created this idempotency key while we were processing
-        const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
-        if (existingOrder) {
-          return res.json({ message: 'Order created', order: existingOrder });
+    let attempts = 0;
+    while (!order && attempts < 10) {
+      attempts++;
+      try {
+        const uniquePaymentAmount = await generateUniquePaymentAmount(total);
+
+        order = await Order.create({
+          checkoutAttemptId: req.validated.body.checkoutAttemptId,
+          discount,
+          userId: req.user.id,
+          items,
+          subtotal,
+          tax,
+          deliveryCharge,
+          total,
+          uniquePaymentAmount,
+          shippingAddress: req.validated.body.shippingAddress,
+          deliveryMethod: req.validated.body.deliveryMethod || 'email',
+          promoCode: req.validated.body.promoCode || undefined,
+          status: 'pending_payment',
+          payment: {
+            provider: 'manual_upi',
+            status: 'pending',
+          },
+          timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
+        });
+      } catch (createErr) {
+        if (createErr.code === 11000) {
+          // If we hit a duplicate uniquePaymentAmount, try again
+          if (createErr.keyPattern && createErr.keyPattern.uniquePaymentAmount) {
+            continue;
+          }
+          // If we hit a duplicate checkoutAttemptId
+          if (createErr.keyPattern && createErr.keyPattern.checkoutAttemptId && req.validated.body.checkoutAttemptId) {
+            const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
+            if (existingOrder) {
+              return res.json({ message: 'Order created', order: existingOrder });
+            }
+          }
         }
+        throw createErr;
       }
-      throw createErr;
+    }
+
+    if (!order) {
+      throw new Error('Could not generate a unique payment amount after multiple attempts. Please try again.');
     }
 
     await OrderStatusHistory.create({

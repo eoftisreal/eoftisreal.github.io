@@ -45,6 +45,12 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
         <img loading="lazy" decoding="async"
           src={product.imageVariants?.[0]?.card || product.images?.[0] || 'https://placehold.co/600x600?text=No+Image'}
+          srcSet={
+            product.imageVariants?.[0]
+              ? `${product.imageVariants[0].thumbnail} 300w, ${product.imageVariants[0].card} 600w, ${product.imageVariants[0].product} 1200w`
+              : undefined
+          }
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           alt={product.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

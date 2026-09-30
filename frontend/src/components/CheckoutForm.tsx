@@ -291,15 +291,14 @@ export default function CheckoutForm() {
           if (paymentWindow) {
             // Move the already-open tab from the loading screen to the order
             paymentWindow.location.href = `/orders/${data.order._id}`;
+            // Redirect the current tab to the home page only if window opened successfully
+            navigate(`/`);
           } else {
             // Tab was blocked (rare, once it's opened synchronously) — the
             // order still succeeded, so give the user a real link they can
-            // click themselves rather than losing it.
+            // click themselves rather than losing it. We don't navigate away here.
             setBlockedOrderId(data.order._id);
           }
-
-          // Redirect the current tab to the home page
-          navigate(`/`);
         } else {
           const errMsg = (data.error?.message || data.message) || 'Failed to place order';
           if (paymentWindow) {

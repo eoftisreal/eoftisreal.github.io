@@ -12,6 +12,8 @@ export const getApiBaseUrl = (): string => {
 
 const apiBase = getApiBaseUrl();
 
+let refreshPromise: Promise<string | null> | null = null;
+
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   let token = getAuthToken();
 
@@ -26,25 +28,39 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     const refreshToken = getRefreshToken();
     if (refreshToken) {
       try {
-        const refreshResponse = await fetch(`${apiBase}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
+        // Deduplicate concurrent refresh requests
+        if (!refreshPromise) {
+          refreshPromise = fetch(`${apiBase}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          }).then(async (refreshResponse) => {
+            if (refreshResponse.ok) {
+              const data = await refreshResponse.json();
+              setAuthToken(data.accessToken);
+              return data.accessToken;
+            } else {
+              clearAuth();
+              return null;
+            }
+          }).catch(() => {
+            clearAuth();
+            return null;
+          }).finally(() => {
+            refreshPromise = null;
+          });
+        }
 
-        if (refreshResponse.ok) {
-          const data = await refreshResponse.json();
-          setAuthToken(data.accessToken);
+        const newToken = await refreshPromise;
 
+        if (newToken) {
           // Retry original request with new token
-          headers.set('Authorization', `Bearer ${data.accessToken}`);
+          headers.set('Authorization', `Bearer ${newToken}`);
           response = await fetch(url, { ...options, headers });
         } else {
-          clearAuth();
           window.location.href = '/auth/login';
         }
       } catch (e) {
-        clearAuth();
         window.location.href = '/auth/login';
       }
     } else {

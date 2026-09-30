@@ -18,6 +18,14 @@ const compressionMiddleware = () => {
       if (req.headers['x-no-compression']) {
         return false;
       }
+      // Avoid double compressing already compressed data
+      const contentType = res.getHeader('Content-Type');
+      if (
+        res.getHeader('Content-Encoding') ||
+        (contentType && (contentType.includes('gzip') || contentType.includes('brotli')))
+      ) {
+        return false;
+      }
       // Use compression filter function
       return compression.filter(req, res);
     },
