@@ -14,7 +14,7 @@ const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
 
-async function generateUniquePaymentAmount(baseTotal) {
+async function generateUniquePaymentAmount(baseTotal, session) {
   let isUnique = false;
   let uniqueAmount = baseTotal;
   let attempts = 0;
@@ -28,7 +28,7 @@ async function generateUniquePaymentAmount(baseTotal) {
     const existingOrder = await Order.findOne({
       uniquePaymentAmount: uniqueAmount,
       'payment.status': { $in: ['pending', 'awaiting_verification'] }
-    });
+    }).session(session);
 
     if (!existingOrder) {
       isUnique = true;
@@ -64,86 +64,24 @@ const checkoutSchema = z.object({
 
 router.post('/create', auth, validate(checkoutSchema), async (req, res, next) => {
   try {
-    // Determine unique payment amount BEFORE the transaction to avoid retry loop issues
-    // and MongoServerError (E11000) aborting the active transaction automatically.
-    const cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
-    if (!cart || cart.items.length === 0) {
-      const err = new Error('Cart is empty');
-      err.statusCode = 400;
-      throw err;
-    }
-
-    const subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);
-    let discount = 0;
-
-    if (req.validated.body.promoCode) {
-      const coupon = await Coupon.findOne({
-        code: req.validated.body.promoCode.toUpperCase(),
-        isActive: true
+    // 1. Initial lookup outside the transaction to catch duplicates created by previous timed-out attempts
+    // before we even check the cart state (which would otherwise incorrectly fail if it's empty now).
+    if (req.validated.body.checkoutAttemptId) {
+      const existingOrder = await Order.findOne({
+        checkoutAttemptId: req.validated.body.checkoutAttemptId,
+        userId: req.user.id
       });
-
-      if (!coupon) {
-        const err = new Error('Invalid or expired coupon code');
-        err.statusCode = 400;
-        throw err;
-      }
-
-      if (subtotal < coupon.minOrderValue) {
-        const err = new Error(`Minimum order value of ${coupon.minOrderValue} required for this coupon`);
-        err.statusCode = 400;
-        throw err;
-      }
-
-      if (coupon.discountType === 'percentage') {
-        discount = subtotal * (coupon.discountValue / 100);
-        if (coupon.maxDiscount) {
-          discount = Math.min(discount, coupon.maxDiscount);
-        }
-      } else {
-        discount = coupon.discountValue;
+      if (existingOrder) {
+        return res.status(201).json({ order: existingOrder, message: 'Order already created' });
       }
     }
-
-    const discountedSubtotal = Math.max(0, subtotal - discount);
-
-    const settings = await getSettings();
-    let tax = 0;
-    if (settings.enableTax !== false) {
-      const taxPercentage = settings.taxPercentage !== undefined ? Number(settings.taxPercentage) : 18;
-      tax = Number((discountedSubtotal * (taxPercentage / 100)).toFixed(2));
-    }
-
-    let deliveryCharge = 0;
-    if (settings.enableDeliveryCharge !== false) {
-      deliveryCharge = settings.deliveryCharge !== undefined ? Number(settings.deliveryCharge) : 0;
-    }
-
-    const total = Number((discountedSubtotal + tax + deliveryCharge).toFixed(2));
-
-    const items = cart.items.map((item) => ({
-      productId: item.productId.id,
-      title: item.productId.title,
-      quantity: item.quantity,
-      unitPrice: item.productId.price,
-      image: item.productId.images?.[0] || '',
-      customImage: item.customImage,
-      size: item.productId.enableSizes ? item.size : undefined,
-      color: item.productId.enableColors ? item.color : undefined
-    }));
-
-    // Find unique payment amount safely OUTSIDE the transaction loop.
-    // If we hit E11000 inside the transaction, it auto-aborts.
-    // By pre-computing this, we dramatically reduce collision chances.
-    // We will still wrap the creation in a retry block for extreme edge cases where
-    // another request takes the exact same uniquePaymentAmount right after we picked it.
 
     let finalOrder;
     let attempts = 0;
 
+    // Retry loop for uniquePaymentAmount collisions
     while (!finalOrder && attempts < 10) {
       attempts++;
-
-      const uniquePaymentAmount = await generateUniquePaymentAmount(total);
 
       const session = await mongoose.startSession();
       try {
@@ -151,21 +89,91 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
           // Reset finalOrder at the start of each transaction attempt to prevent state leakage on transient retries
           finalOrder = null;
 
+          // Re-check for concurrent creations
           if (req.validated.body.checkoutAttemptId) {
-            const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id }).session(session);
+            const existingOrder = await Order.findOne({
+              checkoutAttemptId: req.validated.body.checkoutAttemptId,
+              userId: req.user.id
+            }).session(session);
+
             if (existingOrder) {
               finalOrder = existingOrder;
               return;
             }
           }
 
-          // Double check cart is still full in the transaction
-          const checkCart = await Cart.findOne({ userId: req.user.id }).session(session);
-          if (!checkCart || checkCart.items.length === 0) {
-             const err = new Error('Cart is empty');
-             err.statusCode = 400;
-             throw err;
+          // 2. Fetch and validate cart INSIDE the transaction
+          const cart = await Cart.findOne({ userId: req.user.id })
+            .populate('items.productId')
+            .session(session);
+
+          if (!cart || cart.items.length === 0) {
+            const err = new Error('Cart is empty');
+            err.statusCode = 400;
+            throw err;
           }
+
+          const subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);
+          let discount = 0;
+
+          if (req.validated.body.promoCode) {
+            const coupon = await Coupon.findOne({
+              code: req.validated.body.promoCode.toUpperCase(),
+              isActive: true
+            }).session(session);
+
+            if (!coupon) {
+              const err = new Error('Invalid or expired coupon code');
+              err.statusCode = 400;
+              throw err;
+            }
+
+            if (subtotal < coupon.minOrderValue) {
+              const err = new Error(`Minimum order value of ${coupon.minOrderValue} required for this coupon`);
+              err.statusCode = 400;
+              throw err;
+            }
+
+            if (coupon.discountType === 'percentage') {
+              discount = subtotal * (coupon.discountValue / 100);
+              if (coupon.maxDiscount) {
+                discount = Math.min(discount, coupon.maxDiscount);
+              }
+            } else {
+              discount = coupon.discountValue;
+            }
+          }
+
+          const discountedSubtotal = Math.max(0, subtotal - discount);
+
+          // Get settings (we don't need this in the session directly as it's typically cached/static
+          // but fetching it inside ensures totals match current state)
+          const settings = await getSettings();
+          let tax = 0;
+          if (settings.enableTax !== false) {
+            const taxPercentage = settings.taxPercentage !== undefined ? Number(settings.taxPercentage) : 18;
+            tax = Number((discountedSubtotal * (taxPercentage / 100)).toFixed(2));
+          }
+
+          let deliveryCharge = 0;
+          if (settings.enableDeliveryCharge !== false) {
+            deliveryCharge = settings.deliveryCharge !== undefined ? Number(settings.deliveryCharge) : 0;
+          }
+
+          const total = Number((discountedSubtotal + tax + deliveryCharge).toFixed(2));
+
+          const items = cart.items.map((item) => ({
+            productId: item.productId.id,
+            title: item.productId.title,
+            quantity: item.quantity,
+            unitPrice: item.productId.price,
+            image: item.productId.images?.[0] || '',
+            customImage: item.customImage,
+            size: item.productId.enableSizes ? item.size : undefined,
+            color: item.productId.enableColors ? item.color : undefined
+          }));
+
+          const uniquePaymentAmount = await generateUniquePaymentAmount(total, session);
 
           const orderDocs = await Order.create([{
             checkoutAttemptId: req.validated.body.checkoutAttemptId,
@@ -211,7 +219,7 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
              continue;
           }
           if (err.keyPattern && err.keyPattern.checkoutAttemptId && req.validated.body.checkoutAttemptId) {
-            // It was a duplicate checkoutAttemptId, let's just grab it
+            // It was a duplicate checkoutAttemptId, let's just grab it outside of this aborted session
             finalOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
             if (finalOrder) {
               break;
