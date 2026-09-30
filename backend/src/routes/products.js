@@ -167,8 +167,11 @@ const createSchema = z.object({
     imageVariants: z.array(
       z.object({
         thumbnail: z.string().url().optional(),
+        thumbnailWidth: z.number().int().positive().optional(),
         card: z.string().url().optional(),
+        cardWidth: z.number().int().positive().optional(),
         product: z.string().url().optional(),
+        productWidth: z.number().int().positive().optional(),
       })
     ).default([]),
     r2ImageKeys: z.array(z.string()).default([]),

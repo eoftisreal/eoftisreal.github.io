@@ -1,14 +1,29 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Order = require('./src/models/Order');
+const Order = require('../src/models/Order');
 
 async function migrate() {
   await mongoose.connect(process.env.MONGODB_URI);
   console.log('Connected to MongoDB');
 
   try {
-    console.log('Auditing existing duplicate uniquePaymentAmount across active payment statuses...');
+    console.log('Auditing existing active orders for missing/invalid amounts...');
+    const invalidOrders = await Order.find({
+      'payment.status': { $in: ['pending', 'awaiting_verification'] },
+      $or: [
+        { uniquePaymentAmount: { $exists: false } },
+        { uniquePaymentAmount: null },
+        { uniquePaymentAmount: { $lte: 0 } },
+      ]
+    });
 
+    if (invalidOrders.length > 0) {
+      console.error(`Found ${invalidOrders.length} active orders with missing or invalid amounts:`);
+      invalidOrders.forEach(o => console.error(`  - Order ID: ${o._id}, Amount: ${o.uniquePaymentAmount}`));
+      process.exitCode = 1;
+    }
+
+    console.log('Auditing existing duplicate uniquePaymentAmount across active payment statuses...');
     const duplicates = await Order.aggregate([
       { $match: { 'payment.status': { $in: ['pending', 'awaiting_verification'] } } },
       { $group: { _id: '$uniquePaymentAmount', count: { $sum: 1 }, docs: { $push: '$_id' } } },
@@ -16,35 +31,18 @@ async function migrate() {
     ]);
 
     if (duplicates.length > 0) {
-      console.log(`Found ${duplicates.length} unique payment amounts with duplicates. Resolving...`);
+      console.error(`Found ${duplicates.length} unique payment amounts with duplicates. Manual reconciliation required.`);
       for (const dup of duplicates) {
-         // Keep the first one, assign new amounts to the rest
-         const docsToUpdate = dup.docs.slice(1);
-         for (const docId of docsToUpdate) {
-             const order = await Order.findById(docId);
-             let isUnique = false;
-             let newAmount = order.total;
-             let attempts = 0;
-             while(!isUnique && attempts < 100) {
-                 attempts++;
-                 const fraction = Math.floor(Math.random() * 99) + 1;
-                 newAmount = Number((order.total + fraction / 100).toFixed(2));
-                 const exists = await Order.findOne({ uniquePaymentAmount: newAmount, 'payment.status': { $in: ['pending', 'awaiting_verification'] } });
-                 if (!exists) {
-                     isUnique = true;
-                 }
-             }
-             if (isUnique) {
-                 order.uniquePaymentAmount = newAmount;
-                 await order.save();
-                 console.log(`Updated duplicate order ${docId} with new amount ${newAmount}`);
-             } else {
-                 console.error(`Failed to generate new amount for order ${docId}`);
-             }
-         }
+         console.error(`  - Amount ${dup._id} is duplicated in Order IDs: ${dup.docs.join(', ')}`);
       }
+      process.exitCode = 1;
     } else {
       console.log('No duplicates found.');
+    }
+
+    if (process.exitCode === 1) {
+      console.log('Migration halted due to conflicts. Please resolve the above issues first.');
+      return;
     }
 
     console.log('Creating new strict unique index...');
@@ -65,6 +63,7 @@ async function migrate() {
 
   } catch (error) {
     console.error('Error during migration:', error);
+    process.exitCode = 1;
   } finally {
     await mongoose.disconnect();
   }

@@ -40,17 +40,30 @@ export default function ProductCard({ product }: { product: Product }) {
   const generateSrcSet = (variant: any) => {
     if (!variant || Object.keys(variant).length === 0) return undefined;
 
-    const parts = [];
-    if (variant.thumbnail && variant.thumbnailWidth) parts.push(`${variant.thumbnail} ${variant.thumbnailWidth}w`);
-    else if (variant.thumbnail) parts.push(`${variant.thumbnail} 400w`); // fallback to default generated width
+    const candidates: { url: string; width: number }[] = [];
 
-    if (variant.card && variant.cardWidth) parts.push(`${variant.card} ${variant.cardWidth}w`);
-    else if (variant.card) parts.push(`${variant.card} 800w`);
+    if (variant.thumbnail && typeof variant.thumbnailWidth === 'number' && variant.thumbnailWidth > 0) {
+      candidates.push({ url: variant.thumbnail, width: variant.thumbnailWidth });
+    }
 
-    if (variant.product && variant.productWidth) parts.push(`${variant.product} ${variant.productWidth}w`);
-    else if (variant.product) parts.push(`${variant.product} 1600w`);
+    if (variant.card && typeof variant.cardWidth === 'number' && variant.cardWidth > 0) {
+      candidates.push({ url: variant.card, width: variant.cardWidth });
+    }
 
-    return parts.length > 0 ? parts.join(', ') : undefined;
+    if (variant.product && typeof variant.productWidth === 'number' && variant.productWidth > 0) {
+      candidates.push({ url: variant.product, width: variant.productWidth });
+    }
+
+    if (candidates.length === 0) return undefined;
+
+    // Deduplicate by width
+    const uniqueWidths = new Map<number, string>();
+    candidates.forEach(c => uniqueWidths.set(c.width, c.url));
+
+    // Sort ascending by width
+    const sortedWidths = Array.from(uniqueWidths.entries()).sort((a, b) => a[0] - b[0]);
+
+    return sortedWidths.map(([width, url]) => `${url} ${width}w`).join(', ');
   };
 
   return (
