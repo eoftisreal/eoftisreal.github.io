@@ -71,10 +71,7 @@ module.exports = async ({ req, res, log, error }) => {
     delete forwardedHeaders['host'];
 
     const proxied = await new Promise((resolve, reject) => {
-      // Use internal timeout shorter than Function timeout
-      const requestTimeout = setTimeout(() => {
-        reject(new Error('Internal Proxy Timeout'));
-      }, 12000);
+      let requestTimeout;
 
       const proxyReq = http.request(
         {
@@ -100,8 +97,19 @@ module.exports = async ({ req, res, log, error }) => {
             clearTimeout(requestTimeout);
             reject(err);
           });
+          proxyRes.on('aborted', () => {
+            clearTimeout(requestTimeout);
+            reject(new Error('Proxy response aborted'));
+          });
         }
       );
+
+      // Use internal timeout shorter than Function timeout
+      requestTimeout = setTimeout(() => {
+        const timeoutError = new Error('Internal Proxy Timeout');
+        timeoutError.code = 'PROXY_TIMEOUT';
+        proxyReq.destroy(timeoutError);
+      }, 12000);
 
       proxyReq.on('error', (err) => {
         clearTimeout(requestTimeout);
@@ -132,6 +140,17 @@ module.exports = async ({ req, res, log, error }) => {
     return res.binary(proxied.body, proxied.statusCode, responseHeaders);
   } catch (err) {
     error(err.stack || err.message);
+    if (err.code === 'PROXY_TIMEOUT') {
+      return res.json(
+        {
+          error: {
+            code: 'gateway_timeout',
+            message: 'The request took too long to complete. If you were checking out, please check your orders before retrying as the payment may have been processed.',
+          },
+        },
+        504
+      );
+    }
     return res.text('Internal Server Error', 500);
   }
 };
