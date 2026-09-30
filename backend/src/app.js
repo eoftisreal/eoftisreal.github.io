@@ -50,9 +50,18 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// DB readiness check for API routes
+// Health check should bypass DB check if it doesn't strictly need it, or we can just mount dbCheck after it
+// Wait, the user specifically said: "Keep database-independent liveness routes accessible."
+// Health check is at /api/health
+
+// We should exclude health from dbCheck.
 const dbCheck = require('./middleware/dbCheck');
-app.use('/api', dbCheck);
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health' || req.path === '/health/') {
+    return next();
+  }
+  return dbCheck(req, res, next);
+});
 
 // Compression and caching middleware
 app.use(compressionMiddleware());

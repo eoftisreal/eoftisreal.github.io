@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { z } = require('zod');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
@@ -63,13 +64,8 @@ const checkoutSchema = z.object({
 
 router.post('/create', auth, validate(checkoutSchema), async (req, res, next) => {
   try {
-    if (req.validated.body.checkoutAttemptId) {
-      const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
-      if (existingOrder) {
-        return res.json({ message: 'Order created', order: existingOrder });
-      }
-    }
-
+    // Determine unique payment amount BEFORE the transaction to avoid retry loop issues
+    // and MongoServerError (E11000) aborting the active transaction automatically.
     const cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
     if (!cart || cart.items.length === 0) {
       const err = new Error('Cart is empty');
@@ -111,7 +107,6 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
     const discountedSubtotal = Math.max(0, subtotal - discount);
 
     const settings = await getSettings();
-
     let tax = 0;
     if (settings.enableTax !== false) {
       const taxPercentage = settings.taxPercentage !== undefined ? Number(settings.taxPercentage) : 18;
@@ -136,65 +131,106 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
       color: item.productId.enableColors ? item.color : undefined
     }));
 
-    let order;
-    let attempts = 0;
-    while (!order && attempts < 10) {
-      attempts++;
-      try {
-        const uniquePaymentAmount = await generateUniquePaymentAmount(total);
+    // Find unique payment amount safely OUTSIDE the transaction loop.
+    // If we hit E11000 inside the transaction, it auto-aborts.
+    // By pre-computing this, we dramatically reduce collision chances.
+    // We will still wrap the creation in a retry block for extreme edge cases where
+    // another request takes the exact same uniquePaymentAmount right after we picked it.
 
-        order = await Order.create({
-          checkoutAttemptId: req.validated.body.checkoutAttemptId,
-          discount,
-          userId: req.user.id,
-          items,
-          subtotal,
-          tax,
-          deliveryCharge,
-          total,
-          uniquePaymentAmount,
-          shippingAddress: req.validated.body.shippingAddress,
-          deliveryMethod: req.validated.body.deliveryMethod || 'email',
-          promoCode: req.validated.body.promoCode || undefined,
-          status: 'pending_payment',
-          payment: {
-            provider: 'manual_upi',
-            status: 'pending',
-          },
-          timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
-        });
-      } catch (createErr) {
-        if (createErr.code === 11000) {
-          // If we hit a duplicate uniquePaymentAmount, try again
-          if (createErr.keyPattern && createErr.keyPattern.uniquePaymentAmount) {
-            continue;
-          }
-          // If we hit a duplicate checkoutAttemptId
-          if (createErr.keyPattern && createErr.keyPattern.checkoutAttemptId && req.validated.body.checkoutAttemptId) {
-            const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
+    let finalOrder;
+    let attempts = 0;
+
+    while (!finalOrder && attempts < 10) {
+      attempts++;
+
+      const uniquePaymentAmount = await generateUniquePaymentAmount(total);
+
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          // Reset finalOrder at the start of each transaction attempt to prevent state leakage on transient retries
+          finalOrder = null;
+
+          if (req.validated.body.checkoutAttemptId) {
+            const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id }).session(session);
             if (existingOrder) {
-              return res.json({ message: 'Order created', order: existingOrder });
+              finalOrder = existingOrder;
+              return;
+            }
+          }
+
+          // Double check cart is still full in the transaction
+          const checkCart = await Cart.findOne({ userId: req.user.id }).session(session);
+          if (!checkCart || checkCart.items.length === 0) {
+             const err = new Error('Cart is empty');
+             err.statusCode = 400;
+             throw err;
+          }
+
+          const orderDocs = await Order.create([{
+            checkoutAttemptId: req.validated.body.checkoutAttemptId,
+            discount,
+            userId: req.user.id,
+            items,
+            subtotal,
+            tax,
+            deliveryCharge,
+            total,
+            uniquePaymentAmount,
+            shippingAddress: req.validated.body.shippingAddress,
+            deliveryMethod: req.validated.body.deliveryMethod || 'email',
+            promoCode: req.validated.body.promoCode || undefined,
+            status: 'pending_payment',
+            payment: {
+              provider: 'manual_upi',
+              status: 'pending',
+            },
+            timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
+          }], { session });
+
+          const newOrder = orderDocs[0];
+
+          await OrderStatusHistory.create([{
+            orderId: newOrder._id,
+            newStatus: 'pending_payment',
+            changedBy: req.user.id,
+            note: 'Order created'
+          }], { session });
+
+          await Cart.findOneAndUpdate({ userId: req.user.id }, { $set: { items: [] } }, { session });
+
+          finalOrder = newOrder;
+        });
+      } catch (err) {
+        // If a duplicate key error occurs, it's either checkoutAttemptId or uniquePaymentAmount.
+        // The transaction is automatically aborted by Mongo.
+        if (err.code === 11000) {
+          if (err.keyPattern && err.keyPattern.uniquePaymentAmount) {
+             // Continue loop to try a new amount
+             finalOrder = null;
+             continue;
+          }
+          if (err.keyPattern && err.keyPattern.checkoutAttemptId && req.validated.body.checkoutAttemptId) {
+            // It was a duplicate checkoutAttemptId, let's just grab it
+            finalOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
+            if (finalOrder) {
+              break;
             }
           }
         }
-        throw createErr;
+        // If it's a different error, we throw it up
+        throw err;
+      } finally {
+        await session.endSession();
       }
     }
 
-    if (!order) {
+    if (!finalOrder) {
       throw new Error('Could not generate a unique payment amount after multiple attempts. Please try again.');
     }
 
-    await OrderStatusHistory.create({
-      orderId: order._id,
-      newStatus: 'pending_payment',
-      changedBy: req.user.id,
-      note: 'Order created'
-    });
+    res.status(201).json({ order: finalOrder, message: 'Order created' });
 
-    await Cart.findOneAndUpdate({ userId: req.user.id }, { $set: { items: [] } });
-
-    res.status(201).json({ order });
   } catch (error) {
     next(error);
   }
