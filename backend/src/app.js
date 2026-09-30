@@ -22,7 +22,7 @@ const compressionMiddleware = require('./middleware/compression');
 const cacheMiddleware = require('./middleware/cache');
 const queryOptimizationMiddleware = require('./middleware/queryOptimization');
 
-const { globalLimiter, apiLimiter, authLimiter, readOperationLimiter, writeOperationLimiter, skipPreflight } = require('./middleware/rateLimiter');
+const { globalLimiter, apiLimiter, authLimiter, uploadLimiter, readOperationLimiter, writeOperationLimiter, skipPreflight } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -72,13 +72,22 @@ app.use('/api/', (req, res, next) => {
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/signup', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/auth/magic-link', authLimiter);
+app.use('/api/auth/verify-email', authLimiter);
+app.use('/api/checkout', authLimiter);
+app.use('/api/products/upload-custom', uploadLimiter);
+app.use('/api/admin/upload', uploadLimiter);
 
 // Body parsing
 app.use(express.json({ limit: '2mb' }));
 
 // Logging
-if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_HTTP_LOGS === 'true') {
-  app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'));
+const customLogger = require('./middleware/logger');
+if (process.env.NODE_ENV === 'production') {
+  app.use(customLogger);
+} else {
+  app.use(morgan('dev'));
 }
 
 // Global rate limiting

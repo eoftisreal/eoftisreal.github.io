@@ -9,6 +9,11 @@ const productSchema = new mongoose.Schema(
     category: { type: String, trim: true, index: true },
     brand: { type: String, trim: true, index: true },
     images: [{ type: String }],
+    imageVariants: [{
+      thumbnail: { type: String },
+      card: { type: String },
+      product: { type: String }
+    }],
     r2ImageKeys: [{ type: String }],
     price: { type: Number, required: true, min: 0 },
     compareAtPrice: { type: Number, min: 0 },
@@ -30,5 +35,10 @@ const productSchema = new mongoose.Schema(
 );
 
 productSchema.index({ title: 'text', description: 'text', tags: 'text', artistName: 'text' });
+productSchema.index({ productType: 1 });
+productSchema.index({ isFeatured: 1 });
+productSchema.index({ stock: 1 });
+productSchema.index({ isActive: 1 });
+productSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Product', productSchema);

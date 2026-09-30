@@ -10,7 +10,7 @@
       "trigger": "http",
       "events": [],
       "schedule": "",
-      "timeout": 900,
+      "timeout": 120,
       "env": [
         {
           "key": "NODE_ENV",
@@ -59,12 +59,17 @@
           "required": false
         },
         {
-          "key": "R2_ACCESS_KEY",
+          "key": "R2_ACCESS_KEY_ID",
           "value": "",
           "required": false
         },
         {
-          "key": "R2_SECRET_KEY",
+          "key": "R2_SECRET_ACCESS_KEY",
+          "value": "",
+          "required": false
+        },
+        {
+          "key": "R2_PUBLIC_URL",
           "value": "",
           "required": false
         },

@@ -71,7 +71,7 @@ export default function CategoriesPage() {
         setR2Key(body.key);
         setFile(null);
       } else {
-        alert(body.message || 'Image upload failed');
+        alert((body.error?.message || body.message) || 'Image upload failed');
       }
     } catch (e: any) {
       alert(e.message || 'Image upload failed due to network error');

@@ -1,23 +1,39 @@
 const sharp = require('sharp');
 
 /**
- * Optimizes an image buffer using sharp.
- * Resizes to a maximum width/height of 1920px (maintaining aspect ratio)
- * and converts to WebP format.
- *
- * @param {Buffer} fileBuffer - The original image buffer.
- * @returns {Promise<{ buffer: Buffer, mimeType: string, extension: string }>}
+ * Validates if the buffer is a valid, recognizable image.
  */
+async function validateImage(fileBuffer) {
+  try {
+    const metadata = await sharp(fileBuffer).metadata();
+    const validFormats = ['jpeg', 'jpg', 'png', 'webp', 'heif', 'avif'];
+    if (!validFormats.includes(metadata.format)) {
+      throw new Error(`Unsupported image format: ${metadata.format}`);
+    }
+
+    // Prevent zip bomb or overly large dimension images
+    if (metadata.width > 8000 || metadata.height > 8000) {
+      throw new Error(`Image dimensions too large: ${metadata.width}x${metadata.height}`);
+    }
+
+    return true;
+  } catch (error) {
+    throw new Error(`Invalid image file: ${error.message}`);
+  }
+}
+
 async function optimizeImage(fileBuffer) {
+  await validateImage(fileBuffer);
   try {
     const optimizedBuffer = await sharp(fileBuffer)
+      .rotate() // auto-orient based on EXIF
       .resize({
         width: 1920,
         height: 1920,
         fit: 'inside',
         withoutEnlargement: true,
       })
-      .webp({ quality: 80 })
+      .webp({ quality: 80 }) // strips metadata by default
       .toBuffer();
 
     return {
@@ -31,6 +47,30 @@ async function optimizeImage(fileBuffer) {
   }
 }
 
+async function generateProductVariants(fileBuffer) {
+  await validateImage(fileBuffer);
+  try {
+    const s = sharp(fileBuffer).rotate(); // auto-orient
+
+    const [thumbnail, card, product] = await Promise.all([
+      s.clone().resize({ width: 400, fit: 'inside', withoutEnlargement: true }).webp({ quality: 75 }).toBuffer(),
+      s.clone().resize({ width: 800, fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
+      s.clone().resize({ width: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer(),
+    ]);
+
+    return {
+      thumbnail: { buffer: thumbnail, mimeType: 'image/webp', extension: 'webp' },
+      card: { buffer: card, mimeType: 'image/webp', extension: 'webp' },
+      product: { buffer: product, mimeType: 'image/webp', extension: 'webp' },
+    };
+  } catch (error) {
+    console.error('Error generating product variants:', error);
+    throw new Error('Failed to generate product image variants');
+  }
+}
+
 module.exports = {
+  validateImage,
   optimizeImage,
+  generateProductVariants
 };

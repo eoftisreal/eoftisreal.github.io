@@ -34,7 +34,7 @@ export default function LoginForm() {
         setMessage('Success!');
         navigate('/');
       } else {
-        setMessage(body.message || 'Invalid credentials');
+        setMessage((body.error?.message || body.message) || 'Invalid credentials');
       }
     } catch {
       setMessage('An error occurred during login');

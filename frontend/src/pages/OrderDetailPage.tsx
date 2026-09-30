@@ -134,7 +134,7 @@ function OrderTrackingContent() {
 
         if (!uploadRes.ok) {
           const errData = await uploadRes.json();
-          alert(`Image upload failed: ${errData.message}`);
+          alert(`Image upload failed: ${(errData.error?.message || errData.message)}`);
           setPaymentDoneLoading(false);
           return;
         }
@@ -176,7 +176,7 @@ function OrderTrackingContent() {
         fetchOrder();
       } else {
         const errData = await res.json();
-        alert(`Failed to cancel order: ${errData.message || 'Unknown error'}`);
+        alert(`Failed to cancel order: ${(errData.error?.message || errData.message) || 'Unknown error'}`);
       }
     } catch (e) {
       alert('An error occurred while cancelling the order.');

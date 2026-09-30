@@ -25,7 +25,7 @@ export default function VerifyEmailPage() {
 
         const body = await response.json();
         if (!response.ok) {
-          setMessage(body.message || 'Verification failed.');
+          setMessage((body.error?.message || body.message) || 'Verification failed.');
           return;
         }
 

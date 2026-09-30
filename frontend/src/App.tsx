@@ -17,20 +17,22 @@ export default function App() {
       const token = getAuthToken();
       if (!token) return;
 
-      try {
-        const res = await fetch(`${apiBase}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      // Optimize: Only sync token in background to avoid blocking initial render
+      // or unnecessary repeated calls if the token is already likely valid
+      setTimeout(async () => {
+        try {
+          const res = await fetch(`${apiBase}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        if (res.ok) {
-          const data = await res.json();
-          // Update local storage and trigger auth-change event
-          setAuthToken(data.accessToken);
+          if (res.ok) {
+            const data = await res.json();
+            setAuthToken(data.accessToken);
+          }
+        } catch (error) {
+          console.error('Failed to sync auth token:', error);
         }
-      } catch (error) {
-        // Silently fail if unable to sync
-        console.error('Failed to sync auth token:', error);
-      }
+      }, 2000);
     };
 
     syncToken();

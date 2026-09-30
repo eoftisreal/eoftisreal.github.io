@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { nanoid } = require('nanoid');
 const env = require('../config/env');
 
@@ -48,35 +48,59 @@ function getObjectUrl(objectKey) {
   return `${baseUrl}/${encodeURI(key)}`;
 }
 
-async function uploadToR2(fileBuffer, mimeType, originalName, folder = 'uploads', fileNamePrefix = '') {
+async function uploadToR2(fileBuffer, mimeType, originalName, folder = 'uploads', fileNamePrefix = '', explicitKey = null) {
   if (!s3Client || !env.r2BucketName) {
     throw new Error('Cloudflare R2 is not properly configured for uploading');
   }
 
-  const extension = originalName.split('.').pop() || '';
-  // Ensure the folder path is clean (no leading slash, has a trailing slash if not empty)
-  let cleanFolder = normalizeObjectKey(folder);
-  if (cleanFolder && !cleanFolder.endsWith('/')) {
-    cleanFolder += '/';
-  }
+  let key = explicitKey;
+  if (!key) {
+    const extension = originalName.split('.').pop() || '';
+    // Ensure the folder path is clean (no leading slash, has a trailing slash if not empty)
+    let cleanFolder = normalizeObjectKey(folder);
+    if (cleanFolder && !cleanFolder.endsWith('/')) {
+      cleanFolder += '/';
+    }
 
-  let finalFileName = `${nanoid()}.${extension}`;
-  if (fileNamePrefix && fileNamePrefix.trim()) {
-    finalFileName = `${fileNamePrefix.trim()}-${finalFileName}`;
-  }
+    let finalFileName = `${nanoid()}.${extension}`;
+    if (fileNamePrefix && fileNamePrefix.trim()) {
+      finalFileName = `${fileNamePrefix.trim()}-${finalFileName}`;
+    }
 
-  const key = `${cleanFolder}${finalFileName}`;
+    key = `${cleanFolder}${finalFileName}`;
+  }
 
   const command = new PutObjectCommand({
     Bucket: env.r2BucketName,
     Key: key,
     Body: fileBuffer,
     ContentType: mimeType,
+    CacheControl: 'public, max-age=31536000, immutable',
   });
 
   await s3Client.send(command);
 
   return key;
+}
+
+async function deleteFromR2(objectKey) {
+  if (!s3Client || !env.r2BucketName) return false;
+  if (!objectKey) return false;
+
+  const key = normalizeObjectKey(objectKey);
+  if (!key) return false;
+
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: env.r2BucketName,
+      Key: key,
+    });
+    await s3Client.send(command);
+    return true;
+  } catch (error) {
+    console.error(`Failed to delete object from R2: ${key}`, error);
+    return false;
+  }
 }
 
 module.exports = {
@@ -85,4 +109,5 @@ module.exports = {
   isR2Configured,
   getObjectUrl,
   uploadToR2,
+  deleteFromR2,
 };

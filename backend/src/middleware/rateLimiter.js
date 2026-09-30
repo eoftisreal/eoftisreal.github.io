@@ -7,16 +7,12 @@ const skipPreflight = (req, res) => {
 /**
  * Rate limiter configurations
  */
-const createRateLimiter = (windowMs = 15 * 60 * 1000, max = 100) => {
-  return rateLimit({
-    windowMs, // Time window
-    max, // Max requests per window
-    message: 'Too many requests from this IP, please try again later.',
-    standardHeaders: true,
-    legacyHeaders: false,
-    validate: { trustProxy: false },
-    // Skip successful requests on GET
-    skip: (req, res) => req.method === 'GET' && res.statusCode < 400,
+const createRateLimitHandler = (message) => (req, res) => {
+  res.status(429).json({
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message
+    }
   });
 };
 
@@ -29,7 +25,18 @@ const authLimiter = rateLimit({
   skip: skipPreflight,
   validate: { trustProxy: false },
   skipSuccessfulRequests: false,
-  message: 'Too many login attempts, please try again later.',
+  handler: createRateLimitHandler('Too many login attempts, please try again later.'),
+});
+
+/**
+ * Rate limiter for image uploads
+ */
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 15, // 15 requests per minute
+  skip: skipPreflight,
+  validate: { trustProxy: false },
+  handler: createRateLimitHandler('Too many image uploads from this IP, please try again later.'),
 });
 
 /**
@@ -40,9 +47,9 @@ const readOperationLimiter = rateLimit({
   max: 1000, // 1000 requests per minute
   skip: skipPreflight,
   validate: { trustProxy: false },
-  message: 'Too many read requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  handler: createRateLimitHandler('Too many read requests from this IP, please try again later.'),
 });
 
 /**
@@ -53,9 +60,9 @@ const writeOperationLimiter = rateLimit({
   max: 1000, // 1000 requests per minute
   skip: skipPreflight,
   validate: { trustProxy: false },
-  message: 'Too many write requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  handler: createRateLimitHandler('Too many write requests from this IP, please try again later.'),
 });
 
 /**
@@ -66,6 +73,7 @@ const apiLimiter = rateLimit({
   max: 1000, // 1000 requests per minute
   validate: { trustProxy: false },
   skip: skipPreflight,
+  handler: createRateLimitHandler('Too many requests, please try again later.'),
 });
 
 const globalLimiter = rateLimit({
@@ -73,6 +81,7 @@ const globalLimiter = rateLimit({
   max: 10000,
   validate: { trustProxy: false },
   skip: skipPreflight,
+  handler: createRateLimitHandler('Too many requests from this IP, please try again later.'),
 });
 
-module.exports = { createRateLimiter, authLimiter, apiLimiter, readOperationLimiter, writeOperationLimiter, globalLimiter, skipPreflight };
+module.exports = { authLimiter, uploadLimiter, apiLimiter, readOperationLimiter, writeOperationLimiter, globalLimiter, skipPreflight };

@@ -46,7 +46,7 @@ export default function AccountPage() {
         setIsEditingProfile(false);
       } else {
         const data = await res.json();
-        alert(`Failed to update profile: ${data.message || 'Unknown error'}`);
+        alert(`Failed to update profile: ${(data.error?.message || data.message) || 'Unknown error'}`);
       }
     } catch (e) {
       console.error('Failed to update profile', e);

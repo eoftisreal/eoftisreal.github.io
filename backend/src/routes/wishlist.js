@@ -24,12 +24,12 @@ router.post('/add', requireAuth, async (req, res, next) => {
   try {
     const { productId } = req.body;
     if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({ message: 'Invalid product ID' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'Invalid product ID' } });
     }
 
     const productExists = await Product.findById(productId);
     if (!productExists) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ error: { code: 'API_ERROR', message: 'Product not found' } });
     }
 
     let wishlist = await Wishlist.findOne({ user: req.user._id });
@@ -73,7 +73,7 @@ router.post('/sync', requireAuth, async (req, res, next) => {
   try {
     const { productIds } = req.body;
     if (!Array.isArray(productIds)) {
-      return res.status(400).json({ message: 'productIds must be an array' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'productIds must be an array' } });
     }
 
     let wishlist = await Wishlist.findOne({ user: req.user._id });

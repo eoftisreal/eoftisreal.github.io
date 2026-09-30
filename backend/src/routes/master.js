@@ -44,7 +44,7 @@ router.post('/categories', validate(categorySchema), async (req, res, next) => {
 router.put('/categories/:id', validate(categorySchema), async (req, res, next) => {
   try {
     const category = await Category.findByIdAndUpdate(req.params.id, req.validated.body, { new: true });
-    if (!category) return res.status(404).json({ message: 'Category not found' });
+    if (!category) return res.status(404).json({ error: { code: 'API_ERROR', message: 'Category not found' } });
     res.json(category);
   } catch (error) {
     next(error);
@@ -54,7 +54,7 @@ router.put('/categories/:id', validate(categorySchema), async (req, res, next) =
 router.delete('/categories/:id', async (req, res, next) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
-    if (!category) return res.status(404).json({ message: 'Category not found' });
+    if (!category) return res.status(404).json({ error: { code: 'API_ERROR', message: 'Category not found' } });
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
     next(error);
@@ -92,7 +92,7 @@ router.post('/brands', validate(brandSchema), async (req, res, next) => {
 router.put('/brands/:id', validate(brandSchema), async (req, res, next) => {
   try {
     const brand = await Brand.findByIdAndUpdate(req.params.id, req.validated.body, { new: true });
-    if (!brand) return res.status(404).json({ message: 'Brand not found' });
+    if (!brand) return res.status(404).json({ error: { code: 'API_ERROR', message: 'Brand not found' } });
     res.json(brand);
   } catch (error) {
     next(error);
@@ -102,7 +102,7 @@ router.put('/brands/:id', validate(brandSchema), async (req, res, next) => {
 router.delete('/brands/:id', async (req, res, next) => {
   try {
     const brand = await Brand.findByIdAndDelete(req.params.id);
-    if (!brand) return res.status(404).json({ message: 'Brand not found' });
+    if (!brand) return res.status(404).json({ error: { code: 'API_ERROR', message: 'Brand not found' } });
     res.json({ message: 'Brand deleted successfully' });
   } catch (error) {
     next(error);
@@ -148,7 +148,7 @@ router.post('/coupons', validate(couponSchema), async (req, res, next) => {
 router.put('/coupons/:id', validate(couponSchema), async (req, res, next) => {
   try {
     const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.validated.body, { new: true });
-    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    if (!coupon) return res.status(404).json({ error: { code: 'API_ERROR', message: 'Coupon not found' } });
     res.json(coupon);
   } catch (error) {
     if (error.code === 11000) {
@@ -163,7 +163,7 @@ router.put('/coupons/:id', validate(couponSchema), async (req, res, next) => {
 router.delete('/coupons/:id', async (req, res, next) => {
   try {
     const coupon = await Coupon.findByIdAndDelete(req.params.id);
-    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    if (!coupon) return res.status(404).json({ error: { code: 'API_ERROR', message: 'Coupon not found' } });
     res.json({ message: 'Coupon deleted successfully' });
   } catch (error) {
     next(error);

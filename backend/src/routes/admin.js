@@ -8,6 +8,7 @@ const User = require('../models/User');
 const Setting = require('../models/Setting');
 const OrderStatusHistory = require('../models/OrderStatusHistory');
 const { getAdminSettings } = require('../utils/admin');
+const { invalidateCache, getSettings } = require('../utils/settingsCache');
 const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
@@ -72,11 +73,7 @@ router.get('/analytics', async (_req, res, next) => {
 router.get('/settings', masterAdminOnly, async (_req, res, next) => {
   try {
     const staticSettings = getAdminSettings();
-    const settingsDocs = await Setting.find({});
-    const dynamicSettings = {};
-    settingsDocs.forEach(s => {
-      dynamicSettings[s.key] = s.value;
-    });
+    const dynamicSettings = await getSettings();
 
     res.json({ ...staticSettings, ...dynamicSettings });
   } catch (error) {
@@ -99,13 +96,10 @@ router.put('/settings', masterAdminOnly, async (req, res, next) => {
         }
       }));
       await Setting.bulkWrite(bulkOps);
+      invalidateCache();
     }
 
-    const settingsDocs = await Setting.find({});
-    const dynamicSettings = {};
-    settingsDocs.forEach(s => {
-      dynamicSettings[s.key] = s.value;
-    });
+    const dynamicSettings = await getSettings(true);
 
     res.json(dynamicSettings);
   } catch (error) {
@@ -127,10 +121,10 @@ router.get('/users', masterAdminOnly, async (req, res, next) => {
 router.delete('/users/:id', masterAdminOnly, async (req, res, next) => {
   try {
     if (req.params.id === req.user.id) {
-      return res.status(400).json({ message: 'Cannot delete yourself' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'Cannot delete yourself' } });
     }
     const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ error: { code: 'API_ERROR', message: 'User not found' } });
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     next(error);
@@ -141,52 +135,91 @@ router.put('/users/:id/role', masterAdminOnly, async (req, res, next) => {
   try {
     const { role } = req.body;
     if (!['user', 'admin', 'master_admin'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'Invalid role' } });
     }
     const user = await User.findByIdAndUpdate(req.params.id, { role, isAdmin: role !== 'user' }, { new: true }).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ error: { code: 'API_ERROR', message: 'User not found' } });
     res.json(user);
   } catch (error) {
     next(error);
   }
 });
 
-const { uploadToR2, getObjectUrl, isR2Configured } = require('../utils/r2');
-const { optimizeImage } = require('../utils/imageOptimizer');
+const { uploadToR2, deleteFromR2, getObjectUrl, isR2Configured } = require('../utils/r2');
+const { validateImage, optimizeImage, generateProductVariants } = require('../utils/imageOptimizer');
+const { nanoid } = require('nanoid');
 
 router.post('/upload', upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'No file uploaded' } });
     }
 
     if (!isR2Configured()) {
-      return res.status(500).json({ message: 'Storage is not configured on the server. Image upload is disabled.' });
+      return res.status(500).json({ error: { code: 'API_ERROR', message: 'Storage is not configured on the server. Image upload is disabled.' } });
     }
 
-    let bufferToUpload = req.file.buffer;
-    let mimeType = req.file.mimetype;
-    let originalName = req.file.originalname;
+    await validateImage(req.file.buffer);
+    const isProduct = req.body.folder === 'products';
+    const assetId = nanoid();
+    const folder = req.body.folder || 'uploads';
 
-    if (mimeType.startsWith('image/')) {
-      try {
-        const optimized = await optimizeImage(req.file.buffer);
-        bufferToUpload = optimized.buffer;
-        mimeType = optimized.mimeType;
-        // Replace extension in original name with .webp for R2 key generation
-        originalName = originalName.replace(/\.[^/.]+$/, "") + ".webp";
-      } catch (err) {
-        console.warn('Image optimization failed, falling back to original image:', err);
+    if (isProduct) {
+      const variants = await generateProductVariants(req.file.buffer);
+
+      const uploadVariant = async (variantName, variantData) => {
+        const key = `${folder}/${assetId}/${variantName}.webp`;
+        await uploadToR2(variantData.buffer, variantData.mimeType, `${variantName}.webp`, folder, '', key);
+        return { key, url: getObjectUrl(key) };
+      };
+
+      const [thumbnail, card, product] = await Promise.all([
+        uploadVariant('thumbnail', variants.thumbnail),
+        uploadVariant('card', variants.card),
+        uploadVariant('product', variants.product)
+      ]);
+
+      return res.json({
+        assetId,
+        thumbnail,
+        card,
+        product,
+        key: product.key,
+        url: product.url
+      });
+    } else {
+      const optimized = await optimizeImage(req.file.buffer);
+      const key = `${folder}/${assetId}.webp`;
+      await uploadToR2(optimized.buffer, optimized.mimeType, `${assetId}.webp`, folder, '', key);
+      return res.json({ key, url: getObjectUrl(key) });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/delete-image', async (req, res, next) => {
+  try {
+    if (!req.body.assetId && !req.body.key) {
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'assetId or key is required' } });
+    }
+
+    if (req.body.assetId) {
+      await Promise.all([
+        deleteFromR2(`products/${req.body.assetId}/thumbnail.webp`),
+        deleteFromR2(`products/${req.body.assetId}/card.webp`),
+        deleteFromR2(`products/${req.body.assetId}/product.webp`)
+      ]);
+    } else if (req.body.key) {
+      // Secure check: Only allow deleting from expected prefixes
+      if (req.body.key.startsWith('products/') || req.body.key.startsWith('custom-uploads/')) {
+        await deleteFromR2(req.body.key);
+      } else {
+        return res.status(403).json({ error: { code: 'API_ERROR', message: 'Forbidden. You cannot delete this object key.' } });
       }
     }
 
-    const folder = req.body.folder || 'uploads';
-    const fileNamePrefix = req.body.fileNamePrefix || '';
-
-    const key = await uploadToR2(bufferToUpload, mimeType, originalName, folder, fileNamePrefix);
-    const url = getObjectUrl(key);
-
-    res.json({ key, url });
+    res.json({ message: 'Image deleted' });
   } catch (error) {
     next(error);
   }
@@ -298,7 +331,7 @@ router.put('/orders/:id/remark', async (req, res, next) => {
     const { remark } = req.body;
     const order = await Order.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ error: { code: 'API_ERROR', message: 'Order not found' } });
     }
     order.adminRemark = remark || '';
     await order.save();
@@ -341,12 +374,12 @@ router.put('/orders/:id/status', async (req, res, next) => {
     ];
 
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+      return res.status(400).json({ error: { code: 'API_ERROR', message: 'Invalid status' } });
     }
 
     const order = await Order.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ error: { code: 'API_ERROR', message: 'Order not found' } });
     }
 
     const oldStatus = order.status;
@@ -354,7 +387,7 @@ router.put('/orders/:id/status', async (req, res, next) => {
     // Validation: masterAdminOnly for payment statuses
     const paymentStatuses = ['pending_payment', 'awaiting_verification', 'payment_verified', 'rejected'];
     if (paymentStatuses.includes(status) && req.user.role !== 'master_admin') {
-      return res.status(403).json({ message: 'Only superadmins can modify payment status' });
+      return res.status(403).json({ error: { code: 'API_ERROR', message: 'Only superadmins can modify payment status' } });
     }
 
     // Validation: shipping statuses only allowed if payment is verified (or beyond)
@@ -363,7 +396,7 @@ router.put('/orders/:id/status', async (req, res, next) => {
     if (requiresPaymentVerified.includes(status)) {
        const hasBeenVerified = order.timeline.some(t => t.status === 'payment_verified') || order.status === 'payment_verified' || ['processing', 'shipped', 'delivered'].includes(order.status);
        if (!hasBeenVerified) {
-          return res.status(400).json({ message: 'Cannot update shipping status until payment is approved' });
+          return res.status(400).json({ error: { code: 'API_ERROR', message: 'Cannot update shipping status until payment is approved' } });
        }
     }
 

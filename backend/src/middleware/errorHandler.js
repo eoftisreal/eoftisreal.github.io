@@ -10,21 +10,37 @@ function errorHandler(err, _req, res, _next) {
   if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map(e => e.message);
     return res.status(400).json({
-      message: 'Validation failed',
-      details: { fieldErrors: { body: errors } }
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        details: { fieldErrors: { body: errors } }
+      }
     });
   }
 
   if (err.name === 'MongoServerError' && err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
     return res.status(400).json({
-      message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists.`
+      error: {
+        code: 'DUPLICATE_KEY',
+        message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists.`
+      }
     });
   }
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  const message = statusCode === 500 && isProduction ? 'Internal server error' : (err.message || 'Internal server error');
+
+  if (statusCode === 500) {
+    console.error('Unhandled Server Error:', err);
+  }
+
   res.status(statusCode).json({
-    message: err.message || 'Internal server error',
-    details: err.details || undefined,
+    error: {
+      code: statusCode === 500 ? 'INTERNAL_ERROR' : (err.code || 'API_ERROR'),
+      message,
+      details: err.details || undefined,
+    }
   });
 }
 

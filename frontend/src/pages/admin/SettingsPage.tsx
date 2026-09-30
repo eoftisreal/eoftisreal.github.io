@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { parseJwt } from '@/lib/jwt';
 import { useQueryClient } from '@tanstack/react-query';
-import * as XLSX from 'xlsx';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
 
@@ -116,6 +115,7 @@ export default function SettingsPage() {
         };
       });
 
+      const XLSX = await import('xlsx');
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Orders");
