@@ -133,8 +133,11 @@ export default function AdminProductEditPage() {
         if (body.product && body.thumbnail && body.card) {
           setImageVariants(prev => [...prev, {
             thumbnail: body.thumbnail.url,
+            thumbnailWidth: body.thumbnail.width,
             card: body.card.url,
+            cardWidth: body.card.width,
             product: body.product.url,
+            productWidth: body.product.width
           }]);
         } else {
           setImageVariants(prev => [...prev, null]);

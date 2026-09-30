@@ -177,7 +177,22 @@ export default function ProductDetailPage() {
       />
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-4 overflow-hidden">
-        <img src={currentImage} loading="eager" decoding="sync" fetchPriority="high" alt={product.title} className="aspect-square w-full rounded-md object-cover" />
+        <img src={currentImage} srcSet={product.imageVariants && product.imageVariants[gallery.indexOf(activeImage || gallery[0])] ? (() => {
+          const variant = product.imageVariants[gallery.indexOf(activeImage || gallery[0])];
+          if (!variant || Object.keys(variant).length === 0) return undefined;
+
+          const parts = [];
+          if (variant.thumbnail && variant.thumbnailWidth) parts.push(`${variant.thumbnail} ${variant.thumbnailWidth}w`);
+          else if (variant.thumbnail) parts.push(`${variant.thumbnail} 400w`);
+
+          if (variant.card && variant.cardWidth) parts.push(`${variant.card} ${variant.cardWidth}w`);
+          else if (variant.card) parts.push(`${variant.card} 800w`);
+
+          if (variant.product && variant.productWidth) parts.push(`${variant.product} ${variant.productWidth}w`);
+          else if (variant.product) parts.push(`${variant.product} 1600w`);
+
+          return parts.length > 0 ? parts.join(', ') : undefined;
+        })() : undefined} sizes="(max-width: 768px) 100vw, 50vw" loading="eager" decoding="sync" fetchPriority="high" alt={product.title} className="aspect-square w-full rounded-md object-cover" />
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
           {gallery.map((image, index) => (
             <img

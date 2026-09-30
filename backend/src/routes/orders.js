@@ -54,6 +54,7 @@ router.post('/:id/cancel', auth, async (req, res, next) => {
 
     const oldStatus = order.status;
     order.status = 'cancelled';
+    order.payment.status = 'cancelled';
     order.timeline.push({ status: 'cancelled', note: 'Order cancelled by customer' });
     await order.save();
 
@@ -99,8 +100,16 @@ router.patch('/:id/status', auth, adminOnly, validate(statusSchema), async (req,
     }
 
     const oldStatus = order.status;
-    order.status = req.validated.body.status;
-    order.timeline.push({ status: req.validated.body.status, note: req.validated.body.note });
+    const newStatus = req.validated.body.status;
+
+    order.status = newStatus;
+    if (newStatus === 'cancelled') {
+      order.payment.status = 'cancelled';
+    } else if (newStatus === 'rejected') {
+      order.payment.status = 'failed';
+    }
+
+    order.timeline.push({ status: newStatus, note: req.validated.body.note });
     await order.save();
 
     await OrderStatusHistory.create({

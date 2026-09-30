@@ -52,16 +52,16 @@ async function generateProductVariants(fileBuffer) {
   try {
     const s = sharp(fileBuffer).rotate(); // auto-orient
 
-    const [thumbnail, card, product] = await Promise.all([
-      s.clone().resize({ width: 400, fit: 'inside', withoutEnlargement: true }).webp({ quality: 75 }).toBuffer(),
-      s.clone().resize({ width: 800, fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
-      s.clone().resize({ width: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer(),
+    const [thumbnailData, cardData, productData] = await Promise.all([
+      s.clone().resize({ width: 400, fit: 'inside', withoutEnlargement: true }).webp({ quality: 75 }).toBuffer({ resolveWithObject: true }),
+      s.clone().resize({ width: 800, fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toBuffer({ resolveWithObject: true }),
+      s.clone().resize({ width: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer({ resolveWithObject: true }),
     ]);
 
     return {
-      thumbnail: { buffer: thumbnail, mimeType: 'image/webp', extension: 'webp' },
-      card: { buffer: card, mimeType: 'image/webp', extension: 'webp' },
-      product: { buffer: product, mimeType: 'image/webp', extension: 'webp' },
+      thumbnail: { buffer: thumbnailData.data, width: thumbnailData.info.width, mimeType: 'image/webp', extension: 'webp' },
+      card: { buffer: cardData.data, width: cardData.info.width, mimeType: 'image/webp', extension: 'webp' },
+      product: { buffer: productData.data, width: productData.info.width, mimeType: 'image/webp', extension: 'webp' },
     };
   } catch (error) {
     console.error('Error generating product variants:', error);

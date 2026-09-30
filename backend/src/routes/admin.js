@@ -170,7 +170,7 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
       const uploadVariant = async (variantName, variantData) => {
         const key = `${folder}/${assetId}/${variantName}.webp`;
         await uploadToR2(variantData.buffer, variantData.mimeType, `${variantName}.webp`, folder, '', key);
-        return { key, url: getObjectUrl(key) };
+        return { key, url: getObjectUrl(key), width: variantData.width };
       };
 
       const [thumbnail, card, product] = await Promise.all([
@@ -406,6 +406,12 @@ router.put('/orders/:id/status', async (req, res, next) => {
     }
 
     order.status = status;
+
+    if (status === 'cancelled') {
+      order.payment.status = 'cancelled';
+    } else if (status === 'rejected') {
+      order.payment.status = 'failed';
+    }
 
     let note;
     if (['processing', 'shipped', 'delivered'].includes(status)) {

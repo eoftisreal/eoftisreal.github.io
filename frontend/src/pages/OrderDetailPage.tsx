@@ -104,11 +104,18 @@ function OrderTrackingContent() {
 
       if (remaining === 0) {
         clearInterval(interval);
+        // Automatically cancel the order when the QR expires
+        fetchWithAuth(`${apiBase}/orders/${id}/cancel`, { method: 'POST' })
+          .then(res => {
+             if (res.ok) {
+               fetchOrder();
+             }
+          });
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [qrSettings]);
+  }, [qrSettings, id]);
 
   const handlePaymentDone = async () => {
     setPaymentDoneLoading(true);

@@ -37,6 +37,22 @@ export default function ProductCard({ product }: { product: Product }) {
     toast.success(`${product.title} added to cart!`);
   };
 
+  const generateSrcSet = (variant: any) => {
+    if (!variant || Object.keys(variant).length === 0) return undefined;
+
+    const parts = [];
+    if (variant.thumbnail && variant.thumbnailWidth) parts.push(`${variant.thumbnail} ${variant.thumbnailWidth}w`);
+    else if (variant.thumbnail) parts.push(`${variant.thumbnail} 400w`); // fallback to default generated width
+
+    if (variant.card && variant.cardWidth) parts.push(`${variant.card} ${variant.cardWidth}w`);
+    else if (variant.card) parts.push(`${variant.card} 800w`);
+
+    if (variant.product && variant.productWidth) parts.push(`${variant.product} ${variant.productWidth}w`);
+    else if (variant.product) parts.push(`${variant.product} 1600w`);
+
+    return parts.length > 0 ? parts.join(', ') : undefined;
+  };
+
   return (
     <Link to={`/products/${product._id}`} className="group flex flex-col overflow-hidden rounded-md border border-secondary-bg bg-white transition hover:border-border">
       <div className="relative aspect-square bg-secondary-bg overflow-hidden">
@@ -45,12 +61,8 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
         <img loading="lazy" decoding="async"
           src={product.imageVariants?.[0]?.card || product.images?.[0] || 'https://placehold.co/600x600?text=No+Image'}
-          srcSet={
-            product.imageVariants?.[0]
-              ? `${product.imageVariants[0].thumbnail} 300w, ${product.imageVariants[0].card} 600w, ${product.imageVariants[0].product} 1200w`
-              : undefined
-          }
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          srcSet={generateSrcSet(product.imageVariants?.[0])}
+          sizes="(max-width: 1024px) 50vw, 25vw"
           alt={product.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

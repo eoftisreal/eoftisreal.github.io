@@ -31,7 +31,7 @@ export type Product = {
   productType?: string;
   category: string;
   images: string[];
-  imageVariants?: { thumbnail?: string; card?: string; product?: string }[];
+  imageVariants?: { thumbnail?: string; thumbnailWidth?: number; card?: string; cardWidth?: number; product?: string; productWidth?: number }[];
   price: number;
   compareAtPrice?: number;
   stock: number;
