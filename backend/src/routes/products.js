@@ -9,7 +9,7 @@ const Category = require('../models/Category');
 const Brand = require('../models/Brand');
 
 const router = express.Router();
-const LIST_FIELDS = 'title description artistName productType category brand images price compareAtPrice stock isFeatured isCustomizable enableSizes sizes enableColors colors minDeliveryDays maxDeliveryDays tags salesCount createdAt';
+const LIST_FIELDS = 'title artistName productType category brand images imageVariants price compareAtPrice stock isFeatured isCustomizable enableSizes sizes enableColors colors minDeliveryDays maxDeliveryDays tags salesCount createdAt';
 const SHORT_CACHE = 'public, max-age=120, stale-while-revalidate=300';
 const MEDIUM_CACHE = 'public, max-age=300, stale-while-revalidate=600';
 
@@ -66,8 +66,8 @@ const listSchema = z.object({
     inStock: z.string().optional(),
     isFeatured: z.string().optional(),
     sort: z.string().optional(),
-    page: z.coerce.number().min(1).default(1),
-    limit: z.coerce.number().min(1).max(1000).default(12),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(12),
   }),
   params: z.object({}),
 });
@@ -238,12 +238,16 @@ router.delete('/:id', auth, adminOnly, async (req, res, next) => {
       }
     }
 
-    // Attempt deletion asynchronously so it doesn't block the response
+    // Await deletion to guarantee completion in a serverless function lifecycle
     if (keysToDelete.length > 0) {
       const { deleteFromR2 } = require('../utils/r2');
-      Promise.all(keysToDelete.map(k => deleteFromR2(k))).catch(e => {
+      try {
+        // Run them concurrently, bounded to the array size which is usually small.
+        await Promise.all(keysToDelete.map(k => deleteFromR2(k)));
+      } catch (e) {
+        // We log the error but still return success for the DB deletion.
         console.error('Failed to cleanup R2 assets on product deletion:', e);
-      });
+      }
     }
 
     res.status(204).send();

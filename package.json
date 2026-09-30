@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "npm install --prefix frontend --no-audit --no-fund --include=dev && npm run build --prefix frontend && rm -rf dist && mkdir -p dist && cp -R frontend/dist/. dist/ && npm install --prefix backend --no-audit --no-fund --omit=dev",
+    "build": "npm ci --prefix frontend --no-audit --no-fund --include=dev && npm run build --prefix frontend && rm -rf frontend/node_modules && npm ci --prefix backend --no-audit --no-fund --omit=dev",
     "start": "npm start --prefix backend"
   }
 }

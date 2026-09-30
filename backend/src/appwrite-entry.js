@@ -58,13 +58,10 @@ module.exports = async ({ req, res, log, error }) => {
     const server = await getServer();
     const port = server.address().port;
 
-    try {
-      await getDb();
-    } catch (dbErr) {
-      // Mirrors server.js: keep serving even if the initial connect fails.
-      // Routes that actually need the DB will surface their own errors.
+    // Start DB connection, but don't await it so static files can be served immediately.
+    getDb().catch((dbErr) => {
       error(`MongoDB connection failed: ${dbErr.message}`);
-    }
+    });
 
     const bodyBuffer =
       req.bodyBinary && req.bodyBinary.length ? req.bodyBinary : undefined;
@@ -74,6 +71,11 @@ module.exports = async ({ req, res, log, error }) => {
     delete forwardedHeaders['host'];
 
     const proxied = await new Promise((resolve, reject) => {
+      // Use internal timeout shorter than Function timeout
+      const requestTimeout = setTimeout(() => {
+        reject(new Error('Internal Proxy Timeout'));
+      }, 12000);
+
       const proxyReq = http.request(
         {
           agent: proxyAgent,
@@ -87,16 +89,24 @@ module.exports = async ({ req, res, log, error }) => {
           const chunks = [];
           proxyRes.on('data', (chunk) => chunks.push(chunk));
           proxyRes.on('end', () => {
+            clearTimeout(requestTimeout);
             resolve({
               statusCode: proxyRes.statusCode || 200,
               headers: proxyRes.headers,
               body: Buffer.concat(chunks),
             });
           });
+          proxyRes.on('error', (err) => {
+            clearTimeout(requestTimeout);
+            reject(err);
+          });
         }
       );
 
-      proxyReq.on('error', reject);
+      proxyReq.on('error', (err) => {
+        clearTimeout(requestTimeout);
+        reject(err);
+      });
 
       if (bodyBuffer) {
         proxyReq.write(bodyBuffer);

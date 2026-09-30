@@ -1,47 +1,59 @@
-const responseCache = new Map();
-const CACHE_TTL = 60 * 1000; // 1 minute
+const { LRUCache } = require('lru-cache');
+
+// Limit memory: 100 entries, max 1 minute TTL
+const responseCache = new LRUCache({
+  max: 100,
+  ttl: 60 * 1000,
+});
 
 module.exports = function responseCacheMiddleware(req, res, next) {
   if (req.method !== 'GET') {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      // Clear cache on write (invalidate catalogue data)
+      // Note: In a multi-instance Appwrite environment, this only clears the local instance cache.
       responseCache.clear();
     }
     return next();
   }
 
-  // Skip caching for highly dynamic or user-specific routes that require real-time updates
-  if (
-    req.path.startsWith('/orders') ||
-    req.path.startsWith('/cart') ||
-    req.path.startsWith('/auth') ||
-    req.path.startsWith('/admin') ||
-    req.path === '/public/settings'
-  ) {
+  // Only explicitly allow public catalogue/reference-data routes
+  const isCacheable = (
+    req.path.startsWith('/products') ||
+    req.path.startsWith('/master-data') ||
+    req.path.startsWith('/sitemap')
+  ) && !req.path.startsWith('/checkout'); // ensure checkout isn't cached
+
+  // Bypass authenticated/private requests (including wishlist, account, cart, orders, admin)
+  if (!isCacheable || req.headers.authorization || req.path.startsWith('/wishlist')) {
     return next();
   }
 
-  // Factor in authentication header to prevent cross-user data leakage
-  const authHeader = req.headers.authorization || '';
-  const cacheKey = `${req.path}:${JSON.stringify(req.query)}:${authHeader}`;
+  const cacheKey = `${req.path}:${JSON.stringify(req.query)}`;
 
   // Check cache
-  if (responseCache.has(cacheKey)) {
-    const cached = responseCache.get(cacheKey);
-    if (Date.now() - cached.timestamp < CACHE_TTL) {
-      res.set('X-Cache', 'HIT');
-      return res.status(cached.statusCode).json(cached.body);
+  const cached = responseCache.get(cacheKey);
+  if (cached) {
+    res.set('X-Cache', 'HIT');
+    if (cached.headers) {
+      for (const [key, value] of Object.entries(cached.headers)) {
+        res.setHeader(key, value);
+      }
     }
-    responseCache.delete(cacheKey);
+    return res.status(cached.statusCode).json(cached.body);
   }
 
   // Intercept response
   const originalJson = res.json;
   res.json = function (body) {
     if (res.statusCode >= 200 && res.statusCode < 300) {
+      // Capture relevant headers to replay
+      const headersToCache = {};
+      if (res.getHeader('Cache-Control')) headersToCache['Cache-Control'] = res.getHeader('Cache-Control');
+
       responseCache.set(cacheKey, {
         body: body,
         statusCode: res.statusCode,
-        timestamp: Date.now(),
+        headers: headersToCache,
       });
     }
     res.set('X-Cache', 'MISS');

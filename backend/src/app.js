@@ -50,6 +50,10 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// DB readiness check for API routes
+const dbCheck = require('./middleware/dbCheck');
+app.use('/api', dbCheck);
+
 // Compression and caching middleware
 app.use(compressionMiddleware());
 app.use(cacheMiddleware);
@@ -113,16 +117,22 @@ app.use('/api', sitemapRoutes);
 if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
   const frontendPath = path.join(__dirname, '../../frontend/dist');
 
+  const precompressed = require('./middleware/precompressed');
+  app.use(precompressed(frontendPath));
+
   // Serve static files with caching
   app.use(express.static(frontendPath, {
     maxAge: '1d',
     etag: false,
     // Only cache assets, not HTML
-    setHeaders: (res, path) => {
-      if (path.endsWith('.html')) {
+    setHeaders: (res, pathStr) => {
+      const originalPath = pathStr.replace(/\.(br|gz)$/, '');
+      if (originalPath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-      } else if (path.match(/\.(js|css|woff2?)$/)) {
+      } else if (originalPath.match(/\.(js|css|woff2?)$/)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=3600');
       }
     }
   }));

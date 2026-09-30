@@ -177,12 +177,13 @@ export default function ProductDetailPage() {
       />
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-4 overflow-hidden">
-        <img src={currentImage} loading="lazy" decoding="async" alt={product.title} className="aspect-square w-full rounded-md object-cover" />
+        <img src={currentImage} loading="eager" decoding="sync" fetchPriority="high" alt={product.title} className="aspect-square w-full rounded-md object-cover" />
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
           {gallery.map((image, index) => (
             <img
               key={`${image}-${index}`}
               src={galleryThumbnails[index] || image || 'https://placehold.co/300x300?text=Preview'}
+              loading="lazy" decoding="async"
               alt={`${product.title} preview ${index + 1}`}
               onClick={() => setActiveImage(image)}
               className={`aspect-square w-24 shrink-0 cursor-pointer rounded-lg object-cover border-2 transition-all ${activeImage === image ? 'border-foreground' : 'border-transparent hover:border-slate-300'}`}

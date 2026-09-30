@@ -78,7 +78,10 @@ const orderSchema = new mongoose.Schema(
 // Optimization: Add indexes to prevent slow O(N) full-collection scans when querying and sorting orders in GET /orders
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
-orderSchema.index({ uniquePaymentAmount: 1, 'payment.status': 1 });
+orderSchema.index({ uniquePaymentAmount: 1, 'payment.status': 1 }, {
+  unique: true,
+  partialFilterExpression: { 'payment.status': { $in: ['pending', 'awaiting_verification'] } }
+});
 orderSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Order', orderSchema);

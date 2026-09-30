@@ -36,9 +36,9 @@ const productSchema = new mongoose.Schema(
 
 productSchema.index({ title: 'text', description: 'text', tags: 'text', artistName: 'text' });
 productSchema.index({ productType: 1 });
-productSchema.index({ isFeatured: 1 });
+productSchema.index({ isActive: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, category: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, isFeatured: 1, createdAt: -1 });
 productSchema.index({ stock: 1 });
-productSchema.index({ isActive: 1 });
-productSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Product', productSchema);

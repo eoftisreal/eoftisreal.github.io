@@ -3,6 +3,19 @@ import { getApiBaseUrl, fetchWithAuth } from './apiClient';
 const apiBase = getApiBaseUrl();
 
 export async function apiGet<T>(path: string): Promise<T> {
+  // Use public fetch for catalogue routes to bypass auth token refresh checks
+  if (
+    path.startsWith('/products') ||
+    path.startsWith('/master-data') ||
+    path.startsWith('/public/settings')
+  ) {
+    const res = await fetch(`${apiBase}${path}`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch ${path}`);
+    }
+    return res.json() as Promise<T>;
+  }
+
   const res = await fetchWithAuth(`${apiBase}${path}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch ${path}`);
