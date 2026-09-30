@@ -20,8 +20,23 @@ jest.mock('../src/models/Product', () => ({
 
 const request = require('supertest');
 const app = require('../src/app');
+const mongoose = require('mongoose');
 
 describe('app routes', () => {
+  let mongoServer;
+
+  beforeAll(async () => {
+    const { MongoMemoryServer } = require('mongodb-memory-server');
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    await mongoose.connect(uri);
+  });
+
+  afterAll(async () => {
+    await mongoose.disconnect();
+    await mongoServer.stop();
+  });
+
   it('returns health status', async () => {
     const response = await request(app).get('/api/health');
     expect(response.status).toBe(200);

@@ -8,12 +8,6 @@
       "path": ".",
       "entrypoint": "backend/src/appwrite-entry.js",
       "ignore": [
-        "frontend/node_modules",
-        "frontend/src",
-        "frontend/public",
-        "frontend/tsconfig.json",
-        "frontend/vite.config.ts",
-        "frontend/index.html",
         ".git",
         ".github",
         ".jules",

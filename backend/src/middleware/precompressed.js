@@ -17,40 +17,40 @@ module.exports = function precompressed(basePath) {
       return next();
     }
 
-    const acceptEncoding = req.headers['accept-encoding'] || '';
     const filePath = path.join(basePath, req.path);
+    const availableEncodings = ['identity'];
 
-    // Helper to check and serve precompressed
-    const tryServe = (encoding, extension) => {
-      if (acceptEncoding.includes(encoding)) {
-        const compressedPath = filePath + extension;
-        if (fs.existsSync(compressedPath)) {
-          // Send appropriate headers
-          res.setHeader('Content-Encoding', encoding);
-          res.setHeader('Vary', 'Accept-Encoding');
+    if (fs.existsSync(filePath + '.br')) availableEncodings.push('br');
+    if (fs.existsSync(filePath + '.gz')) availableEncodings.push('gzip');
 
-          // Determine original content type
-          const ext = path.extname(req.path).toLowerCase();
-          if (ext === '.js') {
-            res.setHeader('Content-Type', 'application/javascript');
-          } else if (ext === '.css') {
-            res.setHeader('Content-Type', 'text/css');
-          } else if (ext === '.html') {
-            res.setHeader('Content-Type', 'text/html');
-          }
+    const acceptedEncoding = req.acceptsEncodings(...availableEncodings);
 
-          // Send the compressed file (let express.static handle caching, or set here if needed)
-          req.url = req.url + extension; // modify URL so express.static picks up the compressed file
-          return true;
-        }
-      }
-      return false;
-    };
+    // Always preserve Vary: Accept-Encoding
+    res.vary('Accept-Encoding');
 
-    // Try brotli first, then gzip
-    if (!tryServe('br', '.br')) {
-      tryServe('gzip', '.gz');
+    if (!acceptedEncoding) {
+      return res.status(406).send('Not Acceptable');
     }
+
+    if (acceptedEncoding === 'identity') {
+      return next();
+    }
+
+    const extension = acceptedEncoding === 'br' ? '.br' : '.gz';
+
+    res.setHeader('Content-Encoding', acceptedEncoding);
+
+    const ext = path.extname(req.path).toLowerCase();
+    if (ext === '.js') {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (ext === '.css') {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (ext === '.html') {
+      res.setHeader('Content-Type', 'text/html');
+    }
+
+    // Preserve query strings by modifying path rather than just appending to url
+    req.url = req.path + extension + (req.url.substring(req.path.length) || '');
 
     next();
   };

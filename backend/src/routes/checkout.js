@@ -13,7 +13,7 @@ const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
 
-async function generateUniquePaymentAmount(baseTotal) {
+async function generateUniquePaymentAmount(baseTotal, session) {
   let isUnique = false;
   let uniqueAmount = baseTotal;
   let attempts = 0;
@@ -27,7 +27,7 @@ async function generateUniquePaymentAmount(baseTotal) {
     const existingOrder = await Order.findOne({
       uniquePaymentAmount: uniqueAmount,
       'payment.status': { $in: ['pending', 'awaiting_verification'] }
-    });
+    }).session(session);
 
     if (!existingOrder) {
       isUnique = true;
@@ -61,6 +61,8 @@ const checkoutSchema = z.object({
   params: z.object({}),
 });
 
+const mongoose = require('mongoose');
+
 router.post('/create', auth, validate(checkoutSchema), async (req, res, next) => {
   try {
     if (req.validated.body.checkoutAttemptId) {
@@ -70,129 +72,139 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
       }
     }
 
-    const cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
-    if (!cart || cart.items.length === 0) {
-      const err = new Error('Cart is empty');
-      err.statusCode = 400;
-      throw err;
-    }
-
-    const subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);
-    let discount = 0;
-
-    if (req.validated.body.promoCode) {
-      const coupon = await Coupon.findOne({
-        code: req.validated.body.promoCode.toUpperCase(),
-        isActive: true
-      });
-
-      if (!coupon) {
-        const err = new Error('Invalid or expired coupon code');
-        err.statusCode = 400;
-        throw err;
-      }
-
-      if (subtotal < coupon.minOrderValue) {
-        const err = new Error(`Minimum order value of ${coupon.minOrderValue} required for this coupon`);
-        err.statusCode = 400;
-        throw err;
-      }
-
-      if (coupon.discountType === 'percentage') {
-        discount = subtotal * (coupon.discountValue / 100);
-        if (coupon.maxDiscount) {
-          discount = Math.min(discount, coupon.maxDiscount);
-        }
-      } else {
-        discount = coupon.discountValue;
-      }
-    }
-
-    const discountedSubtotal = Math.max(0, subtotal - discount);
-
-    const settings = await getSettings();
-
-    let tax = 0;
-    if (settings.enableTax !== false) {
-      const taxPercentage = settings.taxPercentage !== undefined ? Number(settings.taxPercentage) : 18;
-      tax = Number((discountedSubtotal * (taxPercentage / 100)).toFixed(2));
-    }
-
-    let deliveryCharge = 0;
-    if (settings.enableDeliveryCharge !== false) {
-      deliveryCharge = settings.deliveryCharge !== undefined ? Number(settings.deliveryCharge) : 0;
-    }
-
-    const total = Number((discountedSubtotal + tax + deliveryCharge).toFixed(2));
-
-    const items = cart.items.map((item) => ({
-      productId: item.productId.id,
-      title: item.productId.title,
-      quantity: item.quantity,
-      unitPrice: item.productId.price,
-      image: item.productId.images?.[0] || '',
-      customImage: item.customImage,
-      size: item.productId.enableSizes ? item.size : undefined,
-      color: item.productId.enableColors ? item.color : undefined
-    }));
-
     let order;
     let attempts = 0;
+
     while (!order && attempts < 10) {
       attempts++;
-      try {
-        const uniquePaymentAmount = await generateUniquePaymentAmount(total);
 
-        order = await Order.create({
-          checkoutAttemptId: req.validated.body.checkoutAttemptId,
-          discount,
-          userId: req.user.id,
-          items,
-          subtotal,
-          tax,
-          deliveryCharge,
-          total,
-          uniquePaymentAmount,
-          shippingAddress: req.validated.body.shippingAddress,
-          deliveryMethod: req.validated.body.deliveryMethod || 'email',
-          promoCode: req.validated.body.promoCode || undefined,
-          status: 'pending_payment',
-          payment: {
-            provider: 'manual_upi',
-            status: 'pending',
-          },
-          timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
-        });
-      } catch (createErr) {
-        if (createErr.code === 11000) {
-          // If we hit a duplicate uniquePaymentAmount, try again
-          if (createErr.keyPattern && createErr.keyPattern.uniquePaymentAmount) {
-            continue;
-          }
-          // If we hit a duplicate checkoutAttemptId
-          if (createErr.keyPattern && createErr.keyPattern.checkoutAttemptId && req.validated.body.checkoutAttemptId) {
-            const existingOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id });
-            if (existingOrder) {
-              return res.json({ message: 'Order created', order: existingOrder });
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          // Double check inside transaction if order was created by another concurrent request
+          if (req.validated.body.checkoutAttemptId) {
+            const concurrentOrder = await Order.findOne({ checkoutAttemptId: req.validated.body.checkoutAttemptId, userId: req.user.id }).session(session);
+            if (concurrentOrder) {
+              order = concurrentOrder;
+              return;
             }
           }
+
+          const cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId').session(session);
+          if (!cart || cart.items.length === 0) {
+            const err = new Error('Cart is empty');
+            err.statusCode = 400;
+            throw err;
+          }
+
+          const subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);
+          let discount = 0;
+
+          if (req.validated.body.promoCode) {
+            const coupon = await Coupon.findOne({
+              code: req.validated.body.promoCode.toUpperCase(),
+              isActive: true
+            }).session(session);
+
+            if (!coupon) {
+              const err = new Error('Invalid or expired coupon code');
+              err.statusCode = 400;
+              throw err;
+            }
+
+            if (subtotal < coupon.minOrderValue) {
+              const err = new Error(`Minimum order value of ${coupon.minOrderValue} required for this coupon`);
+              err.statusCode = 400;
+              throw err;
+            }
+
+            if (coupon.discountType === 'percentage') {
+              discount = subtotal * (coupon.discountValue / 100);
+              if (coupon.maxDiscount) {
+                discount = Math.min(discount, coupon.maxDiscount);
+              }
+            } else {
+              discount = coupon.discountValue;
+            }
+          }
+
+          const discountedSubtotal = Math.max(0, subtotal - discount);
+
+          const settings = await getSettings();
+
+          let tax = 0;
+          if (settings.enableTax !== false) {
+            const taxPercentage = settings.taxPercentage !== undefined ? Number(settings.taxPercentage) : 18;
+            tax = Number((discountedSubtotal * (taxPercentage / 100)).toFixed(2));
+          }
+
+          let deliveryCharge = 0;
+          if (settings.enableDeliveryCharge !== false) {
+            deliveryCharge = settings.deliveryCharge !== undefined ? Number(settings.deliveryCharge) : 0;
+          }
+
+          const total = Number((discountedSubtotal + tax + deliveryCharge).toFixed(2));
+
+          const items = cart.items.map((item) => ({
+            productId: item.productId.id,
+            title: item.productId.title,
+            quantity: item.quantity,
+            unitPrice: item.productId.price,
+            image: item.productId.images?.[0] || '',
+            customImage: item.customImage,
+            size: item.productId.enableSizes ? item.size : undefined,
+            color: item.productId.enableColors ? item.color : undefined
+          }));
+
+          const uniquePaymentAmount = await generateUniquePaymentAmount(total, session);
+
+          const createdOrders = await Order.create([{
+            checkoutAttemptId: req.validated.body.checkoutAttemptId,
+            discount,
+            userId: req.user.id,
+            items,
+            subtotal,
+            tax,
+            deliveryCharge,
+            total,
+            uniquePaymentAmount,
+            shippingAddress: req.validated.body.shippingAddress,
+            deliveryMethod: req.validated.body.deliveryMethod || 'email',
+            promoCode: req.validated.body.promoCode || undefined,
+            status: 'pending_payment',
+            payment: {
+              provider: 'manual_upi',
+              status: 'pending',
+            },
+            timeline: [{ status: 'pending_payment', note: 'Order created and awaiting UPI payment' }],
+          }], { session });
+
+          order = createdOrders[0];
+
+          await OrderStatusHistory.create([{
+            orderId: order._id,
+            newStatus: 'pending_payment',
+            changedBy: req.user.id,
+            note: 'Order created'
+          }], { session });
+
+          await Cart.findOneAndUpdate({ userId: req.user.id }, { $set: { items: [] } }, { session });
+        });
+      } catch (err) {
+        if (err.code === 11000 && err.keyPattern && err.keyPattern.uniquePaymentAmount) {
+          // If we hit a duplicate uniquePaymentAmount, clear order and let loop retry in new transaction
+          order = null;
+        } else {
+          throw err;
         }
-        throw createErr;
+      } finally {
+        await session.endSession();
       }
     }
 
     if (!order) {
       throw new Error('Could not generate a unique payment amount after multiple attempts. Please try again.');
     }
-
-    await OrderStatusHistory.create({
-      orderId: order._id,
-      newStatus: 'pending_payment',
-      changedBy: req.user.id,
-      note: 'Order created'
-    });
-
-    await Cart.findOneAndUpdate({ userId: req.user.id }, { $set: { items: [] } });
 
     res.status(201).json({ order });
   } catch (error) {
