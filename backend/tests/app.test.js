@@ -18,6 +18,18 @@ jest.mock('../src/models/Product', () => ({
   countDocuments: jest.fn(async () => 0),
 }));
 
+// Mock mongoose connection state so dbCheck doesn't block routes in unit tests
+jest.mock('mongoose', () => {
+  const original = jest.requireActual('mongoose');
+  return {
+    ...original,
+    connection: {
+      ...original.connection,
+      readyState: 1
+    }
+  };
+});
+
 const request = require('supertest');
 const app = require('../src/app');
 
