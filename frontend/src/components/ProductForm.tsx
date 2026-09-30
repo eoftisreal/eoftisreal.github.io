@@ -155,7 +155,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         compareAtPrice: compareAtPrice || undefined,
         stock,
         images,
-        imageVariants: imageVariants.filter(v => v !== null),
+        imageVariants: imageVariants.map(v => v || {}),
         r2ImageKeys,
         tags: tags ? tags.split(',').map(s => s.trim()).filter(Boolean) : [],
         isFeatured,

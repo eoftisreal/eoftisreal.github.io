@@ -142,7 +142,7 @@ router.get('/sitemap/categories', async (req, res) => {
 
     // Add category filter URLs
     for (const category of categories) {
-      const categoryUrl = `${baseUrl}/products?category=${category._id}`;
+      const categoryUrl = `${baseUrl}/products?category=${encodeURIComponent(category.name)}`;
       const lastmod = formatDate(category.updatedAt);
 
       sitemap += '  <url>\n';

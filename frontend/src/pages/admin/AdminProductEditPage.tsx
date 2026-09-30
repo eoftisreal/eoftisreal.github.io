@@ -155,6 +155,7 @@ export default function AdminProductEditPage() {
     if (!newImageUrl) return;
     setImages(prev => [...prev, newImageUrl]);
     setImageVariants(prev => [...prev, null]);
+    setR2ImageKeys(prev => [...prev, '']);
     setNewImageUrl('');
   }
 
@@ -199,7 +200,7 @@ export default function AdminProductEditPage() {
         compareAtPrice: compareAtPrice || undefined,
         stock,
         images,
-        imageVariants: imageVariants.filter(v => v !== null),
+        imageVariants: imageVariants.map(v => v || {}),
         r2ImageKeys,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         isFeatured,

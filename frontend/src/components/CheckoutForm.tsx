@@ -2,7 +2,7 @@ import { INDIAN_STATES, COUNTRIES } from '@/lib/constants';
 import { FloatingInput, FloatingSelect } from '@/components/FloatingInput';
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAuthToken } from '@/lib/storage';
 import { fetchWithAuth } from '@/lib/apiClient';
 import { useCartStore } from '@/store/cart';
@@ -36,6 +36,8 @@ export default function CheckoutForm() {
   // Set only if the new tab was blocked by the browser, so we can offer a
   // manual, directly-clicked link (which popup blockers always allow).
   const [blockedOrderId, setBlockedOrderId] = useState<string | null>(null);
+
+  const checkoutAttemptIdRef = useRef<string | null>(null);
 
   const [formData, setFormData] = useState<CheckoutData>({
     name: '',
@@ -259,7 +261,8 @@ export default function CheckoutForm() {
 
       try {
         setMessage('Processing order...');
-        const checkoutAttemptId = crypto.randomUUID();
+        const checkoutAttemptId = checkoutAttemptIdRef.current ?? crypto.randomUUID();
+        checkoutAttemptIdRef.current = checkoutAttemptId;
 
         const payload = {
           checkoutAttemptId,
@@ -281,6 +284,7 @@ export default function CheckoutForm() {
 
         if (data && data.order) {
           setMessage('Order placed successfully!');
+          checkoutAttemptIdRef.current = null;
           // Call clear local cart
           useCartStore.getState().clearLocalCart();
 
