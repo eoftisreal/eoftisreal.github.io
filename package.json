@@ -6,5 +6,8 @@
     "build": "npm ci --prefix frontend --no-audit --no-fund --include=dev && npm run build --prefix frontend && rm -rf frontend/node_modules && npm ci --prefix backend --no-audit --no-fund --omit=dev",
     "appwrite-build": "npm run build && rm -rf frontend/src frontend/public frontend/vite.config.ts frontend/index.html frontend/tsconfig.json",
     "start": "npm start --prefix backend"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.0"
   }
 }

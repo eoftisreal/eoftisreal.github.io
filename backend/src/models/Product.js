@@ -11,8 +11,11 @@ const productSchema = new mongoose.Schema(
     images: [{ type: String }],
     imageVariants: [{
       thumbnail: { type: String },
+      thumbnailWidth: { type: Number },
       card: { type: String },
-      product: { type: String }
+      cardWidth: { type: Number },
+      product: { type: String },
+      productWidth: { type: Number }
     }],
     r2ImageKeys: [{ type: String }],
     price: { type: Number, required: true, min: 0 },
