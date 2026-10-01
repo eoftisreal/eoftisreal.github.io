@@ -85,6 +85,28 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
     const { items } = req.validated.body;
     const cart = await getCart(req.user.id);
 
+    // Identify products that need to be fetched (not already in cart)
+    const productIdsToFetch = [...new Set(items
+      .filter((item) => {
+        return !cart.items.some((i) =>
+          i.productId.toString() === item.productId &&
+          i.size === item.size &&
+          i.color === item.color
+        );
+      })
+      .map((item) => item.productId)
+    )];
+
+    // Batch fetch products to avoid N+1 queries
+    let productMap = {};
+    if (productIdsToFetch.length > 0) {
+      const products = await Product.find({ _id: { $in: productIdsToFetch }, isActive: true }).lean();
+      productMap = products.reduce((acc, p) => {
+        acc[p._id.toString()] = p;
+        return acc;
+      }, {});
+    }
+
     for (const item of items) {
       const existing = cart.items.find((i) =>
         i.productId.toString() === item.productId &&
@@ -95,8 +117,8 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
         existing.quantity += item.quantity;
         if (item.customImage) existing.customImage = item.customImage;
       } else {
-        const product = await Product.findById(item.productId);
-        if (product && product.isActive) {
+        const product = productMap[item.productId];
+        if (product) {
           cart.items.push({
             productId: item.productId,
             quantity: item.quantity,

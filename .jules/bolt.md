@@ -1,0 +1,3 @@
+## 2026-10-01 - Avoid N+1 queries in loops fetching products by ID
+**Learning:** In the backend `routes/cart.js`, resolving product objects using `findById` within a loop caused massive N+1 querying when syncing a large shopping cart. Using `Product.find({ _id: { $in: productIds } })` with `.lean()` to fetch and build a hash map creates an O(1) time lookup while removing the database roundtrip overhead.
+**Action:** When working with collections and needing database properties, always aggregate unique IDs, execute a single query (using `$in`), and map the results locally before processing the loop.
