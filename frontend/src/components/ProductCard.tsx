@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Product } from '@/lib/api';
 import WishlistButton from './WishlistButton';
@@ -15,8 +16,9 @@ function stringToColor(str: string) {
   return `hsl(${hue}, 65%, 45%)`;
 }
 
-export default function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCartStore();
+const ProductCard = React.memo(function ProductCard({ product }: { product: Product }) {
+  // Use selector to prevent re-renders when other cart state changes (e.g. quantity updates)
+  const addItem = useCartStore(state => state.addItem);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page
@@ -123,4 +125,6 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
     </Link>
   );
-}
+});
+
+export default ProductCard;
