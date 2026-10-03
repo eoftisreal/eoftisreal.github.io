@@ -1,0 +1,3 @@
+## 2024-05-24 - [React/Zustand Re-render Bottleneck]
+**Learning:** In grids or lists where components receive complex objects as props and interact with global state (like a shopping cart), destructuring the whole store (e.g., `const { addItem } = useCartStore()`) causes *all* components to re-render whenever *any* part of the store changes (e.g., updating a quantity of a single item in the cart).
+**Action:** Use specific Zustand selectors (e.g., `const addItem = useCartStore(state => state.addItem)`) to subscribe only to the needed slices of state. Furthermore, wrapping the list component (e.g. `ProductCard`) with `React.memo` prevents unnecessary re-renders when parent components update. This is especially crucial for performance in e-commerce product grids.
