@@ -1,0 +1,3 @@
+## 2026-10-04 - [React Zustand Re-rendering Trap in Grids]
+**Learning:** In grids or lists of components (like `ProductCard`), using a destructuring import from Zustand (`const { addItem } = useCartStore();`) causes the component to subscribe to the *entire* state object. If the cart's items or total changes, *every* product card on the page re-renders needlessly, causing a massive performance hit.
+**Action:** Always use selectors when pulling functions or specific values from a Zustand store (e.g., `useCartStore(state => state.addItem)`) to prevent unnecessary component re-renders, and wrap list items in `React.memo` to isolate them from parent state changes.
