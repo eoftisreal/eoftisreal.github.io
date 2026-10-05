@@ -1,0 +1,4 @@
+
+## 2023-10-05 - [Optimize List Items with Zustand Selectors & Memoization]
+**Learning:** Destructuring global Zustand stores (like `const { addItem } = useCartStore()`) in complex list items (like `ProductCard`) causes every instance of the component to re-render whenever *any* state in the store changes (e.g., when the cart total or items update). Furthermore, passing complex props (like a `Product` object) into these child components means they will re-render anytime the parent (like `ProductGrid`) updates unless they are wrapped in `React.memo()`. This combination causes severe performance bottlenecks in grids/lists.
+**Action:** Always use targeted selectors with Zustand (e.g., `useCartStore(state => state.addItem)`) and wrap list item components that receive complex objects as props with `React.memo()` to prevent widespread re-rendering cascades.
