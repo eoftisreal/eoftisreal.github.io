@@ -14,7 +14,7 @@ type Props = {
 };
 
 export default function AddToCartButton({ productId, title, price, image, customImage, size, color }: Props) {
-  const { addItem } = useCartStore();
+  const addItem = useCartStore(state => state.addItem);
 
   return (
     <button
