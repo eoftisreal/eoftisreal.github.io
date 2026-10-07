@@ -7,7 +7,7 @@ type Props = {
   productId: string;
   title: string;
   price: number;
-  stock?: number;
+  stock?: number | string | null;
   image?: string;
   customImage?: string;
   size?: string;
@@ -16,13 +16,14 @@ type Props = {
 
 export default function AddToCartButton({ productId, title, price, stock, image, customImage, size, color }: Props) {
   const { addItem } = useCartStore();
-  const isOutOfStock = typeof stock === 'number' ? stock <= 0 : false;
-
+  const normalizedStock = typeof stock === 'number' ? stock : typeof stock === 'string' ? Number(stock) : undefined;
+  const safeStock = typeof normalizedStock === 'number' && Number.isFinite(normalizedStock) ? normalizedStock : undefined;
+  const isOutOfStock = typeof safeStock === 'number' ? safeStock <= 0 : false;
   return (
     <button
       onClick={() => {
         if (isOutOfStock) return;
-        addItem({ productId, title, unitPrice: price, image, customImage, size, color, availableStock: stock }).then((result) => {
+        addItem({ productId, title, unitPrice: price, image, customImage, size, color, availableStock: safeStock }).then((result) => {
           if (result.ok) {
             toast.success(`${title} added to cart!`);
             return;
