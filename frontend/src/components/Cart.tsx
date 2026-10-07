@@ -5,6 +5,15 @@ import { X, Minus, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+function normalizeStockValue(stock: unknown): number | undefined {
+  if (typeof stock === 'number' && Number.isFinite(stock)) return stock;
+  if (typeof stock === 'string') {
+    const parsed = Number(stock);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+}
+
 export default function Cart() {
   const { items, removeItem, updateQuantity } = useCartStore();
   const navigate = useNavigate();
@@ -46,7 +55,8 @@ export default function Cart() {
       <h1 className="text-3xl font-black mb-8">Your Cart</h1>
       <ul className="divide-y divide-border border-y border-border">
         {items.map((item) => {
-          const canIncrease = typeof item.availableStock === 'number' ? item.quantity < item.availableStock : true;
+          const availableStock = normalizeStockValue(item.availableStock);
+          const canIncrease = typeof availableStock === 'number' ? item.quantity < availableStock : true;
           return (
           <li key={`${item.productId}-${item.size || ''}-${item.color || ''}`} className="flex gap-6 py-6">
             <div className="h-24 w-24 shrink-0 overflow-hidden bg-secondary-bg rounded border border-border flex items-center justify-center">
