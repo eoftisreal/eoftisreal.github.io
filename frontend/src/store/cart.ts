@@ -28,6 +28,15 @@ type CartState = {
   clearLocalCart: () => void;
 };
 
+function normalizeStockValue(stock: unknown): number | undefined {
+  if (typeof stock === 'number' && Number.isFinite(stock)) return stock;
+  if (typeof stock === 'string') {
+    const parsed = Number(stock);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+}
+
 async function getLatestProductStock(productId: string): Promise<number | undefined> {
   try {
     const res = await fetch(`${apiBase}/products/${productId}`);
@@ -69,7 +78,7 @@ export const useCartStore = create<CartState>()(
             customImage: item.customImage || undefined,
             size: product.enableSizes ? item.size : undefined,
             color: product.enableColors ? item.color : undefined,
-            availableStock: typeof product.stock === 'number' ? product.stock : undefined,
+            availableStock: normalizeStockValue(product.stock),
           };
         });
         set({ items: mappedItems });
@@ -90,7 +99,7 @@ export const useCartStore = create<CartState>()(
     );
     const newQuantity = existing ? existing.quantity + 1 : 1;
     const latestStock = await getLatestProductStock(product.productId);
-    const availableStock = latestStock ?? product.availableStock ?? existing?.availableStock;
+    const availableStock = normalizeStockValue(latestStock) ?? normalizeStockValue(product.availableStock) ?? normalizeStockValue(existing?.availableStock);
 
     if (typeof availableStock === 'number' && newQuantity > availableStock) {
   return { ok: false, message: stockLabel(availableStock) };
@@ -152,11 +161,12 @@ export const useCartStore = create<CartState>()(
       item.productId === productId && item.size === size && item.color === color
     );
     const isIncrease = !!existing && newQuantity > existing.quantity;
-    let availableStock = existing?.availableStock;
+    let availableStock = normalizeStockValue(existing?.availableStock);
     if (isIncrease) {
       const latestStock = await getLatestProductStock(productId);
-      if (typeof latestStock === 'number') {
-        availableStock = latestStock;
+      const normalizedLatestStock = normalizeStockValue(latestStock);
+      if (typeof normalizedLatestStock === 'number') {
+        availableStock = normalizedLatestStock;
       }
       if (typeof availableStock === 'number' && newQuantity > availableStock) {
         return { ok: false, message: stockLabel(availableStock) };
