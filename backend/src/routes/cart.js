@@ -59,20 +59,32 @@ router.post('/items', validate(itemSchema), async (req, res, next) => {
   try {
     const { productId, quantity, customImage, size, color } = req.validated.body;
     const product = await Product.findById(productId);
-    assertProductAvailability(product, quantity);
+    assertProductAvailability(product, 1); // Basic check if product exists and stock > 0
 
     const cart = await getCart(req.user.id);
+
+    // Calculate new total quantity for this product in the cart
+    let newTotalQuantity = quantity;
+    for (const item of cart.items) {
+      if (item.productId.toString() === productId) {
+        // Exclude the specific variant we are updating, as its quantity is being replaced
+        if (!(item.size === size && item.color === color)) {
+          newTotalQuantity += item.quantity;
+        }
+      }
+    }
+
+    assertProductAvailability(product, newTotalQuantity);
+
     const existing = cart.items.find((item) =>
       item.productId.toString() === productId &&
       item.size === size &&
       item.color === color
     );
     if (existing) {
-      assertProductAvailability(product, quantity);
       existing.quantity = quantity;
       if (customImage) existing.customImage = customImage;
     } else {
-      assertProductAvailability(product, quantity);
       cart.items.push({ productId, quantity, customImage, size, color });
     }
 
@@ -105,18 +117,33 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
 
     for (const item of items) {
       const product = await Product.findById(item.productId);
+      assertProductAvailability(product, 1);
+
       const existing = cart.items.find((i) =>
         i.productId.toString() === item.productId &&
         i.size === item.size &&
         i.color === item.color
       );
+
+      const newVariantQuantity = existing ? existing.quantity + item.quantity : item.quantity;
+
+      // Calculate new total quantity for this product in the cart
+      let newTotalQuantity = newVariantQuantity;
+      for (const cartItem of cart.items) {
+        if (cartItem.productId.toString() === item.productId) {
+          // Exclude the specific variant we are updating
+          if (!(cartItem.size === item.size && cartItem.color === item.color)) {
+            newTotalQuantity += cartItem.quantity;
+          }
+        }
+      }
+
+      assertProductAvailability(product, newTotalQuantity);
+
       if (existing) {
-        const nextQuantity = existing.quantity + item.quantity;
-        assertProductAvailability(product, nextQuantity);
-        existing.quantity = nextQuantity;
+        existing.quantity = newVariantQuantity;
         if (item.customImage) existing.customImage = item.customImage;
       } else {
-        assertProductAvailability(product, item.quantity);
         cart.items.push({
           productId: item.productId,
           quantity: item.quantity,

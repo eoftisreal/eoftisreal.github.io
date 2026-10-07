@@ -21,7 +21,11 @@ export default function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page
     e.stopPropagation();
-    if (product.stock <= 0) return;
+
+    if (product.stock <= 0) {
+      toast.error('This product is out of stock');
+      return;
+    }
 
     const size = product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined;
     const color = product.colors && product.colors.length > 0 ? product.colors[0] : undefined;
@@ -119,13 +123,13 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             onClick={handleAddToCart}
             disabled={product.stock <= 0}
-            className={`p-1.5 md:p-2 rounded-full text-white transition-opacity ${
+            className={`p-1.5 md:p-2 rounded-full text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 ${
               product.stock <= 0
                 ? 'cursor-not-allowed bg-slate-400'
                 : 'hover:opacity-90'
             }`}
             style={product.stock <= 0 ? undefined : { backgroundColor: '#e04136' }}
-            aria-label="Add to cart"
+            aria-label={product.stock <= 0 ? 'Out of stock' : 'Add to cart'}
             title={product.stock <= 0 ? 'Out of stock' : 'Add to cart'}
           >
             <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
