@@ -13,6 +13,26 @@ async function getCart(userId) {
   return Cart.findOneAndUpdate({ userId }, { $setOnInsert: { userId, items: [] } }, { upsert: true, new: true });
 }
 
+function assertProductAvailability(product, quantity) {
+  if (!product || !product.isActive) {
+    const err = new Error('Product unavailable');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (product.stock <= 0) {
+    const err = new Error('Product is out of stock');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (quantity > product.stock) {
+    const err = new Error(`Only ${product.stock} unit(s) available`);
+    err.statusCode = 400;
+    throw err;
+  }
+}
+
 router.get('/', async (req, res, next) => {
   try {
     const cart = await getCart(req.user.id);
@@ -39,11 +59,7 @@ router.post('/items', validate(itemSchema), async (req, res, next) => {
   try {
     const { productId, quantity, customImage, size, color } = req.validated.body;
     const product = await Product.findById(productId);
-    if (!product || !product.isActive) {
-      const err = new Error('Product unavailable');
-      err.statusCode = 400;
-      throw err;
-    }
+    assertProductAvailability(product, quantity);
 
     const cart = await getCart(req.user.id);
     const existing = cart.items.find((item) =>
@@ -52,9 +68,11 @@ router.post('/items', validate(itemSchema), async (req, res, next) => {
       item.color === color
     );
     if (existing) {
+      assertProductAvailability(product, quantity);
       existing.quantity = quantity;
       if (customImage) existing.customImage = customImage;
     } else {
+      assertProductAvailability(product, quantity);
       cart.items.push({ productId, quantity, customImage, size, color });
     }
 
@@ -86,25 +104,26 @@ router.post('/sync', validate(syncSchema), async (req, res, next) => {
     const cart = await getCart(req.user.id);
 
     for (const item of items) {
+      const product = await Product.findById(item.productId);
       const existing = cart.items.find((i) =>
         i.productId.toString() === item.productId &&
         i.size === item.size &&
         i.color === item.color
       );
       if (existing) {
-        existing.quantity += item.quantity;
+        const nextQuantity = existing.quantity + item.quantity;
+        assertProductAvailability(product, nextQuantity);
+        existing.quantity = nextQuantity;
         if (item.customImage) existing.customImage = item.customImage;
       } else {
-        const product = await Product.findById(item.productId);
-        if (product && product.isActive) {
-          cart.items.push({
-            productId: item.productId,
-            quantity: item.quantity,
-            customImage: item.customImage,
-            size: item.size,
-            color: item.color
-          });
-        }
+        assertProductAvailability(product, item.quantity);
+        cart.items.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          customImage: item.customImage,
+          size: item.size,
+          color: item.color
+        });
       }
     }
 

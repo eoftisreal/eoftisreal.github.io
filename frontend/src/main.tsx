@@ -88,6 +88,7 @@ const AccountPage = lazyRetry(() => import('./pages/AccountPage'));
 const AboutPage = lazyRetry(() => import('./pages/AboutPage'));
 const ContactPage = lazyRetry(() => import('./pages/ContactPage'));
 const PrivacyPolicyPage = lazyRetry(() => import('./pages/PrivacyPolicyPage'));
+const FaqPage = lazyRetry(() => import('./pages/FaqPage'));
 const AdminOrdersPage = lazyRetry(() => import('./pages/admin/OrdersPage'));
 
 const queryClient = new QueryClient({
@@ -116,6 +117,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
           <Route path="products/:id" element={<ProductPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<ContactPage />} />
+          <Route path="faq" element={<FaqPage />} />
           <Route path="privacy" element={<PrivacyPolicyPage />} />
           <Route path="terms" element={<PrivacyPolicyPage />} />
           <Route path="shipping" element={<PrivacyPolicyPage />} />

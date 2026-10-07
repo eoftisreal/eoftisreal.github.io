@@ -321,14 +321,14 @@ export default function ProductDetailPage() {
 
             {customImageUrl && (
               <div className="pt-2 flex items-center gap-2">
-                <AddToCartButton productId={product._id} title={product.title} price={product.price} image={product.images?.[0]} customImage={customImageUrl} size={selectedSize} color={selectedColor} />
+                <AddToCartButton productId={product._id} title={product.title} price={product.price} stock={product.stock} image={product.images?.[0]} customImage={customImageUrl} size={selectedSize} color={selectedColor} />
                 <WishlistButton productId={product._id} className="w-12 h-12 !p-0 flex-shrink-0 border border-border bg-transparent shadow-none" />
               </div>
             )}
           </div>
         ) : (
           <div className="pt-4 border-t border-border flex items-center gap-2">
-            <AddToCartButton productId={product._id} title={product.title} price={product.price} image={product.images?.[0]} size={selectedSize} color={selectedColor} />
+            <AddToCartButton productId={product._id} title={product.title} price={product.price} stock={product.stock} image={product.images?.[0]} size={selectedSize} color={selectedColor} />
             <WishlistButton productId={product._id} className="w-12 h-12 !p-0 flex-shrink-0 border border-border bg-transparent shadow-none" />
           </div>
         )}

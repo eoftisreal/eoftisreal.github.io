@@ -9,6 +9,7 @@ const Coupon = require('../models/Coupon');
 const OrderStatusHistory = require('../models/OrderStatusHistory');
 const Setting = require('../models/Setting');
 const User = require('../models/User');
+const Product = require('../models/Product');
 const { getSettings } = require('../utils/settingsCache');
 const { sendOrderConfirmationEmail } = require('../utils/sendEmail');
 
@@ -111,6 +112,26 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
             const err = new Error('Cart is empty');
             err.statusCode = 400;
             throw err;
+          }
+
+          for (const item of cart.items) {
+            if (!item.productId || !item.productId.isActive) {
+              const err = new Error('One or more cart items are unavailable');
+              err.statusCode = 400;
+              throw err;
+            }
+
+            const updatedProduct = await Product.findOneAndUpdate(
+              { _id: item.productId._id, isActive: true, stock: { $gte: item.quantity } },
+              { $inc: { stock: -item.quantity } },
+              { session, new: true }
+            );
+
+            if (!updatedProduct) {
+              const err = new Error(`${item.productId.title} is out of stock or has insufficient quantity`);
+              err.statusCode = 400;
+              throw err;
+            }
           }
 
           const subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);
