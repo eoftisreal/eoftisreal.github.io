@@ -19,7 +19,6 @@ export default function AddToCartButton({ productId, title, price, stock, image,
   const normalizedStock = typeof stock === 'number' ? stock : typeof stock === 'string' ? Number(stock) : undefined;
   const safeStock = typeof normalizedStock === 'number' && Number.isFinite(normalizedStock) ? normalizedStock : undefined;
   const isOutOfStock = typeof safeStock === 'number' ? safeStock <= 0 : false;
-
   return (
     <button
       onClick={() => {
