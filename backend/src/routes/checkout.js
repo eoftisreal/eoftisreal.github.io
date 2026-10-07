@@ -114,13 +114,29 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
             throw err;
           }
 
+          const requested = new Map();
+
           for (const item of cart.items) {
-            if (!item.productId || !item.productId.isActive) {
-              const err = new Error('One or more cart items are unavailable');
-              err.statusCode = 400;
+            const product = item.productId;
+
+            if (!product || !product.isActive) {
+              const err = new Error('A product in your cart is no longer available');
+              err.statusCode = 409;
               throw err;
             }
 
+            const id = String(product._id);
+            const quantity = (requested.get(id) || 0) + item.quantity;
+            requested.set(id, quantity);
+
+            if (quantity > product.stock) {
+              const err = new Error(`Not enough stock for ${product.title}`);
+              err.statusCode = 409;
+              throw err;
+            }
+          }
+
+          for (const item of cart.items) {
             const updatedProduct = await Product.findOneAndUpdate(
               { _id: item.productId._id, isActive: true, stock: { $gte: item.quantity } },
               { $inc: { stock: -item.quantity } },

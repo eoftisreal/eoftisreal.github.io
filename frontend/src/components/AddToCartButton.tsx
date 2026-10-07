@@ -16,14 +16,15 @@ type Props = {
 
 export default function AddToCartButton({ productId, title, price, stock, image, customImage, size, color }: Props) {
   const { addItem } = useCartStore();
-  const normalizedStock = typeof stock === 'number' ? stock : typeof stock === 'string' ? Number(stock) : undefined;
-  const safeStock = typeof normalizedStock === 'number' && Number.isFinite(normalizedStock) ? normalizedStock : undefined;
-  const isOutOfStock = typeof safeStock === 'number' ? safeStock <= 0 : false;
+
+  const isOutOfStock = Number(stock) <= 0;
+  const availableStock = !Number.isNaN(Number(stock)) ? Number(stock) : undefined;
+
   return (
     <button
       onClick={() => {
         if (isOutOfStock) return;
-        addItem({ productId, title, unitPrice: price, image, customImage, size, color, availableStock: safeStock }).then((result) => {
+        addItem({ productId, title, unitPrice: price, image, customImage, size, color, availableStock }).then((result) => {
           if (result.ok) {
             toast.success(`${title} added to cart!`);
             return;
@@ -34,7 +35,7 @@ export default function AddToCartButton({ productId, title, price, stock, image,
       disabled={isOutOfStock}
       className={`inline-block rounded-full px-6 py-3 font-semibold text-white transition-colors ${
         isOutOfStock
-          ? 'cursor-not-allowed bg-slate-400'
+          ? 'cursor-not-allowed bg-slate-400 disabled:cursor-not-allowed disabled:opacity-50'
           : 'cursor-pointer bg-foreground hover:bg-black'
       }`}
     >
