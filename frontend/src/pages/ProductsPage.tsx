@@ -175,7 +175,11 @@ function ProductListingContent() {
       ) : (
         <>
           <ProductGrid products={data.products} />
-          <p className="text-sm text-slate-500">Page {data.page} of {data.totalPages}</p>
+          {data.products.length === 0 ? (
+            <p className="text-sm text-slate-500">No products found for the selected filters.</p>
+          ) : (
+            <p className="text-sm text-slate-500">Page {data.page} of {data.totalPages}</p>
+          )}
         </>
       )}
     </div>
