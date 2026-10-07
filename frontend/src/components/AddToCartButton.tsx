@@ -22,8 +22,13 @@ export default function AddToCartButton({ productId, title, price, stock, image,
     <button
       onClick={() => {
         if (isOutOfStock) return;
-        addItem({ productId, title, unitPrice: price, image, customImage, size, color });
-        toast.success(`${title} added to cart!`);
+        addItem({ productId, title, unitPrice: price, image, customImage, size, color, availableStock: stock }).then((result) => {
+          if (result.ok) {
+            toast.success(`${title} added to cart!`);
+            return;
+          }
+          toast.error(result.message || 'Unable to add item to cart');
+        });
       }}
       disabled={isOutOfStock}
       className={`inline-block rounded-full px-6 py-3 font-semibold text-white transition-colors ${

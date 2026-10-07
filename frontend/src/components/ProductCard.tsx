@@ -18,7 +18,7 @@ function stringToColor(str: string) {
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page
     e.stopPropagation();
     if (product.stock <= 0) return;
@@ -26,16 +26,21 @@ export default function ProductCard({ product }: { product: Product }) {
     const size = product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined;
     const color = product.colors && product.colors.length > 0 ? product.colors[0] : undefined;
 
-    addItem({
+    const result = await addItem({
       productId: product._id,
       title: product.title,
       unitPrice: product.price,
       image: product.images?.[0],
       size,
-      color
+      color,
+      availableStock: product.stock
     });
 
-    toast.success(`${product.title} added to cart!`);
+    if (result.ok) {
+      toast.success(`${product.title} added to cart!`);
+      return;
+    }
+    toast.error(result.message || 'Unable to add item to cart');
   };
 
   const generateSrcSet = (variant: any) => {
