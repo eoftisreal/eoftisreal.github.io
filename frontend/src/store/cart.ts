@@ -15,17 +15,30 @@ export type CartItem = {
   customImage?: string;
   size?: string;
   color?: string;
+  availableStock?: number;
 };
 
 type CartState = {
   items: CartItem[];
   fetchCart: () => Promise<void>;
-  addItem: (product: Pick<CartItem, 'productId' | 'title' | 'unitPrice' | 'image' | 'customImage' | 'size' | 'color'>) => Promise<void>;
-  updateQuantity: (productId: string, size: string | undefined, color: string | undefined, quantity: number) => Promise<void>;
+  addItem: (product: Pick<CartItem, 'productId' | 'title' | 'unitPrice' | 'image' | 'customImage' | 'size' | 'color' | 'availableStock'>) => Promise<{ ok: boolean; message?: string }>;
+  updateQuantity: (productId: string, size: string | undefined, color: string | undefined, quantity: number) => Promise<{ ok: boolean; message?: string }>;
   removeItem: (productId: string, size: string | undefined, color: string | undefined) => Promise<void>;
   syncLocalCartToBackend: () => Promise<void>;
   clearLocalCart: () => void;
 };
+
+async function getLatestProductStock(productId: string): Promise<number | undefined> {
+  try {
+    const res = await fetch(`${apiBase}/products/${productId}`);
+    if (!res.ok) return undefined;
+    const product = await res.json();
+    if (typeof product.stock !== 'number') return undefined;
+    return product.stock;
+  } catch {
+    return undefined;
+  }
+}
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -56,6 +69,7 @@ export const useCartStore = create<CartState>()(
             customImage: item.customImage || undefined,
             size: product.enableSizes ? item.size : undefined,
             color: product.enableColors ? item.color : undefined,
+            availableStock: typeof product.stock === 'number' ? product.stock : undefined,
           };
         });
         set({ items: mappedItems });
@@ -66,53 +80,40 @@ export const useCartStore = create<CartState>()(
   },
 
   addItem: async (product) => {
+    const stockLabel = (stock: number) => stock <= 0 ? 'Product is out of stock' : `Only ${stock} unit(s) available`;
     const token = getAuthToken();
-    if (!token) {
-      // update Zustand directly, it will persist locally until sync
-      const currentItems = get().items;
-      const existing = currentItems.find((item) =>
-        item.productId === product.productId &&
-        item.size === product.size &&
-        item.color === product.color
-      );
-
-      let updatedItems;
-      if (existing) {
-        updatedItems = currentItems.map(item =>
-          item.productId === product.productId && item.size === product.size && item.color === product.color
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        updatedItems = [...currentItems, { ...product, quantity: 1 }];
-      }
-
-      setCartItems(updatedItems); // keep fallback in sync just in case
-      set({ items: updatedItems });
-      return;
-    }
-
-    // Logged in: update optimistically
     const currentItems = get().items;
     const existing = currentItems.find((item) =>
-      item.productId === product.productId &&
-      item.size === product.size &&
-      item.color === product.color
+  item.productId === product.productId &&
+  item.size === product.size &&
+  item.color === product.color
     );
     const newQuantity = existing ? existing.quantity + 1 : 1;
+    const latestStock = await getLatestProductStock(product.productId);
+    const availableStock = latestStock ?? product.availableStock ?? existing?.availableStock;
+
+    if (typeof availableStock === 'number' && newQuantity > availableStock) {
+  return { ok: false, message: stockLabel(availableStock) };
+    }
 
     const updatedItems = existing
-      ? currentItems.map(item =>
-          item.productId === product.productId && item.size === product.size && item.color === product.color
-            ? { ...item, quantity: newQuantity }
-            : item
-        )
-      : [...currentItems, { ...product, quantity: 1 }];
+  ? currentItems.map(item =>
+      item.productId === product.productId && item.size === product.size && item.color === product.color
+        ? { ...item, quantity: newQuantity, availableStock }
+        : item
+    )
+  : [...currentItems, { ...product, quantity: 1, availableStock }];
+
+    if (!token) {
+  setCartItems(updatedItems); // keep fallback in sync just in case
+  set({ items: updatedItems });
+  return { ok: true };
+    }
 
     set({ items: updatedItems });
 
     try {
-      const res = await fetchWithAuth(`${apiBase}/cart/items`, {
+  const res = await fetchWithAuth(`${apiBase}/cart/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,34 +129,57 @@ export const useCartStore = create<CartState>()(
       });
 
       if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
         // Revert on failure
         await get().fetchCart();
+        return { ok: false, message: body.error?.message || body.message || 'Unable to update cart quantity' };
       }
+      await get().fetchCart();
+      return { ok: true };
     } catch (err) {
       console.error('Failed to add item to cart', err);
       await get().fetchCart(); // Revert on failure
+      return { ok: false, message: 'Unable to update cart quantity' };
     }
   },
 
   updateQuantity: async (productId, size, color, quantity) => {
     const newQuantity = Math.max(1, quantity);
+    const stockLabel = (stock: number) => stock <= 0 ? 'Product is out of stock' : `Only ${stock} unit(s) available`;
     const token = getAuthToken();
+    const currentItems = get().items;
+    const existing = currentItems.find((item) =>
+      item.productId === productId && item.size === size && item.color === color
+    );
+    const isIncrease = !!existing && newQuantity > existing.quantity;
+    let availableStock = existing?.availableStock;
+    if (isIncrease) {
+      const latestStock = await getLatestProductStock(productId);
+      if (typeof latestStock === 'number') {
+        availableStock = latestStock;
+      }
+      if (typeof availableStock === 'number' && newQuantity > availableStock) {
+        return { ok: false, message: stockLabel(availableStock) };
+      }
+    }
 
     if (!token) {
       // local update
-      const currentItems = get().items;
       const updated = currentItems.map(item =>
-        item.productId === productId && item.size === size && item.color === color ? { ...item, quantity: newQuantity } : item
+        item.productId === productId && item.size === size && item.color === color
+          ? { ...item, quantity: newQuantity, availableStock }
+          : item
       );
       setCartItems(updated);
       set({ items: updated });
-      return;
+      return { ok: true };
     }
 
     // Logged in: update optimistically
-    const currentItems = get().items;
     const updated = currentItems.map(item =>
-      item.productId === productId && item.size === size && item.color === color ? { ...item, quantity: newQuantity } : item
+      item.productId === productId && item.size === size && item.color === color
+        ? { ...item, quantity: newQuantity, availableStock }
+        : item
     );
     set({ items: updated });
 
@@ -170,12 +194,17 @@ export const useCartStore = create<CartState>()(
       });
 
       if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
         // Revert on failure
         await get().fetchCart();
+        return { ok: false, message: body.error?.message || body.message || 'Unable to update cart quantity' };
       }
+      await get().fetchCart();
+      return { ok: true };
     } catch (err) {
       console.error('Failed to update quantity', err);
       await get().fetchCart(); // Revert on failure
+      return { ok: false, message: 'Unable to update cart quantity' };
     }
   },
 

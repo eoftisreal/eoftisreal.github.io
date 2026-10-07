@@ -3,6 +3,7 @@
 import { useCartStore } from "@/store/cart";
 import { X, Minus, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Cart() {
   const { items, removeItem, updateQuantity } = useCartStore();
@@ -44,7 +45,9 @@ export default function Cart() {
     <div className="mx-auto max-w-4xl space-y-6 mt-8">
       <h1 className="text-3xl font-black mb-8">Your Cart</h1>
       <ul className="divide-y divide-border border-y border-border">
-        {items.map((item) => (
+        {items.map((item) => {
+          const canIncrease = typeof item.availableStock === 'number' ? item.quantity < item.availableStock : true;
+          return (
           <li key={`${item.productId}-${item.size || ''}-${item.color || ''}`} className="flex gap-6 py-6">
             <div className="h-24 w-24 shrink-0 overflow-hidden bg-secondary-bg rounded border border-border flex items-center justify-center">
               {item.image || item.customImage ? (
@@ -79,14 +82,17 @@ export default function Cart() {
                 <div className="flex items-center gap-3">
                   <div className="flex items-center border border-border rounded">
                     <button
-                      onClick={() =>
-                        updateQuantity(
+                      onClick={async () => {
+                        const result = await updateQuantity(
                           item.productId,
                           item.size,
                           item.color,
                           Math.max(1, item.quantity - 1),
-                        )
-                      }
+                        );
+                        if (!result.ok) {
+                          toast.error(result.message || 'Unable to update cart quantity');
+                        }
+                      }}
                       className="p-2 text-secondary-text hover:text-foreground hover:bg-secondary-bg transition-colors"
                       title="Decrease quantity"
                     >
@@ -96,11 +102,15 @@ export default function Cart() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() =>
-                        updateQuantity(item.productId, item.size, item.color, item.quantity + 1)
-                      }
-                      className="p-2 text-secondary-text hover:text-foreground hover:bg-secondary-bg transition-colors"
-                      title="Increase quantity"
+                      onClick={async () => {
+                        const result = await updateQuantity(item.productId, item.size, item.color, item.quantity + 1);
+                        if (!result.ok) {
+                          toast.error(result.message || 'Unable to update cart quantity');
+                        }
+                      }}
+                      disabled={!canIncrease}
+                      className="p-2 text-secondary-text hover:text-foreground hover:bg-secondary-bg transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                      title={canIncrease ? "Increase quantity" : "Reached available stock"}
                     >
                       <Plus size={14} />
                     </button>
@@ -119,7 +129,8 @@ export default function Cart() {
               </div>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <div className="flex justify-end pt-4">
