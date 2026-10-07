@@ -4,6 +4,7 @@ import WishlistButton from './WishlistButton';
 import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import toast from 'react-hot-toast';
+import React from 'react';
 
 // Helper function to generate a consistent color based on string content
 function stringToColor(str: string) {
@@ -15,8 +16,13 @@ function stringToColor(str: string) {
   return `hsl(${hue}, 65%, 45%)`;
 }
 
-export default function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCartStore();
+// ⚡ Bolt: Wrapped in React.memo to prevent unnecessary re-renders of the entire grid
+// when parent components update. Only re-renders if the product prop changes.
+const ProductCard = React.memo(function ProductCard({ product }: { product: Product }) {
+  // ⚡ Bolt: Use a specific selector instead of destructuring to prevent the component
+  // from subscribing to the entire cart store (e.g., items array, total price).
+  // This drastically reduces re-renders in product lists when the cart changes.
+  const addItem = useCartStore((state) => state.addItem);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page
@@ -123,4 +129,6 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
     </Link>
   );
-}
+});
+
+export default ProductCard;
