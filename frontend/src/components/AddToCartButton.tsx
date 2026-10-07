@@ -14,7 +14,9 @@ type Props = {
 };
 
 export default function AddToCartButton({ productId, title, price, image, customImage, size, color }: Props) {
-  const { addItem } = useCartStore();
+  // ⚡ Bolt: Use a specific selector to prevent subscribing to the entire cart store.
+  // Prevents the button from re-rendering every time the cart contents change.
+  const addItem = useCartStore((state) => state.addItem);
 
   return (
     <button
