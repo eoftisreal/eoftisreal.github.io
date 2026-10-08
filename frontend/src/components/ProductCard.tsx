@@ -20,13 +20,13 @@ export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
 
   const availableStock = normalizeStock(product.stock);
-  const isOutOfStock = availableStock === undefined || availableStock === 0;
+  const isUnavailable = availableStock === undefined || availableStock <= 0;
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page
     e.stopPropagation();
 
-    if (isOutOfStock) {
+    if (isUnavailable) {
       toast.error(
         availableStock === undefined
           ? 'Stock is currently unavailable'
@@ -48,11 +48,12 @@ export default function ProductCard({ product }: { product: Product }) {
       availableStock,
     });
 
-    if (result.ok) {
-      toast.success(`${product.title} added to cart!`);
+    if (!result.ok) {
+      toast.error(result.message || 'Unable to add item');
       return;
     }
-    toast.error(result.message || 'Unable to add item to cart');
+
+    toast.success(`${product.title} added to cart!`);
   };
 
   const generateSrcSet = (variant: any) => {
@@ -85,9 +86,13 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <Link to={`/products/${product._id}`} className="group flex flex-col overflow-hidden rounded-md border border-secondary-bg bg-white transition hover:border-border">
-      <div className="relative aspect-square bg-secondary-bg overflow-hidden">
-        <div className="absolute top-2 right-2 z-20">
+    <div className="group flex flex-col overflow-hidden rounded-md border border-secondary-bg bg-white transition hover:border-border relative">
+      <Link to={`/products/${product._id}`} className="absolute inset-0 z-0">
+        <span className="sr-only">View {product.title}</span>
+      </Link>
+
+      <div className="relative aspect-square bg-secondary-bg overflow-hidden z-10 pointer-events-none">
+        <div className="absolute top-2 right-2 z-20 pointer-events-auto">
           <WishlistButton productId={product._id} />
         </div>
         <img loading="lazy" decoding="async"
@@ -101,7 +106,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <span className="absolute left-2 top-2 bg-white px-2 py-1 text-[10px] font-medium text-foreground z-10 border border-secondary-bg">Sale</span>
         ) : null}
         {product.tags && product.tags.length > 0 && (
-          <div className="absolute bottom-2 left-2 flex flex-wrap gap-1 z-10">
+          <div className="absolute bottom-2 left-2 flex flex-wrap gap-1 z-10 pointer-events-auto">
             {product.tags.map((tag, idx) => (
               <span key={idx} className="bg-white/90 text-foreground text-[10px] px-2 py-1 border border-secondary-bg uppercase tracking-widest">
                 {tag}
@@ -110,9 +115,11 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         )}
       </div>
-      <div className="space-y-2 p-4 flex flex-col flex-grow bg-secondary-bg/20">
-        <div className="flex flex-col items-start gap-1 flex-grow">
-          <h3 className="line-clamp-2 text-sm font-medium text-foreground/90 tracking-normal capitalize">{product.title}</h3>
+      <div className="space-y-2 p-4 flex flex-col flex-grow bg-secondary-bg/20 z-10 pointer-events-none">
+        <div className="flex flex-col items-start gap-1 flex-grow pointer-events-auto">
+          <Link to={`/products/${product._id}`}>
+            <h3 className="line-clamp-2 text-sm font-medium text-foreground/90 tracking-normal capitalize hover:underline">{product.title}</h3>
+          </Link>
           {product.productType && (
             <span
               className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white tracking-wider uppercase shadow-sm mt-1"
@@ -123,27 +130,36 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50 pointer-events-auto">
           <div className="flex items-baseline gap-2">
             <span className="text-base font-medium text-foreground">₹{product.price}</span>
             {product.compareAtPrice && product.compareAtPrice > product.price ? <span className="text-xs text-secondary-text line-through">₹{product.compareAtPrice}</span> : null}
           </div>
           <button
+            type="button"
             onClick={handleAddToCart}
-            disabled={isOutOfStock}
-            className={`p-1.5 md:p-2 rounded-full text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 ${
-              isOutOfStock
-                ? 'cursor-not-allowed bg-slate-400'
-                : 'hover:opacity-90'
+            disabled={isUnavailable}
+            className={`p-2 rounded-full text-white ${
+              isUnavailable
+                ? 'bg-slate-400 opacity-40 cursor-not-allowed'
+                : 'hover:bg-black transition-colors'
             }`}
-            style={isOutOfStock ? undefined : { backgroundColor: '#e04136' }}
-            aria-label={isOutOfStock ? 'Unavailable' : 'Add to cart'}
-            title={isOutOfStock ? 'Unavailable' : 'Add to cart'}
+            style={
+              isUnavailable
+                ? {
+                    animation: 'none',
+                    transition: 'none',
+                    transform: 'none',
+                  }
+                : { backgroundColor: '#e04136' }
+            }
+            aria-label={isUnavailable ? 'Unavailable' : 'Add to cart'}
+            title={isUnavailable ? 'Unavailable' : 'Add to cart'}
           >
-            <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
+            <ShoppingCart className="h-4 w-4" />
           </button>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

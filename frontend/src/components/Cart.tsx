@@ -126,7 +126,18 @@ export default function Cart() {
                     </button>
                   </div>
                   <button
-                    onClick={() => removeItem(item.productId, item.size, item.color)}
+                    type="button"
+                    onClick={async () => {
+                      const result = await removeItem(
+                        item.productId,
+                        item.size,
+                        item.color
+                      );
+
+                      if (!result.ok) {
+                        toast.error(result.message || 'Unable to remove item');
+                      }
+                    }}
                     className="p-2 text-secondary-text hover:text-foreground transition-colors"
                     title="Remove item"
                   >

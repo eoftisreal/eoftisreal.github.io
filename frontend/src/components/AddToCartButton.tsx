@@ -19,13 +19,14 @@ export default function AddToCartButton({ productId, title, price, stock, image,
   const { addItem } = useCartStore();
 
   const availableStock = normalizeStock(stock);
-  const isOutOfStock = availableStock === undefined || availableStock === 0;
+  const isUnavailable = availableStock === undefined || availableStock <= 0;
 
   return (
     <button
-      disabled={isOutOfStock}
+      type="button"
+      disabled={isUnavailable}
       onClick={async () => {
-        if (isOutOfStock) return;
+        if (isUnavailable) return;
 
         const result = await addItem({
           productId,
@@ -38,21 +39,31 @@ export default function AddToCartButton({ productId, title, price, stock, image,
           availableStock,
         });
 
-        if (result.ok) {
-          toast.success(`${title} added to cart!`);
-        } else {
-          toast.error(result.message || 'Unable to add item to cart');
+        if (!result.ok) {
+          toast.error(result.message || 'Unable to add item');
+          return;
         }
+
+        toast.success(`${title} added to cart!`);
       }}
-      className={`inline-block rounded-full px-6 py-3 font-semibold text-white transition-colors ${
-        isOutOfStock
-          ? 'cursor-not-allowed bg-slate-400 opacity-50'
-          : 'cursor-pointer bg-foreground hover:bg-black'
+      className={`inline-block rounded-full px-6 py-3 font-semibold text-white ${
+        isUnavailable
+          ? 'bg-slate-400 opacity-40 cursor-not-allowed'
+          : 'bg-foreground hover:bg-black transition-colors'
       }`}
+      style={
+        isUnavailable
+          ? {
+              animation: 'none',
+              transition: 'none',
+              transform: 'none',
+            }
+          : undefined
+      }
     >
       {availableStock === undefined
         ? 'Stock unavailable'
-        : isOutOfStock
+        : isUnavailable
           ? 'Out of Stock'
           : 'Add to Cart'}
     </button>
