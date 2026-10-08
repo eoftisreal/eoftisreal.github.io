@@ -67,8 +67,22 @@ module.exports = async ({ req, res, log, error }) => {
       req.bodyBinary && req.bodyBinary.length ? req.bodyBinary : undefined;
 
     const forwardedHeaders = { ...req.headers };
-    delete forwardedHeaders['content-length'];
-    delete forwardedHeaders['host'];
+
+    for (const name of Object.keys(forwardedHeaders)) {
+      const lower = name.toLowerCase();
+
+      if (
+        lower === 'content-length' ||
+        lower === 'transfer-encoding' ||
+        lower === 'host'
+      ) {
+        delete forwardedHeaders[name];
+      }
+    }
+
+    if (bodyBuffer) {
+      forwardedHeaders['content-length'] = String(bodyBuffer.length);
+    }
 
     const proxied = await new Promise((resolve, reject) => {
       let requestTimeout;
