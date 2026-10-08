@@ -12,8 +12,12 @@ export default function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { items, fetchCart, clearLocalCart } = useCartStore();
-  const { items: wishlistItems, fetchWishlist, clearLocalWishlist } = useWishlistStore();
+  const items = useCartStore(state => state.items);
+  const fetchCart = useCartStore(state => state.fetchCart);
+  const clearLocalCart = useCartStore(state => state.clearLocalCart);
+  const wishlistItems = useWishlistStore(state => state.items);
+  const fetchWishlist = useWishlistStore(state => state.fetchWishlist);
+  const clearLocalWishlist = useWishlistStore(state => state.clearLocalWishlist);
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
   const wishlistItemCount = wishlistItems.length;
 

@@ -15,7 +15,9 @@ function normalizeStockValue(stock: unknown): number | undefined {
 }
 
 export default function Cart() {
-  const { items, removeItem, updateQuantity } = useCartStore();
+  const items = useCartStore(state => state.items);
+  const removeItem = useCartStore(state => state.removeItem);
+  const updateQuantity = useCartStore(state => state.updateQuantity);
   const navigate = useNavigate();
 
   const total = items.reduce(

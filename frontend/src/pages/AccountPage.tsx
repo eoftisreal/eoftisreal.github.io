@@ -6,7 +6,8 @@ import ProductGrid from '@/components/ProductGrid';
 import { getAuthToken } from '@/lib/storage';
 
 export default function AccountPage() {
-  const { items: wishlistItems, fetchWishlist } = useWishlistStore();
+  const wishlistItems = useWishlistStore(state => state.items);
+  const fetchWishlist = useWishlistStore(state => state.fetchWishlist);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);

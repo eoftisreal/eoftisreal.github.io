@@ -62,7 +62,8 @@ export default function CheckoutForm() {
     deliveryCharge: 0
   });
 
-  const { items, fetchCart } = useCartStore();
+  const items = useCartStore(state => state.items);
+  const fetchCart = useCartStore(state => state.fetchCart);
   const queryClient = useQueryClient();
 
   const checkoutMutation = useMutation({
