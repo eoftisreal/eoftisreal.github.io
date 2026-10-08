@@ -15,7 +15,7 @@ type Props = {
 };
 
 export default function AddToCartButton({ productId, title, price, stock, image, customImage, size, color }: Props) {
-  const { addItem } = useCartStore();
+  const addItem = useCartStore(state => state.addItem);
 
   const isOutOfStock = Number(stock) <= 0;
   const availableStock = !Number.isNaN(Number(stock)) ? Number(stock) : undefined;

@@ -16,7 +16,7 @@ function stringToColor(str: string) {
 }
 
 export default function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCartStore();
+  const addItem = useCartStore(state => state.addItem);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page

@@ -3,7 +3,9 @@ import { Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function WishlistButton({ productId, className = '' }: { productId: string, className?: string }) {
-  const { items, add, remove } = useWishlistStore();
+  const items = useWishlistStore(state => state.items);
+  const add = useWishlistStore(state => state.add);
+  const remove = useWishlistStore(state => state.remove);
   const isWishlisted = items.includes(productId);
 
   const toggleWishlist = async (e: React.MouseEvent) => {
