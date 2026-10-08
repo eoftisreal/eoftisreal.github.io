@@ -3,8 +3,27 @@ import { fetchWithAuth } from "@/lib/apiClient";
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getAuthToken, getCartItems, setCartItems } from '@/lib/storage';
+import {
+  normalizeStock as normalizeStockValue,
+  productQuantity,
+} from '@/lib/stock';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
+
+let mutationQueue: Promise<unknown> = Promise.resolve();
+
+function serializeCartMutation<T>(
+  action: () => Promise<T>
+): Promise<T> {
+  const result = mutationQueue.then(action, action);
+
+  mutationQueue = result.then(
+    () => undefined,
+    () => undefined
+  );
+
+  return result;
+}
 
 export type CartItem = {
   productId: string;
@@ -28,22 +47,22 @@ type CartState = {
   clearLocalCart: () => void;
 };
 
-function normalizeStockValue(stock: unknown): number | undefined {
-  if (typeof stock === 'number' && Number.isFinite(stock)) return stock;
-  if (typeof stock === 'string') {
-    const parsed = Number(stock);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return undefined;
-}
-
-async function getLatestProductStock(productId: string): Promise<number | undefined> {
+async function getLatestProductStock(
+  productId: string
+): Promise<number | undefined> {
   try {
-    const res = await fetch(`${apiBase}/products/${productId}`);
+    const res = await fetch(
+      `${apiBase}/products/${productId}`,
+      { cache: 'no-store' }
+    );
+
     if (!res.ok) return undefined;
+
     const product = await res.json();
-    if (typeof product.stock !== 'number') return undefined;
-    return product.stock;
+
+    if (product.isActive === false) return 0;
+
+    return normalizeStockValue(product.stock);
   } catch {
     return undefined;
   }
@@ -88,21 +107,36 @@ export const useCartStore = create<CartState>()(
     }
   },
 
-  addItem: async (product) => {
-    const stockLabel = (stock: number) => stock <= 0 ? 'Product is out of stock' : `Only ${stock} unit(s) available`;
+  addItem: (product) => serializeCartMutation(async () => {
     const token = getAuthToken();
     const currentItems = get().items;
     const existing = currentItems.find((item) =>
-  item.productId === product.productId &&
-  item.size === product.size &&
-  item.color === product.color
+      item.productId === product.productId &&
+      item.size === product.size &&
+      item.color === product.color
     );
     const newQuantity = existing ? existing.quantity + 1 : 1;
-    const latestStock = await getLatestProductStock(product.productId);
-    const availableStock = normalizeStockValue(latestStock) ?? normalizeStockValue(product.availableStock) ?? normalizeStockValue(existing?.availableStock);
 
-    if (typeof availableStock === 'number' && newQuantity > availableStock) {
-  return { ok: false, message: stockLabel(availableStock) };
+    const availableStock = await getLatestProductStock(product.productId);
+
+    if (availableStock === undefined) {
+      return {
+        ok: false,
+        message: 'Unable to verify stock. Please try again.',
+      };
+    }
+
+    const requestedTotal =
+      productQuantity(currentItems, product.productId) + 1;
+
+    if (requestedTotal > availableStock) {
+      return {
+        ok: false,
+        message:
+          availableStock === 0
+            ? 'Product is out of stock'
+            : `Only ${availableStock} unit(s) available`,
+      };
     }
 
     const updatedItems = existing
@@ -150,26 +184,52 @@ export const useCartStore = create<CartState>()(
       await get().fetchCart(); // Revert on failure
       return { ok: false, message: 'Unable to update cart quantity' };
     }
-  },
+  }),
 
-  updateQuantity: async (productId, size, color, quantity) => {
-    const newQuantity = Math.max(1, quantity);
-    const stockLabel = (stock: number) => stock <= 0 ? 'Product is out of stock' : `Only ${stock} unit(s) available`;
+  updateQuantity: (productId, size, color, quantity) =>
+    serializeCartMutation(async () => {
+    if (!Number.isSafeInteger(quantity) || quantity < 1) {
+      return { ok: false, message: 'Invalid quantity' };
+    }
     const token = getAuthToken();
     const currentItems = get().items;
     const existing = currentItems.find((item) =>
       item.productId === productId && item.size === size && item.color === color
     );
-    const isIncrease = !!existing && newQuantity > existing.quantity;
-    let availableStock = normalizeStockValue(existing?.availableStock);
+
+    if (!existing) {
+      return {
+        ok: false,
+        message: 'Item is no longer in the cart',
+      };
+    }
+
+    const isIncrease = quantity > existing.quantity;
+    let availableStock = normalizeStockValue(existing.availableStock);
+
     if (isIncrease) {
-      const latestStock = await getLatestProductStock(productId);
-      const normalizedLatestStock = normalizeStockValue(latestStock);
-      if (typeof normalizedLatestStock === 'number') {
-        availableStock = normalizedLatestStock;
+      availableStock = await getLatestProductStock(productId);
+
+      if (availableStock === undefined) {
+        return {
+          ok: false,
+          message: 'Unable to verify stock. Please try again.',
+        };
       }
-      if (typeof availableStock === 'number' && newQuantity > availableStock) {
-        return { ok: false, message: stockLabel(availableStock) };
+
+      const requestedTotal =
+        productQuantity(currentItems, productId) -
+        existing.quantity +
+        quantity;
+
+      if (requestedTotal > availableStock) {
+        return {
+          ok: false,
+          message:
+            availableStock === 0
+              ? 'Product is out of stock'
+              : `Only ${availableStock} unit(s) available`,
+        };
       }
     }
 
@@ -177,7 +237,7 @@ export const useCartStore = create<CartState>()(
       // local update
       const updated = currentItems.map(item =>
         item.productId === productId && item.size === size && item.color === color
-          ? { ...item, quantity: newQuantity, availableStock }
+          ? { ...item, quantity: quantity, availableStock }
           : item
       );
       setCartItems(updated);
@@ -188,7 +248,7 @@ export const useCartStore = create<CartState>()(
     // Logged in: update optimistically
     const updated = currentItems.map(item =>
       item.productId === productId && item.size === size && item.color === color
-        ? { ...item, quantity: newQuantity, availableStock }
+        ? { ...item, quantity: quantity, availableStock }
         : item
     );
     set({ items: updated });
@@ -200,7 +260,7 @@ export const useCartStore = create<CartState>()(
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ productId, quantity: newQuantity, size, color }),
+        body: JSON.stringify({ productId, quantity: quantity, size, color }),
       });
 
       if (!res.ok) {
@@ -216,16 +276,17 @@ export const useCartStore = create<CartState>()(
       await get().fetchCart(); // Revert on failure
       return { ok: false, message: 'Unable to update cart quantity' };
     }
-  },
+  }),
 
-  removeItem: async (productId, size, color) => {
+  removeItem: (productId, size, color) =>
+    serializeCartMutation(async () => {
     const token = getAuthToken();
 
+    const currentItems = get().items;
     const isMatch = (item: CartItem) => item.productId === productId && item.size === size && item.color === color;
 
     if (!token) {
       // local update
-      const currentItems = get().items;
       const updated = currentItems.filter(item => !isMatch(item));
       setCartItems(updated);
       set({ items: updated });
@@ -233,7 +294,6 @@ export const useCartStore = create<CartState>()(
     }
 
     // Logged in: update optimistically
-    const currentItems = get().items;
     const updated = currentItems.filter(item => !isMatch(item));
     set({ items: updated });
 
@@ -255,7 +315,7 @@ export const useCartStore = create<CartState>()(
       console.error('Failed to remove item', err);
       await get().fetchCart(); // Revert on failure
     }
-  },
+  }),
 
   syncLocalCartToBackend: async () => {
     const token = getAuthToken();

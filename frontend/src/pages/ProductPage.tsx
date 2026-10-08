@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet, Product } from '@/lib/api';
 import AddToCartButton from '@/components/AddToCartButton';
+import { inventoryQueryOptions } from '@/lib/stock';
 import WishlistButton from '@/components/WishlistButton';
 import SEO from '@/components/SEO';
 import { X, Check } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function ProductDetailPage() {
   const { id } = useParams();
 
   const { data: product, isLoading: loading } = useQuery<Product>({
+    ...inventoryQueryOptions,
     queryKey: ['product', id],
     queryFn: () => apiGet<Product>(`/products/${id}`),
     enabled: !!id
