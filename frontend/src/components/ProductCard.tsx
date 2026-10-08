@@ -4,6 +4,7 @@ import WishlistButton from './WishlistButton';
 import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import toast from 'react-hot-toast';
+import { normalizeStock } from '@/lib/stock';
 
 // Helper function to generate a consistent color based on string content
 function stringToColor(str: string) {
@@ -18,12 +19,19 @@ function stringToColor(str: string) {
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
 
+  const availableStock = normalizeStock(product.stock);
+  const isOutOfStock = availableStock === undefined || availableStock === 0;
+
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to the product page
     e.stopPropagation();
 
-    if (product.stock <= 0) {
-      toast.error('This product is out of stock');
+    if (isOutOfStock) {
+      toast.error(
+        availableStock === undefined
+          ? 'Stock is currently unavailable'
+          : 'This product is out of stock'
+      );
       return;
     }
 
@@ -37,7 +45,7 @@ export default function ProductCard({ product }: { product: Product }) {
       image: product.images?.[0],
       size,
       color,
-      availableStock: product.stock
+      availableStock,
     });
 
     if (result.ok) {
@@ -122,15 +130,15 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
           <button
             onClick={handleAddToCart}
-            disabled={product.stock <= 0}
+            disabled={isOutOfStock}
             className={`p-1.5 md:p-2 rounded-full text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 ${
-              product.stock <= 0
+              isOutOfStock
                 ? 'cursor-not-allowed bg-slate-400'
                 : 'hover:opacity-90'
             }`}
-            style={product.stock <= 0 ? undefined : { backgroundColor: '#e04136' }}
-            aria-label={product.stock <= 0 ? 'Out of stock' : 'Add to cart'}
-            title={product.stock <= 0 ? 'Out of stock' : 'Add to cart'}
+            style={isOutOfStock ? undefined : { backgroundColor: '#e04136' }}
+            aria-label={isOutOfStock ? 'Unavailable' : 'Add to cart'}
+            title={isOutOfStock ? 'Unavailable' : 'Add to cart'}
           >
             <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
           </button>

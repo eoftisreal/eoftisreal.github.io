@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet, Product } from '@/lib/api';
 import ProductGrid from '@/components/ProductGrid';
+import { inventoryQueryOptions } from '@/lib/stock';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import SEO from '@/components/SEO';
 
@@ -62,6 +63,7 @@ function ProductListingContent() {
   if (pageParam) queryParams.set('page', pageParam);
 
   const { data: productsData, isLoading: loading } = useQuery<ProductResponse>({
+    ...inventoryQueryOptions,
     queryKey: ['products', queryParams.toString()],
     queryFn: () => apiGet<ProductResponse>(`/products?${queryParams.toString()}`)
   });

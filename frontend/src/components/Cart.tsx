@@ -4,15 +4,10 @@ import { useCartStore } from "@/store/cart";
 import { X, Minus, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
-function normalizeStockValue(stock: unknown): number | undefined {
-  if (typeof stock === 'number' && Number.isFinite(stock)) return stock;
-  if (typeof stock === 'string') {
-    const parsed = Number(stock);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return undefined;
-}
+import {
+  normalizeStock as normalizeStockValue,
+  productQuantity,
+} from '@/lib/stock';
 
 export default function Cart() {
   const { items, removeItem, updateQuantity } = useCartStore();
@@ -56,7 +51,12 @@ export default function Cart() {
       <ul className="divide-y divide-border border-y border-border">
         {items.map((item) => {
           const availableStock = normalizeStockValue(item.availableStock);
-          const canIncrease = typeof availableStock === 'number' ? item.quantity < availableStock : true;
+          const totalForProduct = productQuantity(items, item.productId);
+          const canIncrease =
+            availableStock === undefined
+              ? true
+              : totalForProduct < availableStock;
+
           return (
           <li key={`${item.productId}-${item.size || ''}-${item.color || ''}`} className="flex gap-6 py-6">
             <div className="h-24 w-24 shrink-0 overflow-hidden bg-secondary-bg rounded border border-border flex items-center justify-center">

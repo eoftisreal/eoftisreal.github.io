@@ -16,6 +16,15 @@ module.exports = function responseCacheMiddleware(req, res, next) {
     return next();
   }
 
+  const isInventoryResponse =
+    req.path === '/products' ||
+    req.path === '/products/' ||
+    /^\/products\/[a-f0-9]{24}\/?$/i.test(req.path);
+
+  if (isInventoryResponse) {
+    return next();
+  }
+
   // Only explicitly allow public catalogue/reference-data routes
   const isCacheable = (
     req.path.startsWith('/products') ||

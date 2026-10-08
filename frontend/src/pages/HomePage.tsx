@@ -4,6 +4,7 @@ import ProductCard from '@/components/ProductCard';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet, Product } from '@/lib/api';
 import SEO from '@/components/SEO';
+import { inventoryQueryOptions } from '@/lib/stock';
 
 type Category = {
   _id: string;
@@ -19,6 +20,7 @@ export default function Home() {
   });
 
   const { data: featuredProductsRes } = useQuery<{ products: Product[] }>({
+    ...inventoryQueryOptions,
     queryKey: ['featuredProducts'],
     queryFn: () => apiGet('/products?isFeatured=true&limit=24')
   });

@@ -10,8 +10,8 @@ const Brand = require('../models/Brand');
 
 const router = express.Router();
 const LIST_FIELDS = 'title artistName productType category brand images imageVariants price compareAtPrice stock isFeatured isCustomizable enableSizes sizes enableColors colors minDeliveryDays maxDeliveryDays tags salesCount createdAt';
-const SHORT_CACHE = 'public, max-age=120, stale-while-revalidate=300';
-const MEDIUM_CACHE = 'public, max-age=300, stale-while-revalidate=600';
+const SHORT_CACHE = 'no-store';
+const MEDIUM_CACHE = 'no-store';
 
 router.get('/categories', async (req, res, next) => {
   try {

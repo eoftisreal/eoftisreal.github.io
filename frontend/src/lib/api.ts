@@ -9,7 +9,9 @@ export async function apiGet<T>(path: string): Promise<T> {
     path.startsWith('/master-data') ||
     path.startsWith('/public/settings')
   ) {
-    const res = await fetch(`${apiBase}${path}`);
+    const res = await fetch(`${apiBase}${path}`, {
+      cache: 'no-store',
+    });
     if (!res.ok) {
       throw new Error(`Failed to fetch ${path}`);
     }
