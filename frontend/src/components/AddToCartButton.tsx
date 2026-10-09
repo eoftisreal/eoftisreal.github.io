@@ -16,7 +16,8 @@ type Props = {
 };
 
 export default function AddToCartButton({ productId, title, price, stock, image, customImage, size, color }: Props) {
-  const { addItem } = useCartStore();
+  // Use a selector to avoid re-rendering on every cart state change
+  const addItem = useCartStore(state => state.addItem);
 
   const availableStock = normalizeStock(stock);
   const isUnavailable = availableStock === undefined || availableStock <= 0;

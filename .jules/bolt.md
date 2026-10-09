@@ -1,0 +1,3 @@
+## 2024-05-24 - [Zustand Selectors and React.memo in Lists]
+**Learning:** Destructuring the entire Zustand store (e.g., `const { addItem } = useCartStore()`) in a component rendered inside a list/grid (like `ProductCard`) causes the component to subscribe to all state changes in the store. This leads to massive unnecessary re-renders across the entire grid whenever the cart state changes (e.g., adding an item updates the `items` array).
+**Action:** Always use Zustand selectors (e.g., `useCartStore(state => state.addItem)`) when consuming store methods, especially in components rendered repeatedly. Additionally, wrap components receiving complex objects as props (like `ProductCard` receiving `Product`) in `React.memo` to prevent re-renders when the parent updates.
