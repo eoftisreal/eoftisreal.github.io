@@ -62,8 +62,23 @@ export default function CheckoutForm() {
     deliveryCharge: 0
   });
 
-  const { items, fetchCart } = useCartStore();
+  const { items: cartItems, fetchCart } = useCartStore();
   const queryClient = useQueryClient();
+
+  const [directBuyItem, setDirectBuyItem] = useState<any>(null);
+
+  useEffect(() => {
+    const draft = sessionStorage.getItem('directCheckoutDraft');
+    if (draft) {
+      try {
+        setDirectBuyItem(JSON.parse(draft)[0]);
+      } catch (e) {
+        console.error('Failed to parse direct buy draft', e);
+      }
+    }
+  }, []);
+
+  const items = directBuyItem ? [directBuyItem] : cartItems;
 
   const checkoutMutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -173,13 +188,17 @@ export default function CheckoutForm() {
     setPromoMessage('Validating...');
 
     try {
+      const bodyPayload: any = { code: promoCode };
+      if (directBuyItem) {
+        bodyPayload.directBuySubtotal = subtotal;
+      }
       const res = await fetch(`${apiBase}/checkout/validate-coupon`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getAuthToken()}`
         },
-        body: JSON.stringify({ code: promoCode })
+        body: JSON.stringify(bodyPayload)
       });
 
       const body = await res.json();
@@ -277,7 +296,17 @@ export default function CheckoutForm() {
             country: formData.country
           },
           deliveryMethod: formData.deliveryMethod,
-          promoCode: promoCode || undefined
+          promoCode: promoCode || undefined,
+          checkoutMode: directBuyItem ? 'buy_now' : 'cart',
+          ...(directBuyItem ? {
+            directBuyItem: {
+              productId: directBuyItem.productId,
+              quantity: directBuyItem.quantity,
+              size: directBuyItem.size,
+              color: directBuyItem.color,
+              customImage: directBuyItem.customImage
+            }
+          } : {})
         };
 
         const data = await checkoutMutation.mutateAsync(payload);
@@ -285,8 +314,13 @@ export default function CheckoutForm() {
         if (data && data.order) {
           setMessage('Order placed successfully!');
           checkoutAttemptIdRef.current = null;
-          // Call clear local cart
-          useCartStore.getState().clearLocalCart();
+
+          if (directBuyItem) {
+            sessionStorage.removeItem('directCheckoutDraft');
+          } else {
+            // Call clear local cart
+            useCartStore.getState().clearLocalCart();
+          }
 
           if (paymentWindow) {
             // Move the already-open tab from the loading screen to the order

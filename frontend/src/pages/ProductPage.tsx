@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet, Product } from '@/lib/api';
 import AddToCartButton from '@/components/AddToCartButton';
+import BuyNowButton from '@/components/BuyNowButton';
 import { inventoryQueryOptions } from '@/lib/stock';
 import WishlistButton from '@/components/WishlistButton';
 import SEO from '@/components/SEO';
@@ -322,15 +323,17 @@ export default function ProductDetailPage() {
             )}
 
             {customImageUrl && (
-              <div className="pt-2 flex items-center gap-2">
+              <div className="pt-2 flex items-center gap-2 flex-wrap">
                 <AddToCartButton productId={product._id} title={product.title} price={product.price} stock={product.stock} image={product.images?.[0]} customImage={customImageUrl} size={selectedSize} color={selectedColor} />
+                <BuyNowButton product={product} customImage={customImageUrl} size={selectedSize} color={selectedColor} />
                 <WishlistButton productId={product._id} className="w-12 h-12 !p-0 flex-shrink-0 border border-border bg-transparent shadow-none" />
               </div>
             )}
           </div>
         ) : (
-          <div className="pt-4 border-t border-border flex items-center gap-2">
+          <div className="pt-4 border-t border-border flex items-center gap-2 flex-wrap">
             <AddToCartButton productId={product._id} title={product.title} price={product.price} stock={product.stock} image={product.images?.[0]} size={selectedSize} color={selectedColor} />
+            <BuyNowButton product={product} size={selectedSize} color={selectedColor} />
             <WishlistButton productId={product._id} className="w-12 h-12 !p-0 flex-shrink-0 border border-border bg-transparent shadow-none" />
           </div>
         )}

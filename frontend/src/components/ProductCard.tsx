@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Product } from '@/lib/api';
 import WishlistButton from './WishlistButton';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, X } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import toast from 'react-hot-toast';
 import { normalizeStock } from '@/lib/stock';
+import React, { useState } from 'react';
 
 // Helper function to generate a consistent color based on string content
 function stringToColor(str: string) {
@@ -18,12 +19,17 @@ function stringToColor(str: string) {
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
+  const navigate = useNavigate();
 
   const availableStock = normalizeStock(product.stock);
   const isUnavailable = availableStock === undefined || availableStock <= 0;
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigating to the product page
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(product.sizes?.[0]);
+  const [selectedColor, setSelectedColor] = useState<string | undefined>(product.colors?.[0]);
+
+  const handleAddToCartClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
 
     if (isUnavailable) {
@@ -35,16 +41,24 @@ export default function ProductCard({ product }: { product: Product }) {
       return;
     }
 
-    const size = product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined;
-    const color = product.colors && product.colors.length > 0 ? product.colors[0] : undefined;
+    const needsSelection = (product.enableSizes && product.sizes && product.sizes.length > 0) ||
+                           (product.enableColors && product.colors && product.colors.length > 0);
 
+    if (needsSelection) {
+      setIsModalOpen(true);
+    } else {
+      addToCart();
+    }
+  };
+
+  const addToCart = async () => {
     const result = await addItem({
       productId: product._id,
       title: product.title,
       unitPrice: product.price,
       image: product.images?.[0],
-      size,
-      color,
+      size: product.enableSizes ? selectedSize : undefined,
+      color: product.enableColors ? selectedColor : undefined,
       availableStock,
     });
 
@@ -54,6 +68,7 @@ export default function ProductCard({ product }: { product: Product }) {
     }
 
     toast.success(`${product.title} added to cart!`);
+    setIsModalOpen(false);
   };
 
   const generateSrcSet = (variant: any) => {
@@ -137,7 +152,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
           <button
             type="button"
-            onClick={handleAddToCart}
+            onClick={handleAddToCartClick}
             disabled={isUnavailable}
             className={`p-2 rounded-full text-white ${
               isUnavailable
@@ -160,6 +175,121 @@ export default function ProductCard({ product }: { product: Product }) {
           </button>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsModalOpen(false);
+          }}
+        >
+          <div
+            className="bg-background rounded-2xl w-full max-w-sm overflow-hidden shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-heading font-bold text-lg text-foreground">Select Options</h3>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsModalOpen(false);
+                }}
+                className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div className="flex items-center gap-4">
+                {product.images?.[0] && (
+                  <img src={product.images[0]} alt={product.title} className="w-16 h-16 object-cover rounded-md" />
+                )}
+                <div>
+                  <h4 className="font-medium text-foreground line-clamp-1">{product.title}</h4>
+                  <p className="text-foreground font-semibold">₹{product.price}</p>
+                </div>
+              </div>
+
+              {product.enableSizes && product.sizes && product.sizes.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2 text-foreground">Size</p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map(size => (
+                      <button
+                        key={size}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedSize(size);
+                        }}
+                        className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                          selectedSize === size
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'border-border text-foreground hover:border-foreground'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {product.enableColors && product.colors && product.colors.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2 text-foreground">Color</p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.colors.map(color => (
+                      <button
+                        key={color}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedColor(color);
+                        }}
+                        className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                          selectedColor === color
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'border-border text-foreground hover:border-foreground'
+                        }`}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 flex flex-col gap-2">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    addToCart();
+                  }}
+                  className="w-full py-3 bg-foreground text-white rounded-full font-semibold hover:bg-black transition-colors"
+                >
+                  Add to Cart
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigate(`/products/${product._id}`);
+                  }}
+                  className="w-full py-3 text-foreground font-medium hover:underline"
+                >
+                  View Full Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
