@@ -58,6 +58,14 @@ const checkoutSchema = z.object({
     }),
     deliveryMethod: z.enum(['email', 'whatsapp']).optional(),
     promoCode: z.string().optional(),
+    checkoutMode: z.enum(['cart', 'buy_now']).optional(),
+    directBuyItem: z.object({
+      productId: z.string(),
+      quantity: z.number().int().positive(),
+      size: z.string().optional(),
+      color: z.string().optional(),
+      customImage: z.string().optional()
+    }).optional()
   }),
   query: z.object({}),
   params: z.object({}),
@@ -103,54 +111,96 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
             }
           }
 
-          // 2. Fetch and validate cart INSIDE the transaction
-          const cart = await Cart.findOne({ userId: req.user.id })
-            .populate('items.productId')
-            .session(session);
+          // 2. Fetch and validate cart or direct buy item INSIDE the transaction
+          let itemsToProcess = [];
+          let subtotal = 0;
 
-          if (!cart || cart.items.length === 0) {
-            const err = new Error('Cart is empty');
-            err.statusCode = 400;
-            throw err;
-          }
+          if (req.validated.body.checkoutMode === 'buy_now' && req.validated.body.directBuyItem) {
+             const dItem = req.validated.body.directBuyItem;
+             const product = await Product.findById(dItem.productId).session(session);
 
-          const requested = new Map();
+             if (!product || !product.isActive) {
+                const err = new Error('Product is no longer available');
+                err.statusCode = 409;
+                throw err;
+             }
+             if (dItem.quantity > product.stock) {
+                const err = new Error(`Not enough stock for ${product.title}`);
+                err.statusCode = 409;
+                throw err;
+             }
 
-          for (const item of cart.items) {
-            const product = item.productId;
-
-            if (!product || !product.isActive) {
-              const err = new Error('A product in your cart is no longer available');
-              err.statusCode = 409;
-              throw err;
-            }
-
-            const id = String(product._id);
-            const quantity = (requested.get(id) || 0) + item.quantity;
-            requested.set(id, quantity);
-
-            if (quantity > product.stock) {
-              const err = new Error(`Not enough stock for ${product.title}`);
-              err.statusCode = 409;
-              throw err;
-            }
-          }
-
-          for (const item of cart.items) {
-            const updatedProduct = await Product.findOneAndUpdate(
-              { _id: item.productId._id, isActive: true, stock: { $gte: item.quantity } },
-              { $inc: { stock: -item.quantity } },
+             const updatedProduct = await Product.findOneAndUpdate(
+              { _id: product._id, isActive: true, stock: { $gte: dItem.quantity } },
+              { $inc: { stock: -dItem.quantity } },
               { session, new: true }
-            );
+             );
 
-            if (!updatedProduct) {
-              const err = new Error(`${item.productId.title} is out of stock or has insufficient quantity`);
-              err.statusCode = 400;
-              throw err;
-            }
+             if (!updatedProduct) {
+               const err = new Error(`${product.title} is out of stock or has insufficient quantity`);
+               err.statusCode = 400;
+               throw err;
+             }
+
+             itemsToProcess = [{
+               productId: product,
+               quantity: dItem.quantity,
+               size: dItem.size,
+               color: dItem.color,
+               customImage: dItem.customImage
+             }];
+
+             subtotal = product.price * dItem.quantity;
+          } else {
+             const cart = await Cart.findOne({ userId: req.user.id })
+               .populate('items.productId')
+               .session(session);
+
+             if (!cart || cart.items.length === 0) {
+               const err = new Error('Cart is empty');
+               err.statusCode = 400;
+               throw err;
+             }
+
+             const requested = new Map();
+
+             for (const item of cart.items) {
+               const product = item.productId;
+
+               if (!product || !product.isActive) {
+                 const err = new Error('A product in your cart is no longer available');
+                 err.statusCode = 409;
+                 throw err;
+               }
+
+               const id = String(product._id);
+               const quantity = (requested.get(id) || 0) + item.quantity;
+               requested.set(id, quantity);
+
+               if (quantity > product.stock) {
+                 const err = new Error(`Not enough stock for ${product.title}`);
+                 err.statusCode = 409;
+                 throw err;
+               }
+             }
+
+             for (const item of cart.items) {
+               const updatedProduct = await Product.findOneAndUpdate(
+                 { _id: item.productId._id, isActive: true, stock: { $gte: item.quantity } },
+                 { $inc: { stock: -item.quantity } },
+                 { session, new: true }
+               );
+
+               if (!updatedProduct) {
+                 const err = new Error(`${item.productId.title} is out of stock or has insufficient quantity`);
+                 err.statusCode = 400;
+                 throw err;
+               }
+             }
+
+             itemsToProcess = cart.items;
+             subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);
           }
-
-          const subtotal = cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0);
           let discount = 0;
 
           if (req.validated.body.promoCode) {
@@ -199,8 +249,8 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
 
           const total = Number((discountedSubtotal + tax + deliveryCharge).toFixed(2));
 
-          const items = cart.items.map((item) => ({
-            productId: item.productId.id,
+          const items = itemsToProcess.map((item) => ({
+            productId: item.productId.id || item.productId._id,
             title: item.productId.title,
             quantity: item.quantity,
             unitPrice: item.productId.price,
@@ -242,7 +292,9 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
             note: 'Order created'
           }], { session });
 
-          await Cart.findOneAndUpdate({ userId: req.user.id }, { $set: { items: [] } }, { session });
+          if (req.validated.body.checkoutMode !== 'buy_now') {
+            await Cart.findOneAndUpdate({ userId: req.user.id }, { $set: { items: [] } }, { session });
+          }
 
           finalOrder = newOrder;
         });
@@ -283,16 +335,22 @@ router.post('/create', auth, validate(checkoutSchema), async (req, res, next) =>
 
 const validateCouponSchema = z.object({
   body: z.object({
-    code: z.string()
+    code: z.string(),
+    directBuySubtotal: z.number().optional()
   })
 });
 
 router.post('/validate-coupon', auth, validate(validateCouponSchema), async (req, res, next) => {
   try {
-    const { code } = req.validated.body;
+    const { code, directBuySubtotal } = req.validated.body;
 
-    const cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
-    const subtotal = cart ? cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0) : 0;
+    let subtotal = 0;
+    if (directBuySubtotal !== undefined) {
+      subtotal = directBuySubtotal;
+    } else {
+      const cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
+      subtotal = cart ? cart.items.reduce((sum, item) => sum + item.productId.price * item.quantity, 0) : 0;
+    }
 
     const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
 

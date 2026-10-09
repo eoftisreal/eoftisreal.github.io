@@ -18,14 +18,26 @@ export default function Header() {
   const wishlistItemCount = wishlistItems.length;
 
   useEffect(() => {
+    // If the user navigates away from the checkout page (e.g., clicks a header link), clear any active direct checkout draft
+    const handleBeforeUnload = () => {
+       if (window.location.pathname !== '/checkout') {
+          sessionStorage.removeItem('directCheckoutDraft');
+       }
+    };
+    handleBeforeUnload(); // Check on mount
+    window.addEventListener('popstate', handleBeforeUnload);
+    return () => window.removeEventListener('popstate', handleBeforeUnload);
+  }, [window.location.pathname]);
+
+  useEffect(() => {
     const checkAuth = () => {
       const token = getAuthToken();
       if (token) {
         setIsAuthenticated(true);
-        const payload = parseJwt(token);
-        if (payload && (payload.role === 'admin' || payload.role === 'master_admin' || payload.isAdmin)) {
-          setIsAdmin(true);
-        } else {
+        try {
+          const payload = parseJwt(token);
+          setIsAdmin(payload.role === 'admin' || payload.role === 'master_admin');
+        } catch (e) {
           setIsAdmin(false);
         }
       } else {
@@ -33,7 +45,6 @@ export default function Header() {
         setIsAdmin(false);
       }
     };
-
     checkAuth();
 
     window.addEventListener('auth-change', checkAuth);
@@ -46,38 +57,28 @@ export default function Header() {
     // Delay loading non-critical data
     const timer = setTimeout(() => {
       fetchCart();
-      fetchWishlist();
-    }, 500);
-
+      if (isAuthenticated) {
+        fetchWishlist();
+      }
+    }, 100);
     return () => clearTimeout(timer);
   }, [fetchCart, fetchWishlist, isAuthenticated]);
 
   const handleLogout = () => {
-    clearAuth();
     clearLocalCart();
     clearLocalWishlist();
+    clearAuth();
     setIsAuthenticated(false);
     setIsAdmin(false);
-    navigate('/');
+    navigate('/auth/login');
   };
 
   return (
-    <>
-      <div className="bg-foreground text-white text-[11px] font-medium tracking-widest uppercase py-2 overflow-hidden flex whitespace-nowrap group">
-        <div className="animate-marquee group-hover:[animation-play-state:paused] flex min-w-full shrink-0 items-center justify-around gap-8">
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-          <span>LOOKING FOR SOMETHING NEW? YOU'RE IN THE RIGHT PLACE.</span>
-        </div>
-      </div>
-      <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border transition-all">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 md:px-8 py-4">
-          {/* Mobile Menu Icon */}
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 md:h-20 gap-4">
+
+          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center flex-1">
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 -ml-2 text-foreground focus:outline-none" title="Menu">
               <img src="/icons/menu.png" alt="Menu" className="h-10 w-10 object-contain" loading="eager" />
@@ -87,7 +88,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-4 md:gap-6 flex-1">
             <Link to="/products" className={linkClass}>Shop</Link>
-            <Link to="/products?category=Collections" className={linkClass}>Collections</Link>
+            <Link to="/products?tag=Collections" className={linkClass}>Collections</Link>
             <Link to="/about" className={linkClass}>About</Link>
           </nav>
 
@@ -97,10 +98,10 @@ export default function Header() {
               alt="Kapda Kraft"
               className="h-8 md:h-10 w-auto object-contain mix-blend-multiply"
               loading="eager"
-        />
+            />
           </Link>
 
-          <nav className="flex items-center justify-end gap-4 md:gap-6 flex-1">
+          <div className="flex items-center justify-end gap-2 sm:gap-4 flex-1">
             {isAdmin && (
               <Link to="/admin" className={`${linkClass} hidden sm:inline-block`} title="Admin">Admin</Link>
             )}
@@ -108,21 +109,21 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 <Link to="/account" className={`${linkClass} flex items-center`} title="Account">
-                  <img src="/icons/user.png" alt="Account" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" />
+                  <img src="/icons/user.png" alt="Account" className="h-8 w-8 md:h-10 md:w-10 object-contain" loading="eager" />
                 </Link>
-                <button onClick={handleLogout} className={`${linkClass} hidden sm:flex items-center`} title="Logout">
-                  <img src="/icons/logout.png" alt="Logout" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" />
+                <button onClick={handleLogout} className={`${linkClass} flex items-center`} title="Log Out">
+                  <img src="/icons/logout.png" alt="Logout" className="h-8 w-8 md:h-10 md:w-10 object-contain" loading="eager" />
                 </button>
               </>
             ) : (
               <Link to="/auth/login" className={`${linkClass} flex items-center`} title="Log In">
-                <img src="/icons/login.png" alt="Log In" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" />
+                <img src="/icons/login.png" alt="Login" className="h-8 w-8 md:h-10 md:w-10 object-contain" loading="eager" />
               </Link>
             )}
             <Link to="/account#wishlist" className={`${linkClass} flex items-center relative`} title="Wishlist">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart h-[22px] w-[22px] md:h-7 md:w-7"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+              <img src="/icons/user.png" alt="Wishlist" className="h-8 w-8 md:h-10 md:w-10 object-contain opacity-70" loading="eager" />
               {wishlistItemCount > 0 && (
-                <span className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-foreground text-white text-[10px] font-bold h-4 min-w-[16px] flex items-center justify-center rounded-full px-1">
+                <span className="absolute -top-1 -right-1 bg-foreground text-background text-[10px] font-bold h-4 w-4 md:h-5 md:w-5 rounded-full flex items-center justify-center">
                   {wishlistItemCount}
                 </span>
               )}
@@ -130,25 +131,25 @@ export default function Header() {
             <Link to="/cart" className={`${linkClass} flex items-center relative`} title="Cart">
               <img src="/icons/cart.png" alt="Cart" className="h-9 w-9 md:h-11 md:w-11 object-contain" loading="eager" />
               {cartItemCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-foreground text-white text-[10px] font-bold h-4 min-w-[16px] flex items-center justify-center rounded-full px-1">
+                <span className="absolute 0 -right-0 bg-foreground text-background text-[10px] font-bold h-4 w-4 md:h-5 md:w-5 rounded-full flex items-center justify-center">
                   {cartItemCount}
                 </span>
               )}
             </Link>
-          </nav>
+          </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
+        {/* Mobile Navigation Dropdown */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-background">
             <nav className="flex flex-col px-4 py-2">
               <Link to="/products" className="py-3 border-b border-border/50 text-sm font-medium text-secondary-text hover:text-foreground" onClick={() => setIsMobileMenuOpen(false)}>Shop</Link>
-              <Link to="/products?category=Collections" className="py-3 border-b border-border/50 text-sm font-medium text-secondary-text hover:text-foreground" onClick={() => setIsMobileMenuOpen(false)}>Collections</Link>
+              <Link to="/products?tag=Collections" className="py-3 border-b border-border/50 text-sm font-medium text-secondary-text hover:text-foreground" onClick={() => setIsMobileMenuOpen(false)}>Collections</Link>
               <Link to="/about" className="py-3 text-sm font-medium text-secondary-text hover:text-foreground" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
             </nav>
           </div>
         )}
-      </header>
-    </>
+      </div>
+    </header>
   );
 }
