@@ -17,8 +17,8 @@ function stringToColor(str: string) {
   return `hsl(${hue}, 65%, 45%)`;
 }
 
-export default function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCartStore();
+const ProductCard = React.memo(({ product }: { product: Product }) => {
+  const addItem = useCartStore(state => state.addItem);
   const navigate = useNavigate();
 
   const availableStock = normalizeStock(product.stock);
@@ -292,4 +292,6 @@ export default function ProductCard({ product }: { product: Product }) {
       )}
     </div>
   );
-}
+});
+
+export default ProductCard;
