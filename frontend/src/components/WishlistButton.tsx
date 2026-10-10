@@ -3,8 +3,9 @@ import { Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function WishlistButton({ productId, className = '' }: { productId: string, className?: string }) {
-  const { items, add, remove } = useWishlistStore();
-  const isWishlisted = items.includes(productId);
+  const isWishlisted = useWishlistStore(state => state.items.includes(productId));
+  const add = useWishlistStore(state => state.add);
+  const remove = useWishlistStore(state => state.remove);
 
   const toggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating if wrapped in a Link

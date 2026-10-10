@@ -12,10 +12,13 @@ export default function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { items, fetchCart, clearLocalCart } = useCartStore();
-  const { items: wishlistItems, fetchWishlist, clearLocalWishlist } = useWishlistStore();
-  const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const wishlistItemCount = wishlistItems.length;
+  const fetchCart = useCartStore(state => state.fetchCart);
+  const clearLocalCart = useCartStore(state => state.clearLocalCart);
+  const cartItemCount = useCartStore(state => state.items.reduce((total, item) => total + item.quantity, 0));
+
+  const fetchWishlist = useWishlistStore(state => state.fetchWishlist);
+  const clearLocalWishlist = useWishlistStore(state => state.clearLocalWishlist);
+  const wishlistItemCount = useWishlistStore(state => state.items.length);
 
   useEffect(() => {
     // If the user navigates away from the checkout page (e.g., clicks a header link), clear any active direct checkout draft
